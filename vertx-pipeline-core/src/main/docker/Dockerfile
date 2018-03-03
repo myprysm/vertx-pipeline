@@ -1,9 +1,11 @@
-FROM vertx/vertx3
+FROM openjdk:8-jre-alpine
 
 ENV VERTICLE_HOME /usr/verticles
-ENV VERTICLE_NAME fr.myprysm.pipeline.DeploymentVerticle
 
-COPY ./verticles $VERTICLE_HOME
+COPY /verticles $VERTICLE_HOME
+
+# Launch the verticle
+WORKDIR $VERTICLE_HOME
 
 ENTRYPOINT ["sh", "-c"]
-CMD ["exec vertx run $VERTICLE_NAME -cp $VERTICLE_HOME/*"]
+CMD ["exec java -jar vertx-pipeline-core-fat.jar -cp ."]

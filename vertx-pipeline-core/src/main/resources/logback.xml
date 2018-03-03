@@ -51,7 +51,7 @@
     <logger name="fr.myprysm.pipeline.processor.LogProcessor" level="trace"/>
 
     <root level="debug">
-        <appender-ref ref="STDOUT"/>
+        <!--<appender-ref ref="STDOUT"/>-->
         <appender-ref ref="FILE"/>
     </root>
 

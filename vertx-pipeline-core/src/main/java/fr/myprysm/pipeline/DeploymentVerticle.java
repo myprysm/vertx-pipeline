@@ -109,7 +109,9 @@ public class DeploymentVerticle extends AbstractVerticle {
                         .put("path", "config.yml")
                 );
 
-        ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions().addStore(store));
+        ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions()
+                .addStore(store)
+                .setIncludeDefaultStores(true));
 
         return retriever.rxGetConfig();
     }

@@ -26,6 +26,8 @@
     <version>1.0.0-SNAPSHOT</version>
     <modules>
         <module>vertx-pipeline-core</module>
+        <!--<module>vertx-pipeline-twitter</module>-->
+        <!--<module>java-exercise</module>-->
     </modules>
 
     <developers>
@@ -50,6 +52,7 @@
 
         <!-- plugin versions & properties -->
         <compiler-plugin.version>3.5.1</compiler-plugin.version>
+        <docker-plugin.version>0.2.8</docker-plugin.version>
         <shade-plugin.version>2.4.3</shade-plugin.version>
         <clean-plugin.version>3.0.0</clean-plugin.version>
         <surefire-plugin.version>2.19.1</surefire-plugin.version>
@@ -167,26 +170,26 @@
                 <plugin>
                     <groupId>com.spotify</groupId>
                     <artifactId>docker-maven-plugin</artifactId>
-                    <version>0.2.8</version>
+                    <version>${docker-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>docker</id>
-                            <phase>none</phase>
-                            <!--<goals>-->
-                            <!--<goal>build</goal>-->
-                            <!--</goals>-->
+                            <phase>package</phase>
+                            <goals>
+                                <goal>build</goal>
+                            </goals>
                         </execution>
                     </executions>
                     <configuration>
                         <dockerDirectory>${project.basedir}/src/main/docker</dockerDirectory>
                         <!-- Configure the image name -->
-                        <imageName>interview/bieber-tweets</imageName>
+                        <imageName>myprysm/${project.artifactId}:latest</imageName>
                         <resources>
                             <resource>
                                 <targetPath>/verticles</targetPath>
                                 <directory>${project.build.directory}</directory>
                                 <includes>
-                                    <include>${project.artifactId}-${project.version}.jar</include>
+                                    <include>${project.artifactId}-fat.jar</include>
                                 </includes>
                             </resource>
                             <!-- don't forget to also add all the dependencies required by your application -->
@@ -220,7 +223,7 @@
                                 </transformers>
                                 <artifactSet>
                                 </artifactSet>
-                                <outputFile>${project.build.directory}/${project.artifactId}-${project.version}-fat.jar
+                                <outputFile>${project.build.directory}/${project.artifactId}-fat.jar
                                 </outputFile>
                             </configuration>
                         </execution>

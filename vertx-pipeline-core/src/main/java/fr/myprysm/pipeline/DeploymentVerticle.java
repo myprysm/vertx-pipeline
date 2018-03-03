@@ -111,7 +111,8 @@ public class DeploymentVerticle extends AbstractVerticle {
 
         ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions()
                 .addStore(store)
-                .setIncludeDefaultStores(true));
+//                .setIncludeDefaultStores(true)
+        );
 
         return retriever.rxGetConfig();
     }

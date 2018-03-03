@@ -25,6 +25,10 @@ import java.util.concurrent.TimeUnit;
 
 import static fr.myprysm.pipeline.util.JsonHelpers.obj;
 
+/**
+ * Pump that emits an event at fixed interval.
+ * It can embed additional data.
+ */
 public final class TimerPump extends BaseJsonPump<TimerPumpOptions> {
     private Long interval;
     private TimeUnit unit;

@@ -52,7 +52,7 @@
 
         <!-- plugin versions & properties -->
         <compiler-plugin.version>3.5.1</compiler-plugin.version>
-        <docker-plugin.version>0.2.8</docker-plugin.version>
+        <docker-plugin.version>1.0.0</docker-plugin.version>
         <shade-plugin.version>2.4.3</shade-plugin.version>
         <clean-plugin.version>3.0.0</clean-plugin.version>
         <surefire-plugin.version>2.19.1</surefire-plugin.version>
@@ -181,12 +181,17 @@
                         </execution>
                     </executions>
                     <configuration>
-                        <dockerDirectory>${project.basedir}/src/main/docker</dockerDirectory>
                         <!-- Configure the image name -->
                         <imageName>myprysm/${project.artifactId}:latest</imageName>
+                        <baseImage>openjdk:8-jre-alpine</baseImage>
+                        <env>
+                            <JAR_NAME>${project.artifactId}-fat.jar</JAR_NAME>
+                            <VERTICLE_HOME>/usr/verticles</VERTICLE_HOME>
+                        </env>
+                        <workdir>$VERTICLE_HOME</workdir>
                         <resources>
                             <resource>
-                                <targetPath>/verticles</targetPath>
+                                <targetPath>/usr/verticles</targetPath>
                                 <directory>${project.build.directory}</directory>
                                 <includes>
                                     <include>${project.artifactId}-fat.jar</include>
@@ -194,6 +199,9 @@
                             </resource>
                             <!-- don't forget to also add all the dependencies required by your application -->
                         </resources>
+
+                        <entryPoint>["sh", "-c"]</entryPoint>
+                        <cmd>["exec java -jar $JAR_NAME -cp ."]</cmd>
                     </configuration>
                 </plugin>
 

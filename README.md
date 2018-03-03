@@ -70,6 +70,86 @@ simple-timer-processor:
 
 ## Developing new veticles
 
+It is quite easy to develop with Vert.x Pipeline. Using `maven` you just have to
+add the following dependency to your `pom.xml`:
+
+```
+<dependency>
+    <groupId>fr.myprysm</groupId>
+    <artifactId>vertx-pipeline-core</artifactId>
+    <version>${vertx-pipeline.version}</version>
+</dependency>
+```
+
+In case you look to extend Vert.x Pipeline you can just package your `jar` without dependencies.
+To run your extension as a docker container, `docker-maven-plugin` can be of some help:
+
+```
+<plugin>
+    <groupId>com.spotify</groupId>
+    <artifactId>docker-maven-plugin</artifactId>
+    <version>${docker-plugin.version}</version>
+    <executions>
+        <execution>
+            <id>docker</id>
+            <phase>package</phase>
+            <goals>
+                <goal>build</goal>
+            </goals>
+        </execution>
+    </executions>
+    <configuration>
+        <!-- Configure the image name -->
+        <imageName>your/pipeline-image</imageName>
+        <baseImage>myprysm/vertx-pipeline-core</baseImage>
+        <env>
+            <VERTICLE_HOME>/usr/verticles</VERTICLE_HOME>
+        </env>
+        <workdir>$VERTICLE_HOME</workdir>
+        <resources>
+            <resource>
+                <targetPath>/usr/verticles</targetPath>
+                <directory>${project.build.outputDirectory}</directory>
+                <includes>
+                    <include>config.yml</include>
+                </includes>
+            </resource>
+            <resource>
+                <targetPath>/usr/verticles</targetPath>
+                <directory>${project.build.directory}</directory>
+                <includes>
+                    <include>${project.artifactId}-${project.version}.jar</include>
+                </includes>
+            </resource>
+            <!-- don't forget to also add all the dependencies required by your application -->
+        </resources>
+    </configuration>
+</plugin>
+```
+
+Don't forget to map volumes if your using some `FileSink`... As this version is under development,
+you could expect some strange behaviour. If you consider it a bug please open an issue an we'll
+check what we can possibly do.
+
+It is recommended to use Maven `exec` plugin to facilitate the development phase.
+
+```
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>exec-maven-plugin</artifactId>
+    <version>${exec-plugin.version}</version>
+    <configuration>
+        <mainClass>fr.myprysm.pipeline.Launcher</mainClass>
+        <arguments>
+            <argument>run</argument>
+            <argument>fr.myprysm.pipeline.DeploymentVerticle</argument>
+        </arguments>
+    </configuration>
+</plugin>
+```
+
+This configuration will run you pipeline configuration from your `resources/config.yml`.
+
 Vert.x Pipeline provides an enhanced `ConfigurableVerticle<T extends Options>` as well as 
 `BaseJsonPump<T extends ProcessorOptions>`, `BaseJsonProcessor<T extends ProcessorOptions>` 
 and `BaseJsonSink<T extends ProcessorOptions>`. They provide a simple lifecycle that is invoked

@@ -63,10 +63,11 @@ public class ObjectToArrayProcessorOptions extends ProcessorOptions {
      * <p>
      * If one of the fields is not found in the input object, the field is created with an empty array.
      *
+     * @param fields the list of fields to transform to array.
      * @return this
      */
-    public ObjectToArrayProcessorOptions setFields(JsonArray extract) {
-        this.fields = extract;
+    public ObjectToArrayProcessorOptions setFields(JsonArray fields) {
+        this.fields = fields;
         return this;
     }
 

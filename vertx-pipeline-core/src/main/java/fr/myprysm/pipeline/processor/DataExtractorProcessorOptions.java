@@ -61,7 +61,8 @@ public class DataExtractorProcessorOptions extends ProcessorOptions {
      * <p>
      * If one of the fields is not found in the input object, the field is ignored.
      *
-     * @return the list of fields to extract.
+     * @param extract the list of fields to extract
+     * @return this
      */
     public DataExtractorProcessorOptions setExtract(JsonObject extract) {
         this.extract = extract;

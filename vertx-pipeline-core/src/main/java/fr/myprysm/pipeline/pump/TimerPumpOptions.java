@@ -100,6 +100,7 @@ public class TimerPumpOptions extends PumpOptions {
      * The value is one of {@link TimeUnit}
      *
      * @param unit the time unit of the pump
+     * @return this
      */
     public TimerPumpOptions setUnit(TimeUnit unit) {
         this.unit = unit;
@@ -123,6 +124,7 @@ public class TimerPumpOptions extends PumpOptions {
      * No additional data is sent when it is null or empty
      *
      * @param data the additional data
+     * @return this
      */
     public TimerPumpOptions setData(JsonObject data) {
         this.data = data;

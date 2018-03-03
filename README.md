@@ -132,6 +132,7 @@ you could expect some strange behaviour. If you consider it a bug please open an
 check what we can possibly do.
 
 It is recommended to use Maven `exec` plugin to facilitate the development phase.
+With the following configuration you will be able to run `mvn exec:java` to launch your pipelines.
 
 ```
 <plugin>
@@ -149,6 +150,20 @@ It is recommended to use Maven `exec` plugin to facilitate the development phase
 ```
 
 This configuration will run you pipeline configuration from your `resources/config.yml`.
+
+In case your lazy or you don't want to configure maven plugins, you can also use the Vert.x Pipeline POM
+as parent:
+
+```
+<parent>
+    <artifactId>vertx-pipeline</artifactId>
+    <groupId>fr.myprysm</groupId>
+    <version>1.0.0-SNAPSHOT</version>
+</parent>
+```
+
+This allows you to import plugin configuration automatically from the configuration directly used by the core.
+It brings the capability to build a `fat-jar` as well as building `Docker` images (like written previously).
 
 Vert.x Pipeline provides an enhanced `ConfigurableVerticle<T extends Options>` as well as 
 `BaseJsonPump<T extends ProcessorOptions>`, `BaseJsonProcessor<T extends ProcessorOptions>` 

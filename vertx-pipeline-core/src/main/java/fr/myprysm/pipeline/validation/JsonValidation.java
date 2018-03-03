@@ -20,16 +20,14 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static fr.myprysm.pipeline.util.JsonHelpers.extractObject;
-import static fr.myprysm.pipeline.util.JsonHelpers.extractString;
-import static java.lang.Boolean.TRUE;
-import static java.util.Objects.requireNonNull;
 import static fr.myprysm.pipeline.validation.ValidationResult.invalid;
 import static fr.myprysm.pipeline.validation.ValidationResult.valid;
+import static java.lang.Boolean.TRUE;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Base JSON validation class.
@@ -94,6 +92,13 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
         return hasPath(path, message(path, "does not exist"));
     }
 
+    /**
+     * Validates that <code>path</code> exists in object.
+     *
+     * @param path    the path
+     * @param message the custom message for validation
+     * @return validation result combinator
+     */
     static JsonValidation hasPath(String path, String message) {
         requireNonNull(path);
         return holds(json -> extractObject(json, path).isPresent(), message);
@@ -288,6 +293,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
      *
      * @param field the name of the field
      * @param clazz the {@link Enum} class
+     * @param <T>   the type of the enumeration
      * @return validation result combinator
      */
     static <T extends Enum<T>> JsonValidation isEnum(String field, Class<T> clazz) {
@@ -302,6 +308,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
      * @param field   the name of the field
      * @param clazz   the {@link Enum} class
      * @param message the custom message for validation
+     * @param <T>   the type of the enumeration
      * @return validation result combinator
      */
     static <T extends Enum<T>> JsonValidation isEnum(String field, Class<T> clazz, String message) {

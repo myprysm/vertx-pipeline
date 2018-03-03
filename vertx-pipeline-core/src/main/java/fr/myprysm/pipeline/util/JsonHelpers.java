@@ -30,8 +30,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
  * JSON Helpers to manipulate and create items faster.
- *
- *
  */
 public interface JsonHelpers {
 
@@ -77,6 +75,7 @@ public interface JsonHelpers {
      *
      * @param json the object to write the value into
      * @param path the path to insert / replace the value.
+     * @return the object at the position of path.
      */
     static JsonObject ensurePathExistsAndGet(JsonObject json, String path) {
         requireNonNull(json);

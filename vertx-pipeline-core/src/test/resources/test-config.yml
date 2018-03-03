@@ -1,0 +1,97 @@
+empty:
+
+simple:
+  pump:
+    type: fr.myprysm.pipeline.pump.TimerPump
+    interval: 10
+    unit: MILLISECONDS
+  sink:
+    type: fr.myprysm.pipeline.sink.ConsoleSink
+
+basic:
+  pump:
+    type: fr.myprysm.pipeline.pump.TimerPump
+    interval: 1
+    unit: SECONDS
+
+  processors:
+    - type: fr.myprysm.pipeline.processor.NoOpProcessor
+
+  sink:
+    type: fr.myprysm.pipeline.sink.ConsoleSink
+
+named:
+  pump:
+    name: Custom Name
+    type: fr.myprysm.pipeline.pump.TimerPump
+    interval: 1
+    unit: SECONDS
+
+  processors:
+    - type: fr.myprysm.pipeline.processor.NoOpProcessor
+      name: Bla bla
+
+  sink:
+    name: FooBar
+    type: fr.myprysm.pipeline.sink.ConsoleSink
+
+multi-instance-processor:
+  pump:
+    type: fr.myprysm.pipeline.pump.TimerPump
+    interval: 1
+    unit: SECONDS
+  processors:
+    - type: fr.myprysm.pipeline.processor.NoOpProcessor
+      instances: 10
+  sink:
+    type: fr.myprysm.pipeline.sink.ConsoleSink
+
+
+multi-instance-multi-processor:
+  pump:
+    type: fr.myprysm.pipeline.pump.TimerPump
+    interval: 50
+    unit: MILLISECONDS
+
+  processors:
+    - type: fr.myprysm.pipeline.processor.NoOpProcessor
+      instances: 10
+    - type: fr.myprysm.pipeline.processor.LogProcessor
+      instances: 3
+      level: DEBUG
+  sink:
+    type: fr.myprysm.pipeline.sink.FileSink
+    mode: overwrite
+    format: json
+
+logger-test:
+  pump:
+    type: fr.myprysm.pipeline.pump.TimerPump
+    interval: 50
+    unit: MILLISECONDS
+  processors:
+    - type: fr.myprysm.pipeline.processor.LogProcessor
+      level: TRACE
+    - type: fr.myprysm.pipeline.processor.LogProcessor
+      level: DEBUG
+    - type: fr.myprysm.pipeline.processor.LogProcessor
+      level: INFO
+    - type: fr.myprysm.pipeline.processor.LogProcessor
+      level: WARN
+    - type: fr.myprysm.pipeline.processor.LogProcessor
+      level: ERROR
+  sink:
+    type: fr.myprysm.pipeline.sink.ConsoleSink
+
+data-extractor-test:
+  pump:
+    type: fr.myprysm.pipeline.pump.TimerPump
+    interval: 50
+    unit: MILLISECONDS
+  processors:
+    - type: fr.myprysm.pipeline.processor.DataExtractorProcessor
+      extract:
+        "counter": "another.field.counter"
+        "timestamp": "that.damn.works"
+  sink:
+    type: fr.myprysm.pipeline.sink.ConsoleSink

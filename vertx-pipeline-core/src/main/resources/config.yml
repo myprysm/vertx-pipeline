@@ -1,0 +1,40 @@
+
+#################################################################
+#
+# Pump and Sink configuration are named.
+# A pump represents a source
+# A sink represents a destination
+# A pipeline represents a set of 0 to n processors
+# that are applied on an item produced from a pump
+# before being drained by a sink.
+################################################################
+
+sample-pipeline:
+  pump:
+    type: fr.myprysm.pipeline.pump.TimerPump
+    interval: 500
+    unit: MILLISECONDS
+
+  processors:
+    - type: fr.myprysm.pipeline.processor.NoOpProcessor
+
+  sink:
+    type: fr.myprysm.pipeline.sink.ConsoleSink
+
+multi-instance-multi-processor:
+  pump:
+    type: fr.myprysm.pipeline.pump.TimerPump
+    interval: 50
+    unit: MILLISECONDS
+
+  processors:
+    - type: fr.myprysm.pipeline.processor.NoOpProcessor
+      instances: 10
+    - type: fr.myprysm.pipeline.processor.LogProcessor
+      instances: 3
+      level: DEBUG
+  sink:
+    type: fr.myprysm.pipeline.sink.FileSink
+    mode: overwrite
+    format: json
+

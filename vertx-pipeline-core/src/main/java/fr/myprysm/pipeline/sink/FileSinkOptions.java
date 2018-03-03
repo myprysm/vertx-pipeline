@@ -47,12 +47,18 @@ public class FileSinkOptions extends SinkOptions {
         super();
     }
 
+    public FileSinkOptions(JsonObject json) {
+        super(json);
+        FileSinkOptionsConverter.fromJson(json, this);
+    }
+
     public FileSinkOptions(FileSinkOptions other) {
         super(other);
         path = other.path;
         file = other.file;
         format = other.format;
         batchSize = other.batchSize;
+        mode = other.mode;
     }
 
     public FileSinkOptions(SinkOptions other) {
@@ -174,9 +180,26 @@ public class FileSinkOptions extends SinkOptions {
         return this;
     }
 
-    public FileSinkOptions(JsonObject json) {
-        FileSinkOptionsConverter.fromJson(json, this);
+    @Override
+    public String getName() {
+        return super.getName();
     }
+
+    @Override
+    public FileSinkOptions setName(String name) {
+        return (FileSinkOptions) super.setName(name);
+    }
+
+    @Override
+    public String getType() {
+        return super.getType();
+    }
+
+    @Override
+    public FileSinkOptions setType(String type) {
+        return (FileSinkOptions) super.setType(type);
+    }
+
 
     @Override
     public JsonObject toJson() {

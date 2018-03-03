@@ -17,7 +17,6 @@
 package fr.myprysm.pipeline.processor;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
@@ -67,6 +66,36 @@ public class DataExtractorProcessorOptions extends ProcessorOptions {
     public DataExtractorProcessorOptions setExtract(JsonObject extract) {
         this.extract = extract;
         return this;
+    }
+
+    @Override
+    public String getName() {
+        return super.getName();
+    }
+
+    @Override
+    public DataExtractorProcessorOptions setName(String name) {
+        return (DataExtractorProcessorOptions) super.setName(name);
+    }
+
+    @Override
+    public String getType() {
+        return super.getType();
+    }
+
+    @Override
+    public DataExtractorProcessorOptions setType(String type) {
+        return (DataExtractorProcessorOptions) super.setType(type);
+    }
+
+    @Override
+    public Integer getInstances() {
+        return super.getInstances();
+    }
+
+    @Override
+    public DataExtractorProcessorOptions setInstances(Integer instances) {
+        return (DataExtractorProcessorOptions) super.setInstances(instances);
     }
 
     @Override

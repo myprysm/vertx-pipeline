@@ -71,6 +71,36 @@ public class ObjectToArrayProcessorOptions extends ProcessorOptions {
     }
 
     @Override
+    public String getName() {
+        return super.getName();
+    }
+
+    @Override
+    public ObjectToArrayProcessorOptions setName(String name) {
+        return (ObjectToArrayProcessorOptions) super.setName(name);
+    }
+
+    @Override
+    public String getType() {
+        return super.getType();
+    }
+
+    @Override
+    public ObjectToArrayProcessorOptions setType(String type) {
+        return (ObjectToArrayProcessorOptions) super.setType(type);
+    }
+
+    @Override
+    public Integer getInstances() {
+        return super.getInstances();
+    }
+
+    @Override
+    public ObjectToArrayProcessorOptions setInstances(Integer instances) {
+        return (ObjectToArrayProcessorOptions) super.setInstances(instances);
+    }
+
+    @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
         ObjectToArrayProcessorOptionsConverter.toJson(this, json);

@@ -83,6 +83,7 @@ public class FileSink extends BaseJsonSink<FileSinkOptions> implements Flushable
 
     @Override
     public Completable shutdown() {
+        emitter.onComplete();
         disposable.dispose();
         return file.rxFlush().andThen(defer(file::rxClose));
     }

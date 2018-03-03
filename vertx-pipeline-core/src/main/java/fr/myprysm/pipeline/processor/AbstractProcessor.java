@@ -17,15 +17,15 @@
 package fr.myprysm.pipeline.processor;
 
 
+import fr.myprysm.pipeline.pipeline.ExchangeOptions;
+import fr.myprysm.pipeline.util.ConfigurableVerticle;
+import fr.myprysm.pipeline.util.RoundRobin;
+import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.EventBus;
 import io.vertx.reactivex.core.eventbus.Message;
 import io.vertx.reactivex.core.eventbus.MessageConsumer;
-import fr.myprysm.pipeline.pipeline.ExchangeOptions;
-import fr.myprysm.pipeline.util.ConfigurableVerticle;
-import fr.myprysm.pipeline.util.RoundRobin;
-import fr.myprysm.pipeline.validation.ValidationResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,12 +103,11 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
     public void consume(Message<I> item) {
         I input = item.body();
         LOG.debug("[{}] Message received: {}", name(), input);
+        transform(input).subscribe(this::publish, this::handleError);
+    }
 
-        try {
-            transform(input).subscribe(this::publish);
-        } catch (Exception e) {
-            error("An error occurred while processing item: ", e);
-        }
+    private void handleError(Throwable throwable) {
+        error("An error occurred while processing item: ", throwable);
     }
 
     @Override

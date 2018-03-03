@@ -16,7 +16,10 @@
 
 package fr.myprysm.pipeline.sink;
 
+import fr.myprysm.pipeline.pipeline.ExchangeOptions;
+import fr.myprysm.pipeline.util.ConfigurableVerticle;
 import fr.myprysm.pipeline.util.Named;
+import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
@@ -24,9 +27,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.EventBus;
 import io.vertx.reactivex.core.eventbus.Message;
 import io.vertx.reactivex.core.eventbus.MessageConsumer;
-import fr.myprysm.pipeline.pipeline.ExchangeOptions;
-import fr.myprysm.pipeline.util.ConfigurableVerticle;
-import fr.myprysm.pipeline.validation.ValidationResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,12 +52,6 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
         eventBus = vertx.eventBus();
         from = deploy.getFrom();
         return config;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public T readConfiguration(JsonObject config) {
-        return (T) new SinkOptions(config);
     }
 
     @Override

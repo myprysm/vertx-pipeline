@@ -30,7 +30,8 @@ public interface StreamHelpers {
      * Stream array elements in reverse-index order
      *
      * @param input the input array
-     * @return a stream of the elements in reverse
+     * @param <T>   the type of object in the array
+     * @return the stream
      */
     static <T> Stream<T> streamInReverse(T[] input) {
         return IntStream.range(1, input.length + 1).mapToObj(
@@ -40,7 +41,8 @@ public interface StreamHelpers {
     /**
      * Stream elements in reverse-index order
      *
-     * @param input
+     * @param input the input list
+     * @param <T>   the type of object in the list
      * @return a stream of the elements in reverse
      */
     static <T> Stream<T> streamInReverse(List<T> input) {
@@ -53,7 +55,8 @@ public interface StreamHelpers {
     /**
      * Stream elements in reverse-index order
      *
-     * @param input
+     * @param input the input linked list
+     * @param <T>   the type of object in the list
      * @return a stream of the elements in reverse
      */
     static <T> Stream<T> streamInReverse(LinkedList<T> input) {

@@ -18,6 +18,7 @@ package fr.myprysm.pipeline;
 
 
 import fr.myprysm.pipeline.pipeline.PipelineVerticle;
+import fr.myprysm.pipeline.util.ClasspathHelpers;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
@@ -30,11 +31,9 @@ import io.vertx.reactivex.CompletableHelper;
 import io.vertx.reactivex.config.ConfigRetriever;
 import io.vertx.reactivex.core.AbstractVerticle;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Objects;
 
@@ -51,6 +50,7 @@ public class DeploymentVerticle extends AbstractVerticle {
     public void start(Future<Void> started) {
         readConfiguration()
                 .map(this::prepareConfiguration)
+                .flatMap(this::loadClasses)
                 .flatMapCompletable(this::startPipelines)
                 .subscribe(CompletableHelper.toObserver(started));
 
@@ -110,7 +110,7 @@ public class DeploymentVerticle extends AbstractVerticle {
                 );
 
         ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions()
-                .addStore(store)
+                        .addStore(store)
 //                .setIncludeDefaultStores(true)
         );
 
@@ -124,6 +124,19 @@ public class DeploymentVerticle extends AbstractVerticle {
      */
     public LinkedList<Pair<String, String>> getPipelineDeployments() {
         return pipelineDeployments;
+    }
+
+    /**
+     * Load classes asynchronously as it is a blocking operation.
+     *
+     * @param config the config
+     * @return a single with the config
+     */
+    private Single<JsonObject> loadClasses(JsonObject config) {
+        return vertx.rxExecuteBlocking(future -> {
+            ClasspathHelpers.getScan();
+            future.complete(config);
+        });
     }
 
     //    private Single<OAuthCredentialsResponse> prepareConfiguration(JsonObject options) {

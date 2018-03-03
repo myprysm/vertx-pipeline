@@ -21,7 +21,6 @@ import fr.myprysm.pipeline.validation.ValidationResult;
 import io.netty.channel.EventLoop;
 import io.reactivex.Completable;
 import io.reactivex.Single;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Future;
 
@@ -73,14 +72,14 @@ public class DataExtractorProcessor extends BaseJsonProcessor<DataExtractorProce
             Optional<Object> value;
 
             if (THIS.equals(mapping.getKey())) {
-                value = Optional.of(input.copy());
+                value = Optional.of(input);
             } else {
                 value = JsonHelpers.extractObject(input, mapping.getKey());
             }
 
             if (value.isPresent()) {
                 if (THIS.equals(mapping.getKey()) && value.get() instanceof JsonObject) {
-                    output = (JsonObject) value.get();
+                    JsonHelpers.writeObject(output, (String) mapping.getValue(), ((JsonObject) value.get()).copy());
                 } else {
                     JsonHelpers.writeObject(output, (String) mapping.getValue(), value.get());
                 }

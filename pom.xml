@@ -30,13 +30,6 @@
         <!--<module>java-exercise</module>-->
     </modules>
 
-    <developers>
-        <developer>
-            <name>Damien Benon</name>
-            <url>https://github.com/myprysm</url>
-        </developer>
-    </developers>
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
@@ -356,6 +349,12 @@
         </pluginManagement>
     </build>
 
+    <developers>
+        <developer>
+            <name>Damien Benon</name>
+            <url>https://github.com/myprysm</url>
+        </developer>
+    </developers>
     <scm>
         <url>https://github.com/myprysm/vertx-pipeline</url>
     </scm>

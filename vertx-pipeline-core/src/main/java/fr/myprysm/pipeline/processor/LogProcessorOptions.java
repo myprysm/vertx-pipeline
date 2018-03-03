@@ -85,6 +85,36 @@ public class LogProcessorOptions extends ProcessorOptions {
     }
 
     @Override
+    public String getName() {
+        return super.getName();
+    }
+
+    @Override
+    public LogProcessorOptions setName(String name) {
+        return (LogProcessorOptions) super.setName(name);
+    }
+
+    @Override
+    public String getType() {
+        return super.getType();
+    }
+
+    @Override
+    public LogProcessorOptions setType(String type) {
+        return (LogProcessorOptions) super.setType(type);
+    }
+
+    @Override
+    public Integer getInstances() {
+        return super.getInstances();
+    }
+
+    @Override
+    public LogProcessorOptions setInstances(Integer instances) {
+        return (LogProcessorOptions) super.setInstances(instances);
+    }
+
+    @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
         LogProcessorOptionsConverter.toJson(this, json);

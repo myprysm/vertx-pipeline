@@ -26,42 +26,47 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static fr.myprysm.pipeline.util.JsonHelpers.arr;
 import static fr.myprysm.pipeline.util.JsonHelpers.obj;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class DataExtractorProcessorTest implements VertxTest {
-    public static final String VERTICLE = "fr.myprysm.pipeline.processor.DataExtractorProcessor";
+class ObjectToArrayProcessorTest implements VertxTest {
+    public static final String VERTICLE = "fr.myprysm.pipeline.processor.ObjectToArrayProcessor";
     static final JsonObject CONFIG = obj()
-            .put("name", "data-extraction-test")
+            .put("name", "object-to-array-test")
             .put("type", VERTICLE)
             .put("from", "from")
             .put("to", arr().add("to"))
-            .put("extract", obj()
-                    .put("first.path", "a.very.deep.path.down.below")
-                    .put("second.path", "foo.bar")
-                    .put("this", "copy")
-                    .put("non.existing.path", "to.an.empty.container")
+            .put("fields", arr()
+                    .add("first.path")
+                    .add("non.existing.path")
+                    .add("object")
             );
     static DeploymentOptions OPTIONS = new DeploymentOptions().setConfig(CONFIG);
 
     static final JsonObject INPUT = obj()
             .put("first", obj().put("path", "a secret"))
-            .put("second", obj().put("path", "another secret"));
+            .put("object", obj().put("path", "another secret"));
 
     @Test
-    @DisplayName("Testing transformations with data extractors")
+    @DisplayName("Testing transformations with object to array")
     void testDataExtractorProcessor(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
         Checkpoint cp = ctx.checkpoint(10);
         vertx.eventBus().<JsonObject>consumer("to", message -> {
-            JsonObject json = message.body();
-            assertThat(JsonHelpers.extractObject(json, "a.very.deep.path.down.below")).hasValue("a secret");
-            assertThat(JsonHelpers.extractObject(json, "foo.bar")).hasValue("another secret");
-            assertThat(JsonHelpers.extractObject(json, "copy")).hasValue(INPUT);
-            assertThat(JsonHelpers.extractObject(json, "to.an.empty.container")).hasValue(obj());
             cp.flag();
+            JsonObject json = message.body();
+            Optional<Object> opt = JsonHelpers.extractObject(json, "first.path");
+            assertThat(opt).hasValue(arr().add("a secret"));
+
+            opt = JsonHelpers.extractObject(json, "non.existing.path");
+            assertThat(opt).hasValue(arr());
+
+            opt = JsonHelpers.extractObject(json, "object");
+            assertThat(opt).hasValue(arr().add(obj().put("path", "another secret")));
+
         });
 
         vertx.deployVerticle(VERTICLE, OPTIONS, ctx.succeeding(id -> {
@@ -72,4 +77,5 @@ class DataExtractorProcessorTest implements VertxTest {
 
         ctx.awaitCompletion(2, TimeUnit.SECONDS);
     }
+
 }

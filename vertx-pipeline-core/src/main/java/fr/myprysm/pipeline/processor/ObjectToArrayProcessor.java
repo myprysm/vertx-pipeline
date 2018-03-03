@@ -16,6 +16,7 @@
 
 package fr.myprysm.pipeline.processor;
 
+import fr.myprysm.pipeline.util.JsonHelpers;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.netty.channel.EventLoop;
 import io.reactivex.Completable;
@@ -23,7 +24,12 @@ import io.reactivex.Single;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Future;
+import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.Optional;
+
+import static fr.myprysm.pipeline.util.JsonHelpers.EMPTY_STRING;
+import static fr.myprysm.pipeline.util.JsonHelpers.arr;
 import static io.reactivex.Completable.complete;
 
 /**
@@ -48,7 +54,32 @@ public class ObjectToArrayProcessor extends BaseJsonProcessor<ObjectToArrayProce
     }
 
     private void extractData(JsonObject input, Future<JsonObject> complete) {
+        JsonObject output = input.copy();
+        for (Object o : fields) {
+            String field = (String) o;
+            JsonArray array = arr();
+            Optional<Object> optional = JsonHelpers.extractObject(input, field);
 
+            if (optional.isPresent()) {
+                Object value = optional.get();
+                if (value instanceof JsonObject) {
+                    array.add(((JsonObject) value).copy());
+                } else {
+                    array.add(value);
+                }
+
+            }
+
+            Pair<String, String> pathAndField = JsonHelpers.toPathAndField(field);
+            if (EMPTY_STRING.equals(pathAndField.getLeft())) {
+                output.put(pathAndField.getRight(), array);
+            } else {
+                JsonHelpers.ensurePathExistsAndGet(output, pathAndField.getLeft())
+                        .put(pathAndField.getRight(), array);
+            }
+        }
+
+        complete.complete(output);
     }
 
     @Override
@@ -69,6 +100,6 @@ public class ObjectToArrayProcessor extends BaseJsonProcessor<ObjectToArrayProce
 
     @Override
     public ValidationResult validate(JsonObject config) {
-        return null;
+        return ObjectToArrayProcessorOptionsValidation.validate(config);
     }
 }

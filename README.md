@@ -2,7 +2,7 @@
 
 An Event Stream Processing platform, highly scalable, resilient, and asynchronous by design.
 
-## What's Vert.x Pipeline
+## What's Vert.x Pipeline
 
 Vert.x Pipeline looks much like Vert.x, acting as a toolbox, toolkit, low-resource consuming,
 fast and non blocking flow processor. It consists in building a set of scalable `pipelines` 

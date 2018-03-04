@@ -1,5 +1,7 @@
 # Vert.x Pipeline
 
+[![Build Status](https://travis-ci.org/myprysm/vertx-pipeline.svg?branch=master)](https://travis-ci.org/myprysm/vertx-pipeline)
+
 An Event Stream Processing platform, highly scalable, resilient, and asynchronous by design.
 
 ## What's Vert.x Pipeline

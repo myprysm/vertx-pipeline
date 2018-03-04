@@ -239,13 +239,15 @@ to ensure a proper run and the pipeline stability.
 - [ ] `KeyToValueListProcessor`         - maps some fields of the input as key and some other field (may be the input) as value in a list.
                                         this processor is an accumulator, thus it needs to receive a signal to flush its data.
                                         key as well as value can be any kind of object but a `null` value.
-- [ ] `ObjectToArrayProcessor`          - transforms a field into an array. When field is null, array is empty, 
+- [x] `ObjectToArrayProcessor`          - transforms a field into an array. When field is null, array is empty, 
                                         otherwise array contains the previous field value
-- [ ] `CounterSignalEmitterProcessor`   - Emits a signal to the `PipelineVerticle` controller every n received events 
+- [x] `CounterSignalEmitterProcessor`   - Emits a signal to the `PipelineVerticle` controller every n received events 
                                         to either broadcast a flush, or terminate the pipeline
-- [ ] `TimerSignalEmitterProcessor`     - Emits a signal to the `PipelineVerticle` controller after configured duration
+- [x] `TimerSignalEmitterProcessor`     - Emits a signal to the `PipelineVerticle` controller after configured duration
                                         to either broadcast a flush, or terminate the pipeline
-
+- [x] `MapperBasicExtractor`            - Accumulates incoming events and map them to a key.
+                                        Provides the ability to merge and sort incoming arrays when the key already
+                                        exists. Provides the ability to send the accumulated events sorted (or not)
 ## Next to come
 
 - [ ] Pipeline pause/resume

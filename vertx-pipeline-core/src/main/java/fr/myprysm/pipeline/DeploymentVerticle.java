@@ -169,7 +169,7 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
                 .setType("file")
                 .setFormat("yaml")
                 .setConfig(new JsonObject()
-                        .put("path", "*config.yml")
+                        .put("path", "config.yml")
                 );
 
         ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions()

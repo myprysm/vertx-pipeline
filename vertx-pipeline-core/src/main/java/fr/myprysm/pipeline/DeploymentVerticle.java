@@ -34,6 +34,8 @@ import io.vertx.reactivex.CompletableHelper;
 import io.vertx.reactivex.config.ConfigRetriever;
 import io.vertx.reactivex.core.AbstractVerticle;
 import io.vertx.reactivex.core.eventbus.EventBus;
+import io.vertx.reactivex.core.eventbus.Message;
+import io.vertx.reactivex.core.eventbus.MessageConsumer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,20 +43,20 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
-import static io.reactivex.Completable.complete;
-import static io.reactivex.Completable.defer;
+import static io.reactivex.Completable.*;
 import static io.reactivex.Observable.fromIterable;
 
 public class DeploymentVerticle extends AbstractVerticle implements SignalReceiver {
     private static final Logger LOG = LoggerFactory.getLogger(DeploymentVerticle.class);
+    public static final String UNDEPLOY = "undeploy";
     public static final String PIPELINE_VERTICLE = "fr.myprysm.pipeline.pipeline.PipelineVerticle";
     public static final String DEPLOYMENT_ERROR = "Unable to deploy pipeline";
 
     private LinkedList<Pair<String, String>> pipelineDeployments = new LinkedList<>();
     private String deployChannel = UUID.randomUUID().toString();
     private EventBus eventBus;
+    private MessageConsumer<String> consumer;
 
     private static boolean runningPipeline(Pair<String, String> dep) {
         return !DEPLOYMENT_ERROR.equals(dep.getValue());
@@ -69,6 +71,11 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
                 .subscribe(CompletableHelper.toObserver(started));
     }
 
+    @Override
+    public void stop(Future<Void> stopped) throws Exception {
+        consumer.rxUnregister().subscribe(CompletableHelper.toObserver(stopped));
+    }
+
     /**
      * Prepares the pipeline name by extracting it from configuratino
      *
@@ -77,12 +84,39 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
      */
     private JsonObject prepareConfiguration(JsonObject json) {
         eventBus = vertx.eventBus();
+        consumer = eventBus.<String>consumer(deployChannel, this::handleSignal);
         json.fieldNames().forEach(name ->
                 json.getJsonObject(name)
                         .put("name", name)
                         .put("deployChannel", deployChannel)
         );
         return json;
+    }
+
+    private void handleSignal(Message<String> signal) {
+        String action = signal.headers().get("action");
+        String pipeline = signal.body();
+        if (UNDEPLOY.equals(action) && pipeline != null) {
+            fromIterable(pipelineDeployments)
+                    .filter(deploy -> deploy.getLeft().equals(pipeline))
+                    .flatMapCompletable(this::stopPipeline)
+                    .andThen(defer(this::hasRunningPipelines))
+                    .doOnError(throwable -> {
+                        if (throwable instanceof DeploymentException) {
+                            vertx.close();
+                        }
+                    })
+                    .subscribe(
+                            () -> LOG.info("Undeployed [{}].", pipeline),
+                            throwable -> LOG.error("Shutting down the system.")
+                    );
+        }
+    }
+
+    private Completable stopPipeline(Pair<String, String> pipeline) {
+        LOG.error("Undeploying {}:{}", pipeline.getLeft(), pipeline.getRight());
+        pipelineDeployments.remove(pipeline);
+        return vertx.rxUndeploy(pipeline.getRight());
     }
 
     private Completable startPipelines(JsonObject config) {
@@ -93,22 +127,19 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
                 .reduceWith(this::getPipelineDeployments, (list, deployment) -> {
                     deployment.subscribe((Consumer<Pair<String, String>>) list::add);
                     return list;
-                }).toCompletable().andThen(defer(this::hasRunningPipelines));
+                }).toCompletable();
+        //.andThen(defer(this::hasRunningPipelines));
 
     }
 
     private Completable hasRunningPipelines() {
-        return Completable.timer(1, TimeUnit.SECONDS)
-                .andThen(Completable.fromCallable(() -> {
-                    Boolean deployed = pipelineDeployments.stream()
-                            .anyMatch(DeploymentVerticle::runningPipeline);
-                    if (!deployed) {
-                        throw new DeploymentException("No running pipeline... Shutting down.");
-                    }
+        Boolean deployed = pipelineDeployments.stream()
+                .anyMatch(DeploymentVerticle::runningPipeline);
+        if (!deployed) {
+            return error(new DeploymentException("No running pipeline... Shutting down."));
+        }
 
-                    return true;
-                }));
-
+        return complete();
     }
 
     /**
@@ -138,7 +169,7 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
                 .setType("file")
                 .setFormat("yaml")
                 .setConfig(new JsonObject()
-                        .put("path", "config.yml")
+                        .put("path", "*config.yml")
                 );
 
         ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions()
@@ -206,22 +237,4 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
         return eventBus;
     }
 
-    //    private Single<OAuthCredentialsResponse> prepareConfiguration(JsonObject options) {
-//        JsonObject sinkOpts = options
-//            .getJsonObject("twitter-auth")
-//            .getJsonObject("pump");
-//
-//        return vertx.rxExecuteBlocking(t -> {
-//            OAuthCredentialsResponse params;
-//            try {
-//                params = new TwitterAuthenticator(System.out, sinkOpts.getString("consumerKey"), sinkOpts.getString("consumerSecret")).exchange();
-//                LOG.info("token[{}], tokenSecret[{}]", params.token, params.tokenSecret);
-//                t.complete(params);
-//            } catch (TwitterAuthenticationException e) {
-//                LOG.error("An error occured with twitter", e);
-//                t.fail(e);
-//            }
-//        });
-//
-//    }
 }

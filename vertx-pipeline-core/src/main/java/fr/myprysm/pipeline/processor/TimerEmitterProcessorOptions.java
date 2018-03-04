@@ -29,11 +29,13 @@ public class TimerEmitterProcessorOptions extends ProcessorOptions {
     public static final Long DEFAULT_INTERVAL = 1000L;
     public static final TimeUnit DEFAULT_UNIT = TimeUnit.MILLISECONDS;
     public static final Signal DEFAULT_SIGNAL = Signal.FLUSH;
+    public static final Long DEFAULT_DELAY_TERMINATE = 1L;
 
 
     private Long interval = DEFAULT_INTERVAL;
     private TimeUnit unit = DEFAULT_UNIT;
     private Signal signal = DEFAULT_SIGNAL;
+    private Long delayTerminate = DEFAULT_DELAY_TERMINATE;
 
     public TimerEmitterProcessorOptions() {
 
@@ -44,6 +46,7 @@ public class TimerEmitterProcessorOptions extends ProcessorOptions {
         interval = other.interval;
         unit = other.unit;
         signal = other.signal;
+        delayTerminate = other.delayTerminate;
     }
 
     public TimerEmitterProcessorOptions(ProcessorOptions other) {
@@ -130,6 +133,31 @@ public class TimerEmitterProcessorOptions extends ProcessorOptions {
         this.signal = signal;
         return this;
     }
+
+    /**
+     * The delay before sending <code>TERMINATE</code> signal.
+     *
+     * @return the delay before sending <code>TERMINATE</code>
+     */
+    public Long getDelayTerminate() {
+        return delayTerminate;
+    }
+
+    /**
+     * The delay before sending <code>TERMINATE</code> signal.
+     * <p>
+     * A <code>FLUSH</code> signal is always emitted before sending
+     * <code>TERMINATE</code> thus setting delay between both emissions
+     * can help the pipeline finish his job properly, especially when accumulating data.
+     *
+     * @param delayTerminate the delay before sending <code>TERMINATE</code>
+     * @return this
+     */
+    public TimerEmitterProcessorOptions setDelayTerminate(Long delayTerminate) {
+        this.delayTerminate = delayTerminate;
+        return this;
+    }
+
 
     @Override
     public String getName() {

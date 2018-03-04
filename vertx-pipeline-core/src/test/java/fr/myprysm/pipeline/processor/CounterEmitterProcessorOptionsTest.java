@@ -32,7 +32,7 @@ class CounterEmitterProcessorOptionsTest {
         new CounterEmitterProcessorOptionsConverter();
 
         String badStr = "{\"name\": 10, \"type\": 20, \"interval\": false, \"signal\": 1}";
-        String optStr = "{\"instances\":1, \"name\":\"name\", \"type\": \"type\", \"interval\": 100,\"signal\":\"TERMINATE\"}";
+        String optStr = "{\"instances\":1,\"name\":\"name\",\"type\":\"type\",\"delayTerminate\":1,\"interval\":100,\"signal\":\"TERMINATE\"}";
 
         ProcessorOptions optPump = new ProcessorOptions(new JsonObject(optStr));
 
@@ -51,7 +51,7 @@ class CounterEmitterProcessorOptionsTest {
         JsonObject optJson = new JsonObject(optStr);
 
         assertThat(new CounterEmitterProcessorOptions(new JsonObject(badStr))).isEqualTo(new CounterEmitterProcessorOptions());
-        assertThat(optNull.toJson()).isEqualTo(obj().put("instances", 1));
+        assertThat(optNull.toJson()).isEqualTo(obj().put("instances", 1).put("delayTerminate", 1));
         assertThat(optObj).isEqualTo(optObj);
         assertThat(optObj).isNotEqualTo(optNull);
         assertThat(optObj).isEqualTo(new CounterEmitterProcessorOptions(optJson));

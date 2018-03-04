@@ -8,6 +8,14 @@
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[delayTerminate]]`delayTerminate`|`Number (Long)`|
++++
+The delay before sending <code>TERMINATE</code> signal.
+ <p>
+ A <code>FLUSH</code> signal is always emitted before sending
+ <code>TERMINATE</code> thus setting delay between both emissions
+ can help the pipeline finish his job properly, especially when accumulating data.
++++
 |[[instances]]`instances`|`Number (Integer)`|
 +++
 The number of instances to deploy.
@@ -258,6 +266,67 @@ The type of the processor.
 +++
 |===
 
+[[MergeBasicProcessorOptions]]
+== MergeBasicProcessorOptions
+
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[defaultCapacity]]`defaultCapacity`|`Number (Long)`|
++++
+The default capacity of the accumulated map, configured on startup.
+ <p>
++++
+|[[instances]]`instances`|`Number (Integer)`|
++++
+The number of instances to deploy.
+ <p>
+ Must be a positive link.
++++
+|[[name]]`name`|`String`|
++++
+The name of the processor.
+ <p>
+ This is automatically populated when the pipeline configuration is a list.
+ <p>
+ You still can name your processor for any purpose by using a map instead of a list
+ when you describe your pipeline.
++++
+|[[onFlush]]`onFlush`|`Json object`|
++++
+The list of operations to apply on the accumulated map.
+ <p>
+ Operations available:
+ <ul>
+ <li>sort: sorts the objects based on the value at path. Default is ASC</li>
+ </ul>
+ If the operation is not one of those allowed, it is ignored.
++++
+|[[operations]]`operations`|`Json object`|
++++
+The list of operations to apply on the accumulating map.
+ <p>
+ Operations available:
+ <ul>
+ <li>objToKey: put the object in the map with the value at path as identifier</li>
+ <li>mergeArrays: merges the arrays at given path on cached object</li>
+ <li>sortArray: sorts the array at field in the corresponding order. Default is ASC</li>
+ </ul>
+ <p>
+ objToKey is required.
+ <p>
+ If the operation is not one of those allowed, it is ignored.
++++
+|[[type]]`type`|`String`|
++++
+The type of the processor.
+ <p>
+ This is the fully qualified name of the <code>class</code> that acts as processor.
++++
+|===
+
 [[ObjectToArrayProcessorOptions]]
 == ObjectToArrayProcessorOptions
 
@@ -399,6 +468,14 @@ The type of the sink.
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[delayTerminate]]`delayTerminate`|`Number (Long)`|
++++
+The delay before sending <code>TERMINATE</code> signal.
+ <p>
+ A <code>FLUSH</code> signal is always emitted before sending
+ <code>TERMINATE</code> thus setting delay between both emissions
+ can help the pipeline finish his job properly, especially when accumulating data.
++++
 |[[instances]]`instances`|`Number (Integer)`|
 +++
 The number of instances to deploy.

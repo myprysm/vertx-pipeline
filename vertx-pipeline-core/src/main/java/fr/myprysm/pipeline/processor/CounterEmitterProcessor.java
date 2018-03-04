@@ -38,6 +38,7 @@ public class CounterEmitterProcessor extends EmitterJsonProcessor<CounterEmitter
     private static final Logger LOG = LoggerFactory.getLogger(CounterEmitterProcessor.class);
     private Long interval;
     private Signal signal;
+    private Long delayTerminate;
 
     private AtomicLong counter = new AtomicLong(0L);
 
@@ -48,11 +49,16 @@ public class CounterEmitterProcessor extends EmitterJsonProcessor<CounterEmitter
     }
 
     private void handleSignal() {
-        if (counter.incrementAndGet() % interval == 1) {
-            debug("tick {}", counter.get() / interval);
+        Long modulo = counter.incrementAndGet() % interval;
+        if (modulo == 0) {
+            Long tick = counter.get() / interval;
+            debug("tick {}", tick);
             emitSignal(Signal.FLUSH);
             if (Signal.TERMINATE == signal) {
-                emitSignal(Signal.TERMINATE);
+                vertx.setTimer(delayTerminate, timerId -> {
+                    error("Sending terminate {}", tick);
+                    emitSignal(Signal.TERMINATE);
+                });
             }
         }
     }
@@ -71,7 +77,13 @@ public class CounterEmitterProcessor extends EmitterJsonProcessor<CounterEmitter
     public Completable configure(CounterEmitterProcessorOptions config) {
         interval = config.getInterval();
         signal = config.getSignal();
+        delayTerminate = config.getDelayTerminate();
         return complete();
+    }
+
+    @Override
+    protected Logger delegate() {
+        return LOG;
     }
 
     @Override

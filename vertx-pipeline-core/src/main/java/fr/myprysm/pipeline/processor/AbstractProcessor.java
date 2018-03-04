@@ -107,9 +107,19 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
         LOG.debug("[{}] Message received: {}", name(), input);
 
         try {
-            transform(input).subscribe(this::publish);
+            transform(input).subscribe(this::publish, this::handleError);
         } catch (Exception e) {
             error("An error occurred while processing item: ", e);
+        }
+    }
+
+    private void handleError(Throwable throwable) {
+        if (throwable instanceof DiscardableEventException) {
+            if (LOG.isInfoEnabled()) {
+                info("Discarding event: {}", ((DiscardableEventException) throwable).getEvent());
+            }
+        } else {
+            error("An error occurred while processing item: ", throwable);
         }
     }
 

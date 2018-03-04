@@ -14,23 +14,23 @@
  *    limitations under the License.
  */
 
-package fr.myprysm.pipeline;
+package fr.myprysm.pipeline.processor;
 
-import io.vertx.core.Vertx;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import io.vertx.core.json.JsonObject;
 
-import java.util.concurrent.TimeUnit;
+/**
+ * Exception that can throw/return a publisher when
+ * it consumes an event but it doesn't want to respond yet.
+ */
+public class DiscardableEventException extends Exception {
 
-class DeploymentVerticleTest implements VertxTest {
+    private JsonObject event;
 
-    @Test
-    @Disabled("Disabled at the moment...")
-    public void testDeploymentVerticle(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
-        vertx.deployVerticle("fr.myprysm.pipeline.DeploymentVerticle", ctx.succeeding(id -> {
-            vertx.setTimer(5000, timer -> ctx.completeNow());
-        }));
-        ctx.awaitCompletion(10, TimeUnit.SECONDS);
+    public DiscardableEventException(JsonObject object) {
+        event = object;
+    }
+
+    public JsonObject getEvent() {
+        return event;
     }
 }

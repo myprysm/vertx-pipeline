@@ -22,6 +22,12 @@
               value="${LOG_FILE:-${LOG_PATH:-${LOG_TEMP:-${java.io.tmpdir:-/tmp}}}/vertx-pipeline.log}"/>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
         </encoder>
@@ -42,8 +48,7 @@
 
     <logger name="io.netty" level="warn"/>
     <logger name="io.vertx" level="info"/>
-    <logger name="fr.myprysm.pipeline" level="info"/>
-
+    <logger name="fr.myprysm.pipeline" level="error"/>
 
     <logger name="fr.myprysm.pipeline.pump.AbstractPump" level="info"/>
     <logger name="fr.myprysm.pipeline.sink.AbstractSink" level="info"/>

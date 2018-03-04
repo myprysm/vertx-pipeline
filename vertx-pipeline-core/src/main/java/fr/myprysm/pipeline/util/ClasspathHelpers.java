@@ -26,8 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
-
 public class ClasspathHelpers {
     private static final Logger LOG = LoggerFactory.getLogger(ClasspathHelpers.class);
     private static ScanResult scan;
@@ -43,7 +41,7 @@ public class ClasspathHelpers {
      *
      * @return the scan result
      */
-    public static ScanResult getScan() {
+    public synchronized static ScanResult getScan() {
         if (scan == null) {
             LOG.info("Scanning classpath...");
             scan = new FastClasspathScanner().scan();
@@ -54,13 +52,14 @@ public class ClasspathHelpers {
     }
 
 
+
 //    public static List<Class<Processor>> getProcessors() {
 //        return getProcessorClassNames().stream()
 //                .map(ClasspathHelpers::<Processor>toClass)
 //                .collect(toList());
 //    }
 
-    public static List<String> getProcessorClassNames() {
+    public synchronized static List<String> getProcessorClassNames() {
         if (processorClassNames == null) {
             processorClassNames = getScan().getNamesOfClassesImplementing(Processor.class);
             LOG.info("Processors scanned.");
@@ -69,7 +68,7 @@ public class ClasspathHelpers {
         return processorClassNames;
     }
 
-    public static List<String> getSinkClassNames() {
+    public synchronized static List<String> getSinkClassNames() {
         if (sinkClassNames == null) {
             sinkClassNames = getScan().getNamesOfClassesImplementing(Sink.class);
             LOG.info("Sinks scanned.");
@@ -78,7 +77,7 @@ public class ClasspathHelpers {
         return sinkClassNames;
     }
 
-    public static List<String> getPumpClassNames() {
+    public synchronized static List<String> getPumpClassNames() {
         if (pumpClassNames == null) {
             pumpClassNames = getScan().getNamesOfClassesImplementing(Pump.class);
             LOG.info("Pumps scanned.");

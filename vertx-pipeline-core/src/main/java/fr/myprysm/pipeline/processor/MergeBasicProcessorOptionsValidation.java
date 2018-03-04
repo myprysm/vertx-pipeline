@@ -14,23 +14,19 @@
  *    limitations under the License.
  */
 
-package fr.myprysm.pipeline;
+package fr.myprysm.pipeline.processor;
 
-import io.vertx.core.Vertx;
-import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import fr.myprysm.pipeline.validation.ValidationResult;
+import io.vertx.core.json.JsonObject;
 
-import java.util.concurrent.TimeUnit;
+import static fr.myprysm.pipeline.validation.JsonValidation.isNull;
+import static fr.myprysm.pipeline.validation.JsonValidation.isObject;
 
-class DeploymentVerticleTest implements VertxTest {
+public interface MergeBasicProcessorOptionsValidation {
 
-    @Test
-    @Disabled("Disabled at the moment...")
-    public void testDeploymentVerticle(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
-        vertx.deployVerticle("fr.myprysm.pipeline.DeploymentVerticle", ctx.succeeding(id -> {
-            vertx.setTimer(5000, timer -> ctx.completeNow());
-        }));
-        ctx.awaitCompletion(10, TimeUnit.SECONDS);
+    static ValidationResult validate(JsonObject config) {
+        return isObject("operations")
+            .and(isNull("onFlush").or(isObject("onFlush")))
+            .apply(config);
     }
 }

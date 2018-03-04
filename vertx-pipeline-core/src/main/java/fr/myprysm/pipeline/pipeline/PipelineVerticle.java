@@ -93,7 +93,7 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
         switch (signal) {
             case TERMINATE:
                 this.undeploy().andThen(defer(this::notifyUndeploy)).subscribe(
-                        () -> info("Undeployed pipeline."),
+                        () -> debug("Undeployed pipeline."),
                         (throwable -> error("An error occured during undeployment", throwable))
                 );
         }
@@ -130,9 +130,9 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
         }
 
         return fromIterable(deployments)
-                .doOnEach(group -> info("Deploying processor group..."))
+                .doOnEach(group -> debug("Deploying processor group..."))
                 .map(this::deployGroup)
-                .doOnEach(group -> info("Deployed processor group."))
+                .doOnEach(group -> debug("Deployed processor group."))
                 .flatMapCompletable(item -> item.doOnSuccess(this::addProcessorDeployment).toCompletable());
     }
 
@@ -142,7 +142,7 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
                 .map(this::startVerticle)
                 .reduce(new ArrayList<Pair<String, String>>(), (list, deployment) -> {
                     deployment.subscribe(deploy -> {
-                        info("Component [{}]: {}", deploy.getLeft(), deploy.getRight());
+                        debug("Component [{}]: {}", deploy.getLeft(), deploy.getRight());
                         list.add(deploy);
                     });
                     return list;
@@ -181,9 +181,9 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
 
     private Completable undeployProcessors() {
         return fromIterable(processorsDeployment)
-                .doOnEach(group -> info("Undeploying processor group..."))
+                .doOnEach(group -> debug("Undeploying processor group..."))
                 .map(this::undeployGroup)
-                .doOnEach(group -> info("Undeployed processor group."))
+                .doOnEach(group -> debug("Undeployed processor group."))
                 .flatMapCompletable(Completable::onErrorComplete);
     }
 
@@ -202,24 +202,24 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
      * @return the id
      */
     private String componentId(Pair<String, String> deployment) {
-        info("Undeploying [{}]...", deployment.getKey());
+        debug("Undeploying [{}]...", deployment.getKey());
         return deployment.getValue();
     }
 
-    void setPumpDeployment(Pair<String, String> pumpDeployment) {
+    private void setPumpDeployment(Pair<String, String> pumpDeployment) {
         this.pumpDeployment = pumpDeployment;
     }
 
-    void addProcessorDeployment(List<Pair<String, String>> processorDeployment) {
+    private void addProcessorDeployment(List<Pair<String, String>> processorDeployment) {
         this.processorsDeployment.add(processorDeployment);
     }
 
-    void setSinkDeployment(Pair<String, String> sinkDeployment) {
+    private void setSinkDeployment(Pair<String, String> sinkDeployment) {
         this.sinkDeployment = sinkDeployment;
     }
 
     private void logDeployProcessor(Notification<Triple<String, String, DeploymentOptions>> deploy) {
-        if (deploy.isOnNext()) info("Deploying processor [{}]...", deploy.getValue().getLeft());
+        if (deploy.isOnNext()) info("Deploying processor {}...", deploy.getValue().getLeft());
     }
 
     @Override

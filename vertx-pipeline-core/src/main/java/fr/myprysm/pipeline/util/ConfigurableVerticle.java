@@ -16,6 +16,8 @@
 
 package fr.myprysm.pipeline.util;
 
+import fr.myprysm.pipeline.validation.Validable;
+import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.core.Future;
@@ -23,8 +25,6 @@ import io.vertx.core.Verticle;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.CompletableHelper;
 import io.vertx.reactivex.core.AbstractVerticle;
-import fr.myprysm.pipeline.validation.Validable;
-import fr.myprysm.pipeline.validation.ValidationResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,6 +128,7 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
 
     private void logErrorStart(Throwable throwable) {
         LOG.error("An error occured during deployment of [{}]", clazz);
+        LOG.error("Configuration is [{}]", config());
         LOG.error("Reason: ", throwable);
     }
 

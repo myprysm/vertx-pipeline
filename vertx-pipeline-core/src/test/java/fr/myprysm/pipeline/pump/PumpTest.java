@@ -108,6 +108,11 @@ public class PumpTest implements VertxTest {
         }
 
         @Override
+        public PumpOptions readConfiguration(JsonObject config) {
+            return new PumpOptions(config);
+        }
+
+        @Override
         public Completable configure(PumpOptions config) {
             return Completable.complete();
         }

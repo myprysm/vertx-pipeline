@@ -27,6 +27,9 @@ import io.vertx.core.json.JsonArray;
 public class CounterEmitterProcessorOptionsConverter {
 
   public static void fromJson(JsonObject json, CounterEmitterProcessorOptions obj) {
+    if (json.getValue("delayTerminate") instanceof Number) {
+      obj.setDelayTerminate(((Number)json.getValue("delayTerminate")).longValue());
+    }
     if (json.getValue("interval") instanceof Number) {
       obj.setInterval(((Number)json.getValue("interval")).longValue());
     }
@@ -36,6 +39,9 @@ public class CounterEmitterProcessorOptionsConverter {
   }
 
   public static void toJson(CounterEmitterProcessorOptions obj, JsonObject json) {
+    if (obj.getDelayTerminate() != null) {
+      json.put("delayTerminate", obj.getDelayTerminate());
+    }
     if (obj.getInterval() != null) {
       json.put("interval", obj.getInterval());
     }

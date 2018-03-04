@@ -34,7 +34,7 @@ class TimerEmitterProcessorOptionsTest {
         new TimerEmitterProcessorOptionsConverter();
 
         String badStr = "{\"name\": 10, \"type\": 20, \"interval\": false, \"unit\":12,\"signal\": 1}";
-        String optStr = "{\"instances\":1, \"name\":\"name\", \"type\": \"type\", \"unit\": \"DAYS\", \"interval\": 100,\"signal\":\"TERMINATE\"}";
+        String optStr = "{\"instances\":1,\"name\":\"name\",\"type\":\"type\",\"delayTerminate\":1,\"interval\":100,\"signal\":\"TERMINATE\",\"unit\":\"DAYS\"}";
 
         ProcessorOptions optPump = new ProcessorOptions(new JsonObject(optStr));
 
@@ -55,7 +55,7 @@ class TimerEmitterProcessorOptionsTest {
         JsonObject optJson = new JsonObject(optStr);
 
         assertThat(new TimerEmitterProcessorOptions(new JsonObject(badStr))).isEqualTo(new TimerEmitterProcessorOptions());
-        assertThat(optNull.toJson()).isEqualTo(obj().put("instances", 1));
+        assertThat(optNull.toJson()).isEqualTo(obj().put("instances", 1).put("delayTerminate", 1));
         assertThat(optObj).isEqualTo(optObj);
         assertThat(optObj).isNotEqualTo(optNull);
         assertThat(optObj).isEqualTo(new TimerEmitterProcessorOptions(optJson));

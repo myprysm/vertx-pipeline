@@ -72,7 +72,7 @@ abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVertic
 
     @Override
     protected Completable preShutdown() {
-        if (!source.isDisposed()) source.dispose();
+        source.dispose();
         return Completable.complete();
     }
 

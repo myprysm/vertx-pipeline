@@ -23,8 +23,7 @@ import io.vertx.core.json.JsonObject;
 
 import static fr.myprysm.pipeline.pump.TimerPumpOptionsValidation.validInterval;
 import static fr.myprysm.pipeline.pump.TimerPumpOptionsValidation.validTimeUnit;
-import static fr.myprysm.pipeline.validation.JsonValidation.isEnum;
-import static fr.myprysm.pipeline.validation.JsonValidation.isNull;
+import static fr.myprysm.pipeline.validation.JsonValidation.*;
 
 public interface TimerEmitterProcessorOptionsValidation {
 
@@ -32,6 +31,7 @@ public interface TimerEmitterProcessorOptionsValidation {
         return validTimeUnit()
                 .and(validInterval())
                 .and(validSignal())
+                .and(isNull("delayTerminate").or(gt("delayTerminate", 0L)))
                 .apply(config);
     }
 

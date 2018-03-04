@@ -38,3 +38,19 @@ multi-instance-multi-processor:
     mode: overwrite
     format: json
 
+stop-after-two-seconds-console:
+  pump:
+    type: fr.myprysm.pipeline.pump.TimerPump
+    interval: 50
+    unit: MILLISECONDS
+
+  processors:
+    - type: fr.myprysm.pipeline.processor.TimerEmitterProcessor
+      interval: 2
+      unit: SECONDS
+      signal: TERMINATE
+    - type: fr.myprysm.pipeline.processor.LogProcessor
+      instances: 3
+      level: DEBUG
+  sink:
+    type: fr.myprysm.pipeline.sink.Console

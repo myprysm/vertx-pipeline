@@ -14,15 +14,29 @@
  *    limitations under the License.
  */
 
-package fr.myprysm.pipeline.sink;
+package fr.myprysm.pipeline.processor;
 
 import fr.myprysm.pipeline.util.Flushable;
 import fr.myprysm.pipeline.util.Signal;
+import io.reactivex.Completable;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.Message;
+import io.vertx.reactivex.core.eventbus.MessageConsumer;
 
-public abstract class FlushableJsonSink<T extends FlushableSinkOptions> extends BaseJsonSink<T> implements Flushable {
+import static io.reactivex.Completable.defer;
+
+public abstract class FlushableJsonProcessor<T extends ProcessorOptions> extends BaseJsonProcessor<T> implements Flushable {
+
     private String controlChannel;
+    private MessageConsumer<String> controlChannelConsumer;
+
+    @Override
+    protected JsonObject preConfiguration(JsonObject config) {
+        super.preConfiguration(config);
+        controlChannel = exchange().getControlChannel();
+        controlChannelConsumer = eventBus().consumer(controlChannel, this::handleSignal);
+        return config;
+    }
 
     @Override
     public String controlChannel() {
@@ -30,11 +44,8 @@ public abstract class FlushableJsonSink<T extends FlushableSinkOptions> extends 
     }
 
     @Override
-    protected JsonObject preConfiguration(JsonObject config) {
-        super.preConfiguration(config);
-        controlChannel = exchange().getControlChannel();
-        eventBus().consumer(controlChannel, this::handleSignal);
-        return config;
+    protected Completable preShutdown() {
+        return super.preShutdown().andThen(defer(controlChannelConsumer::rxUnregister));
     }
 
     private void handleSignal(Message<String> message) {
@@ -52,6 +63,4 @@ public abstract class FlushableJsonSink<T extends FlushableSinkOptions> extends 
     private void signalHandledSuccessfully() {
         debug("Signal handled.");
     }
-
-
 }

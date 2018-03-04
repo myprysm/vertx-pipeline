@@ -20,45 +20,48 @@ import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static fr.myprysm.pipeline.util.JsonHelpers.arr;
 import static fr.myprysm.pipeline.util.JsonHelpers.obj;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class ObjectToArrayProcessorOptionsTest {
+class MergeBasicProcessorOptionsTest {
+
     @Test
-    @DisplayName("Validate Object to array options")
-    void testObjectToArrayProcessorOptions() {
-        new ObjectToArrayProcessorOptionsConverter();
+    @DisplayName("Validate Merge basic options")
+    void testMergeBasicProcessorOptions() {
+        new MergeBasicProcessorOptionsConverter();
 
         String badStr = "{\"name\": 10, \"type\": 20, \"fields\": false}";
-        String optStr = "{\"instances\":1, \"name\":\"name\", \"type\": \"type\", \"fields\":[\"field1\",\"field2\"]}";
+        String optStr = "{\"instances\":1,\"name\":\"name\",\"type\":\"type\",\"defaultCapacity\":100,\"onFlush\":{},\"operations\":{}}";
 
         ProcessorOptions optPump = new ProcessorOptions(new JsonObject(optStr));
 
-        ObjectToArrayProcessorOptions optNull = new ObjectToArrayProcessorOptions()
+        MergeBasicProcessorOptions optNull = new MergeBasicProcessorOptions()
                 .setName(null)
                 .setType(null)
-                .setFields(null);
+                .setDefaultCapacity(null)
+                .setOnFlush(null)
+                .setOperations(null);
 
-        ObjectToArrayProcessorOptions optObj = new ObjectToArrayProcessorOptions()
+        MergeBasicProcessorOptions optObj = new MergeBasicProcessorOptions()
                 .setName("name")
                 .setType("type")
-                .setFields(arr().add("field1").add("field2"));
+                .setDefaultCapacity(100L);
 
         JsonObject optJson = new JsonObject(optStr);
 
-        assertThat(new ObjectToArrayProcessorOptions(new JsonObject(badStr))).isEqualTo(new ObjectToArrayProcessorOptions());
+        assertThat(new MergeBasicProcessorOptions(new JsonObject(badStr))).isEqualTo(new MergeBasicProcessorOptions());
         assertThat(optNull.toJson()).isEqualTo(obj().put("instances", 1));
         assertThat(optObj).isEqualTo(optObj);
         assertThat(optObj).isNotEqualTo(optNull);
-        assertThat(optObj).isEqualTo(new ObjectToArrayProcessorOptions(optJson));
-        assertThat(optObj).isEqualTo(new ObjectToArrayProcessorOptions(optObj));
-        assertThat(optObj.toString()).isEqualTo(new ObjectToArrayProcessorOptions(optJson).toString());
-        assertThat(optObj.hashCode()).isEqualTo(new ObjectToArrayProcessorOptions(optJson).hashCode());
+        assertThat(optObj).isEqualTo(new MergeBasicProcessorOptions(optJson));
+        assertThat(optObj).isEqualTo(new MergeBasicProcessorOptions(optObj));
+        assertThat(optObj.toString()).isEqualTo(new MergeBasicProcessorOptions(optJson).toString());
+        assertThat(optObj.hashCode()).isEqualTo(new MergeBasicProcessorOptions(optJson).hashCode());
         assertThat(optObj).isNotEqualTo(null);
         assertThat(optObj).isNotEqualTo(new Object());
         assertThat(optObj.toJson()).isEqualTo(optJson);
         assertThat(optPump)
-                .isEqualToComparingOnlyGivenFields(new ObjectToArrayProcessorOptions(optPump), "name", "type");
+                .isEqualToComparingOnlyGivenFields(new MergeBasicProcessorOptions(optPump), "name", "type");
     }
+
 }

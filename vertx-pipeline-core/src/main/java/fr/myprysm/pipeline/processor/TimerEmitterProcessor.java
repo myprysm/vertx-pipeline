@@ -23,6 +23,8 @@ import io.reactivex.Flowable;
 import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
 import io.vertx.core.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
 
@@ -35,10 +37,11 @@ import static io.reactivex.Completable.complete;
  * first on the control channel.
  */
 public class TimerEmitterProcessor extends EmitterJsonProcessor<TimerEmitterProcessorOptions> {
-
+    private static final Logger LOG = LoggerFactory.getLogger(TimerEmitterProcessor.class);
     private Long interval;
     private TimeUnit unit;
     private Signal signal;
+    private Long delayTerminate;
     private Disposable disposable;
 
     @Override
@@ -56,7 +59,10 @@ public class TimerEmitterProcessor extends EmitterJsonProcessor<TimerEmitterProc
     private void handleTimer(Long tick) {
         emitSignal(Signal.FLUSH);
         if (Signal.TERMINATE == signal) {
-            emitSignal(Signal.TERMINATE);
+            vertx.setTimer(delayTerminate, timerId -> {
+                error("Sending terminate {}", tick);
+                emitSignal(Signal.TERMINATE);
+            });
         }
     }
 
@@ -70,13 +76,18 @@ public class TimerEmitterProcessor extends EmitterJsonProcessor<TimerEmitterProc
         interval = config.getInterval();
         unit = config.getUnit();
         signal = config.getSignal();
-
+        delayTerminate = config.getDelayTerminate();
         return complete();
     }
 
     @Override
     public ValidationResult validate(JsonObject config) {
         return TimerEmitterProcessorOptionsValidation.validate(config);
+    }
+
+    @Override
+    protected Logger delegate() {
+        return LOG;
     }
 
     @Override

@@ -17,8 +17,11 @@
 package fr.myprysm.pipeline;
 
 
+import fr.myprysm.pipeline.pipeline.ExchangeOptions;
 import fr.myprysm.pipeline.pipeline.PipelineVerticle;
 import fr.myprysm.pipeline.util.ClasspathHelpers;
+import fr.myprysm.pipeline.util.Signal;
+import fr.myprysm.pipeline.util.SignalReceiver;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
@@ -30,21 +33,32 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.CompletableHelper;
 import io.vertx.reactivex.config.ConfigRetriever;
 import io.vertx.reactivex.core.AbstractVerticle;
+import io.vertx.reactivex.core.eventbus.EventBus;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import static io.reactivex.Completable.complete;
+import static io.reactivex.Completable.defer;
 import static io.reactivex.Observable.fromIterable;
 
-public class DeploymentVerticle extends AbstractVerticle {
+public class DeploymentVerticle extends AbstractVerticle implements SignalReceiver {
     private static final Logger LOG = LoggerFactory.getLogger(DeploymentVerticle.class);
     public static final String PIPELINE_VERTICLE = "fr.myprysm.pipeline.pipeline.PipelineVerticle";
     public static final String DEPLOYMENT_ERROR = "Unable to deploy pipeline";
 
     private LinkedList<Pair<String, String>> pipelineDeployments = new LinkedList<>();
+    private String deployChannel = UUID.randomUUID().toString();
+    private EventBus eventBus;
+
+    private static boolean runningPipeline(Pair<String, String> dep) {
+        return !DEPLOYMENT_ERROR.equals(dep.getValue());
+    }
 
     @Override
     public void start(Future<Void> started) {
@@ -53,7 +67,6 @@ public class DeploymentVerticle extends AbstractVerticle {
                 .flatMap(this::loadClasses)
                 .flatMapCompletable(this::startPipelines)
                 .subscribe(CompletableHelper.toObserver(started));
-
     }
 
     /**
@@ -63,7 +76,12 @@ public class DeploymentVerticle extends AbstractVerticle {
      * @return the configuration with each pipeline named. according to its entry name from configuration
      */
     private JsonObject prepareConfiguration(JsonObject json) {
-        json.fieldNames().forEach(name -> json.getJsonObject(name).put("name", name));
+        eventBus = vertx.eventBus();
+        json.fieldNames().forEach(name ->
+                json.getJsonObject(name)
+                        .put("name", name)
+                        .put("deployChannel", deployChannel)
+        );
         return json;
     }
 
@@ -75,7 +93,21 @@ public class DeploymentVerticle extends AbstractVerticle {
                 .reduceWith(this::getPipelineDeployments, (list, deployment) -> {
                     deployment.subscribe((Consumer<Pair<String, String>>) list::add);
                     return list;
-                }).toCompletable();
+                }).toCompletable().andThen(defer(this::hasRunningPipelines));
+
+    }
+
+    private Completable hasRunningPipelines() {
+        return Completable.timer(1, TimeUnit.SECONDS)
+                .andThen(Completable.fromCallable(() -> {
+                    Boolean deployed = pipelineDeployments.stream()
+                            .anyMatch(DeploymentVerticle::runningPipeline);
+                    if (!deployed) {
+                        throw new DeploymentException("No running pipeline... Shutting down.");
+                    }
+
+                    return true;
+                }));
 
     }
 
@@ -137,6 +169,41 @@ public class DeploymentVerticle extends AbstractVerticle {
             ClasspathHelpers.getScan();
             future.complete(config);
         });
+    }
+
+    /**
+     * Specific case for this verticle the deployChannel IS the controlChannel.
+     *
+     * @return the deployChannel.
+     */
+    @Override
+    public String controlChannel() {
+        return deployChannel;
+    }
+
+    /**
+     * As this verticle is the control tower over the configured and deployed pipelines
+     * its does not communicate the same informations on the same channels
+     * even though it implements some of the interfaces.
+     * <p>
+     * This handler will never be called.
+     *
+     * @param signal the signal received.
+     * @return always complete
+     */
+    @Override
+    public Completable onSignal(Signal signal) {
+        return complete();
+    }
+
+    @Override
+    public ExchangeOptions exchange() {
+        return null;
+    }
+
+    @Override
+    public EventBus eventBus() {
+        return eventBus;
     }
 
     //    private Single<OAuthCredentialsResponse> prepareConfiguration(JsonObject options) {

@@ -30,11 +30,13 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 import static fr.myprysm.pipeline.util.JsonHelpers.arr;
-import static fr.myprysm.pipeline.util.StreamHelpers.streamInReverse;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -42,10 +44,11 @@ import static strman.Strman.*;
 
 class PipelineConfigurer extends PipelineOptions {
     private static final Logger LOG = LoggerFactory.getLogger(PipelineConfigurer.class);
+    public static final String CONTROL_CHANNEL = "control-channel";
+
+    private String controlChannel;
     private Triple<String, String, DeploymentOptions> sink;
-
     private LinkedList<List<Triple<String, String, DeploymentOptions>>> processors;
-
     private Triple<String, String, DeploymentOptions> pump;
 
 
@@ -98,6 +101,16 @@ class PipelineConfigurer extends PipelineOptions {
         return pump;
     }
 
+    /**
+     * Returns the control channel on which the pipeline communicates.
+     *
+     * @return the control channel
+     */
+    String getControlChannel() {
+        checkBuild();
+        return controlChannel;
+    }
+
     private void checkBuild() {
         if (sink == null || processors == null || pump == null) {
             build();
@@ -105,11 +118,13 @@ class PipelineConfigurer extends PipelineOptions {
     }
 
     private void build() {
+        controlChannel = UUID.randomUUID().toString();
         prepareSink();
         prepareProcessors();
         preparePump();
         buildNetwork();
     }
+
 
     /**
      * Travels from {@link Sink} to {@link Pump} through {@link Processor}s
@@ -325,6 +340,7 @@ class PipelineConfigurer extends PipelineOptions {
         DeploymentOptions options = new DeploymentOptions().setConfig(copy);
 
         copy.put("name", name);
+        copy.put("controlChannel", controlChannel);
         if (setAddress) {
             String uuid = UUID.randomUUID().toString();
             copy.put("from", uuid);

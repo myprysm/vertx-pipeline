@@ -19,7 +19,7 @@ package fr.myprysm.pipeline.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import fr.myprysm.pipeline.util.Flushable;
+import fr.myprysm.pipeline.util.Signal;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.*;
 import io.reactivex.disposables.Disposable;
@@ -46,7 +46,7 @@ import static java.util.stream.Collectors.joining;
  * Whenever the sink cannot write into the destination file
  * an <code>UNRECOVERABLE</code> signal is sent to shutdown the pipeline.
  */
-public class FileSink extends BaseJsonSink<FileSinkOptions> implements Flushable, FlowableOnSubscribe<JsonObject> {
+public class FileSink extends FlushableJsonSink<FileSinkOptions> implements FlowableOnSubscribe<JsonObject> {
 
     private FileSinkOptions options;
     private FileSystem fs;
@@ -177,5 +177,10 @@ public class FileSink extends BaseJsonSink<FileSinkOptions> implements Flushable
     @Override
     public void subscribe(FlowableEmitter<JsonObject> emitter) throws Exception {
         this.emitter = emitter;
+    }
+
+    @Override
+    public Completable onSignal(Signal signal) {
+        return file.rxFlush();
     }
 }

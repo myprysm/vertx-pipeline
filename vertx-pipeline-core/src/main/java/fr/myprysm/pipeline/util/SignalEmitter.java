@@ -14,24 +14,26 @@
  *    limitations under the License.
  */
 
-package fr.myprysm.pipeline.sink;
-
-import fr.myprysm.pipeline.processor.Processor;
-import fr.myprysm.pipeline.pump.Pump;
-import fr.myprysm.pipeline.util.Consumer;
+package fr.myprysm.pipeline.util;
 
 /**
- * A sink is an element able to consume Items from the {@link io.vertx.core.eventbus.EventBus}
- * as far as it is plugged to a {@link Pump} with a pipeline of <code>0..n</code> {@link Processor}.
- * <p>
- * It aims to drains an infinite flow of items from a {@link Pump}.
+ * Signal receiver to publish internal health check
+ * and control across a pipeline from its components
+ * to the controller and vice-versa
  */
-public interface Sink<I> extends Consumer<I> {
+public interface SignalEmitter extends Stream {
 
     /**
-     * Drain one item from the pipeline.
+     * The control channel to emit signals.
      *
-     * @param item the item to drain
+     * @return the control channel
      */
-    void drain(I item);
+    String controlChannel();
+
+    /**
+     * Emits a signal
+     *
+     * @param signal the signal to emit
+     */
+    void emitSignal(Signal signal);
 }

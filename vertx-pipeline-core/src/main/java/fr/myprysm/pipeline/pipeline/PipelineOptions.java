@@ -29,11 +29,13 @@ import static fr.myprysm.pipeline.util.JsonHelpers.obj;
 @DataObject(generateConverter = true)
 public class PipelineOptions implements Options {
     public static final String DEFAULT_NAME = "default-pipeline";
+    private static final String DEFAULT_DEPLOY_CHANNEL = "default-deploy-channel";
 
     private String name;
     private JsonObject pump = obj();
     private JsonArray processors = arr();
     private JsonObject sink = obj();
+    private String deployChannel = DEFAULT_DEPLOY_CHANNEL;
 
     public PipelineOptions() {
         super();
@@ -44,6 +46,7 @@ public class PipelineOptions implements Options {
         pump = other.pump;
         processors = other.processors;
         sink = other.sink;
+        deployChannel = other.deployChannel;
     }
 
     public PipelineOptions(JsonObject json) {
@@ -90,6 +93,15 @@ public class PipelineOptions implements Options {
 
     public PipelineOptions setSink(JsonObject sink) {
         this.sink = sink;
+        return this;
+    }
+
+    public String getDeployChannel() {
+        return deployChannel;
+    }
+
+    public PipelineOptions setDeployChannel(String deployChannel) {
+        this.deployChannel = deployChannel;
         return this;
     }
 

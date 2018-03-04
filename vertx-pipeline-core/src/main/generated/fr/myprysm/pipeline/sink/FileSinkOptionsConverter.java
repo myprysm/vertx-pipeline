@@ -27,9 +27,6 @@ import io.vertx.core.json.JsonArray;
 public class FileSinkOptionsConverter {
 
   public static void fromJson(JsonObject json, FileSinkOptions obj) {
-    if (json.getValue("batchSize") instanceof Number) {
-      obj.setBatchSize(((Number)json.getValue("batchSize")).intValue());
-    }
     if (json.getValue("file") instanceof String) {
       obj.setFile((String)json.getValue("file"));
     }
@@ -45,9 +42,6 @@ public class FileSinkOptionsConverter {
   }
 
   public static void toJson(FileSinkOptions obj, JsonObject json) {
-    if (obj.getBatchSize() != null) {
-      json.put("batchSize", obj.getBatchSize());
-    }
     if (obj.getFile() != null) {
       json.put("file", obj.getFile());
     }

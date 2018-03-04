@@ -22,7 +22,7 @@ import io.reactivex.Completable;
  * Represents a component that can buffer some items before
  * writing those to its output
  */
-public interface Flushable {
+public interface Flushable extends SignalReceiver {
 
     /**
      * The batch size of the component.

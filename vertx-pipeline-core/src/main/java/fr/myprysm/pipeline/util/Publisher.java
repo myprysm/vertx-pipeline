@@ -30,7 +30,7 @@ import java.util.List;
  *
  * @param <T> the type of the item
  */
-public interface Publisher<T> {
+public interface Publisher<T> extends Stream {
 
     /**
      * Provides the address to publish an item

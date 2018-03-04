@@ -28,6 +28,7 @@ import static fr.myprysm.pipeline.validation.ValidationResult.invalid;
 import static fr.myprysm.pipeline.validation.ValidationResult.valid;
 import static java.lang.Boolean.TRUE;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 /**
  * Base JSON validation class.
@@ -308,7 +309,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
      * @param field   the name of the field
      * @param clazz   the {@link Enum} class
      * @param message the custom message for validation
-     * @param <T>   the type of the enumeration
+     * @param <T>     the type of the enumeration
      * @return validation result combinator
      */
     static <T extends Enum<T>> JsonValidation isEnum(String field, Class<T> clazz, String message) {
@@ -316,6 +317,40 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
         requireNonNull(clazz);
         return isString(field)
                 .and(holds(json -> Arrays.stream(clazz.getEnumConstants())
+                        .map(Enum::name)
+                        .anyMatch(json.getValue(field)::equals), message));
+    }
+
+    /**
+     * Validates that <code>field</code> is a <code>string</code> of enum <code>clazz</code>.
+     *
+     * @param field  the name of the field
+     * @param values the {@link Enum} values
+     * @param <T>    the type of the enumeration
+     * @return validation result combinator
+     */
+    static <T extends Enum<T>> JsonValidation isEnum(String field, T... values) {
+        requireNonNull(field);
+        requireNonNull(values);
+        String text = Arrays.stream(values).map(Enum::name).collect(joining(","));
+        return isEnum(field, message(field, "is not part of enum " + text), values);
+    }
+
+    /**
+     * Validates that <code>field</code> is a <code>string</code> of enum <code>clazz</code>.
+     *
+     * @param field   the name of the field
+     * @param values  the {@link Enum} values
+     * @param message the custom message for validation
+     * @param <T>     the type of the enumeration
+     * @return validation result combinator
+     */
+    @SuppressWarnings("unchecked")
+    static <T extends Enum<T>> JsonValidation isEnum(String field, String message, T... values) {
+        requireNonNull(field);
+        requireNonNull(values);
+        return isEnum(field, values[0].getClass())
+                .and(holds(json -> Arrays.stream(values)
                         .map(Enum::name)
                         .anyMatch(json.getValue(field)::equals), message));
     }

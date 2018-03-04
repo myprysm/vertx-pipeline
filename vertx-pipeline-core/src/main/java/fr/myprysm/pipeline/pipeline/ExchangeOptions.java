@@ -29,9 +29,11 @@ import static java.util.Collections.unmodifiableList;
 public class ExchangeOptions {
     public static final List<String> DEFAULT_TO = Collections.singletonList("to");
     public static final String DEFAULT_FROM = "from";
+    public static final String DEFAULT_CONTROL_CHANNEL = "control";
 
     private String from;
     private List<String> to;
+    private String controlChannel;
 
     public ExchangeOptions() {
 
@@ -40,6 +42,7 @@ public class ExchangeOptions {
     public ExchangeOptions(ExchangeOptions other) {
         from = other.from;
         to = other.to;
+        controlChannel = other.controlChannel;
     }
 
     public ExchangeOptions(JsonObject json) {
@@ -79,7 +82,7 @@ public class ExchangeOptions {
     }
 
     /**
-     * The address the deployed object will receive items from..
+     * The address the deployed object will receive items from.
      * <p>
      * This is automatically configured when the pipeline is built.
      * <b>The address cannot be configured</b>
@@ -89,6 +92,32 @@ public class ExchangeOptions {
      */
     public ExchangeOptions setFrom(String from) {
         this.from = from;
+        return this;
+    }
+
+    /**
+     * The control channel to emit/receive signals.
+     * <p>
+     * This is automatically configured when the pipeline is built.
+     * <b>The channel cannot be configured</b>
+     *
+     * @return the control channel
+     */
+    public String getControlChannel() {
+        return controlChannel;
+    }
+
+    /**
+     * The control channel to emit/receive signals.
+     * <p>
+     * This is automatically configured when the pipeline is built.
+     * <b>The channel cannot be configured</b>
+     *
+     * @param controlChannel the control channel
+     * @return this
+     */
+    public ExchangeOptions setControlChannel(String controlChannel) {
+        this.controlChannel = controlChannel;
         return this;
     }
 
@@ -103,6 +132,7 @@ public class ExchangeOptions {
         return "ExchangeOptions{" +
                 "from='" + from + '\'' +
                 ", to=" + to +
+                ", controlChannel='" + controlChannel + '\'' +
                 '}';
     }
 
@@ -112,12 +142,13 @@ public class ExchangeOptions {
         if (!(o instanceof ExchangeOptions)) return false;
         ExchangeOptions that = (ExchangeOptions) o;
         return Objects.equals(from, that.from) &&
-                Objects.equals(to, that.to);
+                Objects.equals(to, that.to) &&
+                Objects.equals(controlChannel, that.controlChannel);
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(from, to);
+        return Objects.hash(from, to, controlChannel);
     }
 }

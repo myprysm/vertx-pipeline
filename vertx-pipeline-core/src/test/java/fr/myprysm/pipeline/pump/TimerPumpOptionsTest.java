@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class TimerPumpOptionsTest {
 
     @Test
-    @DisplayName("Validate TimerPumpOptions features")
+    @DisplayName("Validate TimerPump options")
     void testTimerPumpOptionsFeatures() {
         new TimerPumpOptionsConverter();
 

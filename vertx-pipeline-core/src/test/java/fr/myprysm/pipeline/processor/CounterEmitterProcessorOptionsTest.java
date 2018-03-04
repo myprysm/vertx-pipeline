@@ -16,6 +16,7 @@
 
 package fr.myprysm.pipeline.processor;
 
+import fr.myprysm.pipeline.util.Signal;
 import io.vertx.core.json.JsonObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,43 +24,45 @@ import org.junit.jupiter.api.Test;
 import static fr.myprysm.pipeline.util.JsonHelpers.obj;
 import static org.assertj.core.api.Assertions.assertThat;
 
-class DataExtractorProcessorOptionsTest {
+class CounterEmitterProcessorOptionsTest {
 
     @Test
-    @DisplayName("Validate Data Extractor options")
-    void testDataExtractorProcessorOptions() {
-        new DataExtractorProcessorOptionsConverter();
+    @DisplayName("Validate Counter Emitter options")
+    void testCounterEmitterProcessorOptions() {
+        new CounterEmitterProcessorOptionsConverter();
 
-        String badStr = "{\"name\": 10, \"type\": 20, \"extract\": false}";
-        String optStr = "{\"instances\":1, \"name\":\"name\", \"type\": \"type\", \"extract\":{\"field\":\"value\"}}";
+        String badStr = "{\"name\": 10, \"type\": 20, \"interval\": false, \"signal\": 1}";
+        String optStr = "{\"instances\":1, \"name\":\"name\", \"type\": \"type\", \"interval\": 100,\"signal\":\"TERMINATE\"}";
 
         ProcessorOptions optPump = new ProcessorOptions(new JsonObject(optStr));
 
-        DataExtractorProcessorOptions optNull = new DataExtractorProcessorOptions()
+        CounterEmitterProcessorOptions optNull = new CounterEmitterProcessorOptions()
                 .setName(null)
                 .setType(null)
-                .setExtract(null);
+                .setInterval(null)
+                .setSignal(null);
 
-        DataExtractorProcessorOptions optObj = new DataExtractorProcessorOptions()
+        CounterEmitterProcessorOptions optObj = new CounterEmitterProcessorOptions()
                 .setName("name")
                 .setType("type")
-                .setExtract(obj().put("field", "value"));
+                .setInterval(100L)
+                .setSignal(Signal.TERMINATE);
 
         JsonObject optJson = new JsonObject(optStr);
 
-        assertThat(new DataExtractorProcessorOptions(new JsonObject(badStr))).isEqualTo(new DataExtractorProcessorOptions());
+        assertThat(new CounterEmitterProcessorOptions(new JsonObject(badStr))).isEqualTo(new CounterEmitterProcessorOptions());
         assertThat(optNull.toJson()).isEqualTo(obj().put("instances", 1));
         assertThat(optObj).isEqualTo(optObj);
         assertThat(optObj).isNotEqualTo(optNull);
-        assertThat(optObj).isEqualTo(new DataExtractorProcessorOptions(optJson));
-        assertThat(optObj).isEqualTo(new DataExtractorProcessorOptions(optObj));
-        assertThat(optObj.toString()).isEqualTo(new DataExtractorProcessorOptions(optJson).toString());
-        assertThat(optObj.hashCode()).isEqualTo(new DataExtractorProcessorOptions(optJson).hashCode());
+        assertThat(optObj).isEqualTo(new CounterEmitterProcessorOptions(optJson));
+        assertThat(optObj).isEqualTo(new CounterEmitterProcessorOptions(optObj));
+        assertThat(optObj.toString()).isEqualTo(new CounterEmitterProcessorOptions(optJson).toString());
+        assertThat(optObj.hashCode()).isEqualTo(new CounterEmitterProcessorOptions(optJson).hashCode());
         assertThat(optObj).isNotEqualTo(null);
         assertThat(optObj).isNotEqualTo(new Object());
         assertThat(optObj.toJson()).isEqualTo(optJson);
         assertThat(optPump)
-                .isEqualToComparingOnlyGivenFields(new DataExtractorProcessorOptions(optPump), "name", "type");
+                .isEqualToComparingOnlyGivenFields(new CounterEmitterProcessorOptions(optPump), "name", "type");
     }
 
 }

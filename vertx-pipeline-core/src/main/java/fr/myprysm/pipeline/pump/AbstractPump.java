@@ -17,14 +17,14 @@
 package fr.myprysm.pipeline.pump;
 
 import fr.myprysm.pipeline.pipeline.ExchangeOptions;
+import fr.myprysm.pipeline.util.ConfigurableVerticle;
+import fr.myprysm.pipeline.util.RoundRobin;
+import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.EventBus;
-import fr.myprysm.pipeline.util.ConfigurableVerticle;
-import fr.myprysm.pipeline.util.RoundRobin;
-import fr.myprysm.pipeline.validation.ValidationResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +34,8 @@ import java.util.List;
 abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVerticle<T> implements Pump<O> {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractPump.class);
     private String name;
+
+    private ExchangeOptions exchange;
     private List<String> recipients;
     private Iterator<String> to;
     private EventBus eventBus;
@@ -54,9 +56,9 @@ abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVertic
     @Override
     protected JsonObject preConfiguration(JsonObject config) {
         PumpOptions pump = new PumpOptions(config);
-        ExchangeOptions deploy = new ExchangeOptions(config);
+        exchange = new ExchangeOptions(config);
         name = pump.getName();
-        recipients = deploy.getTo();
+        recipients = exchange.getTo();
         to = RoundRobin.of(recipients).iterator();
         eventBus = vertx.eventBus();
         return config;
@@ -102,13 +104,14 @@ abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVertic
         return to.next();
     }
 
-    /**
-     * The event bus bound to this pump
-     *
-     * @return the event bus
-     */
+    @Override
     public EventBus eventBus() {
         return eventBus;
+    }
+
+    @Override
+    public ExchangeOptions exchange() {
+        return exchange;
     }
 
     @Override

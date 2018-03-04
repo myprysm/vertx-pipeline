@@ -27,20 +27,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PipelineOptionsTest {
 
     @Test
-    @DisplayName("Validate File sink options")
-    void testDataExtractorProcessorOptions() {
+    @DisplayName("Validate Pipeline options")
+    void testPipelineOptions() {
         new PipelineOptionsConverter();
 
         String badStr = "{\"name\": 10, \"type\": 20, \"pump\": 100, \"processors\": \"test\", \"sink\": false}";
-        String optStr = "{\"name\": \"name\", \"pump\": {}, \"processors\": [{},{}], \"sink\":{}}";
+        String optStr = "{\"deployChannel\":\"test\",\"name\": \"name\", \"pump\": {}, \"processors\": [{},{}], \"sink\":{}}";
 
         PipelineOptions optNull = new PipelineOptions()
+                .setDeployChannel(null)
                 .setName(null)
                 .setPump(null)
                 .setProcessors(null)
                 .setSink(null);
 
         PipelineOptions optObj = new PipelineOptions()
+                .setDeployChannel("test")
                 .setName("name")
                 .setPump(obj())
                 .setProcessors(arr().add(obj()).add(obj()))

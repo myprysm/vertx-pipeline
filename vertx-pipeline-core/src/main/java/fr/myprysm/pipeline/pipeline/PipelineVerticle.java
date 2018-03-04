@@ -17,12 +17,19 @@
 package fr.myprysm.pipeline.pipeline;
 
 import fr.myprysm.pipeline.util.ConfigurableVerticle;
+import fr.myprysm.pipeline.util.Signal;
+import fr.myprysm.pipeline.util.SignalEmitter;
+import fr.myprysm.pipeline.util.SignalReceiver;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.reactivex.Notification;
 import io.reactivex.Single;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.JsonObject;
+import io.vertx.reactivex.core.eventbus.EventBus;
+import io.vertx.reactivex.core.eventbus.Message;
+import io.vertx.reactivex.core.eventbus.MessageConsumer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
@@ -37,7 +44,7 @@ import static io.reactivex.Completable.defer;
 import static io.reactivex.Observable.fromIterable;
 import static strman.Strman.toKebabCase;
 
-public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> {
+public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> implements SignalEmitter, SignalReceiver {
     private static final Logger LOG = LoggerFactory.getLogger(PipelineVerticle.class);
     /**
      * Pair with on the left side the name of the {@link fr.myprysm.pipeline.pump.Pump}
@@ -52,8 +59,13 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> {
      */
     private Pair<String, String> sinkDeployment;
 
+    private EventBus eventBus;
+
     private String name;
     private PipelineConfigurer config;
+    private String deployChannel;
+    private String controlChannel;
+    private MessageConsumer<String> controlChannelConsumer;
 
     @Override
     public ValidationResult validate(JsonObject config) {
@@ -69,6 +81,26 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> {
     public Completable configure(PipelineOptions config) {
         this.name = toKebabCase(config.getName());
         this.config = new PipelineConfigurer(config);
+        deployChannel = this.config.getDeployChannel();
+        controlChannel = this.config.getControlChannel();
+        eventBus = vertx.eventBus();
+        controlChannelConsumer = eventBus.consumer(controlChannel, this::handleSignal);
+        return complete();
+    }
+
+    private void handleSignal(Message<String> signalString) {
+        Signal signal = Signal.valueOf(signalString.body());
+        switch (signal) {
+            case TERMINATE:
+                this.undeploy().andThen(defer(this::notifyUndeploy)).subscribe(
+                        () -> info("Undeployed pipeline."),
+                        (throwable -> error("An error occured during undeployment", throwable))
+                );
+        }
+    }
+
+    private Completable notifyUndeploy() {
+        eventBus().publish(deployChannel, name, new DeliveryOptions().addHeader("action", "undeploy"));
         return complete();
     }
 
@@ -136,7 +168,7 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> {
     @Override
     public Completable shutdown() {
         info("Shutting down...");
-        return complete();
+        return controlChannelConsumer.rxUnregister();
     }
 
     private Completable undeploy() {
@@ -188,5 +220,30 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> {
 
     private void logDeployProcessor(Notification<Triple<String, String, DeploymentOptions>> deploy) {
         if (deploy.isOnNext()) info("Deploying processor [{}]...", deploy.getValue().getLeft());
+    }
+
+    @Override
+    public String controlChannel() {
+        return config.getControlChannel();
+    }
+
+    @Override
+    public Completable onSignal(Signal signal) {
+        return null;
+    }
+
+    @Override
+    public void emitSignal(Signal signal) {
+
+    }
+
+    @Override
+    public ExchangeOptions exchange() {
+        return null;
+    }
+
+    @Override
+    public EventBus eventBus() {
+        return eventBus;
     }
 }

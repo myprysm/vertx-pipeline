@@ -27,6 +27,9 @@ import io.vertx.core.json.JsonArray;
 public class PipelineOptionsConverter {
 
   public static void fromJson(JsonObject json, PipelineOptions obj) {
+    if (json.getValue("deployChannel") instanceof String) {
+      obj.setDeployChannel((String)json.getValue("deployChannel"));
+    }
     if (json.getValue("name") instanceof String) {
       obj.setName((String)json.getValue("name"));
     }
@@ -42,6 +45,9 @@ public class PipelineOptionsConverter {
   }
 
   public static void toJson(PipelineOptions obj, JsonObject json) {
+    if (obj.getDeployChannel() != null) {
+      json.put("deployChannel", obj.getDeployChannel());
+    }
     if (obj.getName() != null) {
       json.put("name", obj.getName());
     }

@@ -98,13 +98,13 @@ public class SinkTest extends ConsoleTest implements VertxTest {
 
         @Override
         public void drain(JsonObject item) {
-            if (item.equals(FAIL_DATA)) throw new NullPointerException();
+            if (item.equals(FAIL_DATA)) throw new IllegalArgumentException();
             System.out.println(item.toString());
         }
 
         @Override
         public Completable shutdown() {
-            return Completable.error(new NullPointerException());
+            return Completable.error(new IllegalArgumentException());
         }
 
         @Override

@@ -22,11 +22,10 @@ import io.vertx.core.json.JsonObject;
 import java.util.Objects;
 
 @DataObject(generateConverter = true)
-public class FileSinkOptions extends SinkOptions {
+public class FileSinkOptions extends FlushableSinkOptions {
     public static final String DEFAULT_FILE = "output";
     public static final Format DEFAULT_FORMAT = Format.json;
     public static final String DEFAULT_PATH = "/tmp";
-    public static final Integer DEFAULT_BATCH_SIZE = 10;
     public static final Mode DEFAULT_MODE = Mode.fail;
 
     public enum Format {
@@ -40,7 +39,6 @@ public class FileSinkOptions extends SinkOptions {
     private String path = DEFAULT_PATH;
     private String file = DEFAULT_FILE;
     private Format format = DEFAULT_FORMAT;
-    private Integer batchSize = DEFAULT_BATCH_SIZE;
     private Mode mode = DEFAULT_MODE;
 
     public FileSinkOptions() {
@@ -57,7 +55,6 @@ public class FileSinkOptions extends SinkOptions {
         path = other.path;
         file = other.file;
         format = other.format;
-        batchSize = other.batchSize;
         mode = other.mode;
     }
 
@@ -137,30 +134,6 @@ public class FileSinkOptions extends SinkOptions {
     }
 
     /**
-     * The batch size of the {@link FileSink}.
-     *
-     * @return the batch size
-     */
-    public Integer getBatchSize() {
-        return batchSize;
-    }
-
-    /**
-     * The batch size of the {@link FileSink}.
-     * <p>
-     * It must be a positive {@link Integer}.
-     * <p>
-     * It defaults to <code>10</code>
-     *
-     * @param batchSize the batch size to flush items.
-     * @return this
-     */
-    public FileSinkOptions setBatchSize(Integer batchSize) {
-        this.batchSize = batchSize;
-        return this;
-    }
-
-    /**
      * The mode of the {@link FileSink}
      *
      * @return the mode of the sink
@@ -178,6 +151,16 @@ public class FileSinkOptions extends SinkOptions {
     public FileSinkOptions setMode(Mode mode) {
         this.mode = mode;
         return this;
+    }
+
+    @Override
+    public Integer getBatchSize() {
+        return super.getBatchSize();
+    }
+
+    @Override
+    public FileSinkOptions setBatchSize(Integer batchSize) {
+        return (FileSinkOptions) super.setBatchSize(batchSize);
     }
 
     @Override
@@ -217,14 +200,13 @@ public class FileSinkOptions extends SinkOptions {
         return Objects.equals(path, that.path) &&
                 Objects.equals(file, that.file) &&
                 format == that.format &&
-                Objects.equals(batchSize, that.batchSize) &&
                 mode == that.mode;
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(super.hashCode(), path, file, format, batchSize, mode);
+        return Objects.hash(super.hashCode(), path, file, format, mode);
     }
 
     @Override
@@ -233,7 +215,6 @@ public class FileSinkOptions extends SinkOptions {
                 "path='" + path + '\'' +
                 ", file='" + file + '\'' +
                 ", format=" + format +
-                ", batchSize=" + batchSize +
                 ", mode=" + mode +
                 "} " + super.toString();
     }

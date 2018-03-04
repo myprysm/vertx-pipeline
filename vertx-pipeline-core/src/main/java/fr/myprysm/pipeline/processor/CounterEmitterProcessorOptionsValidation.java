@@ -14,23 +14,26 @@
  *    limitations under the License.
  */
 
-package fr.myprysm.pipeline.sink;
+package fr.myprysm.pipeline.processor;
 
-import fr.myprysm.pipeline.sink.FileSinkOptions.Format;
-import fr.myprysm.pipeline.sink.FileSinkOptions.Mode;
+import fr.myprysm.pipeline.util.Signal;
+import fr.myprysm.pipeline.validation.JsonValidation;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.vertx.core.json.JsonObject;
 
-import static fr.myprysm.pipeline.validation.JsonValidation.*;
+import static fr.myprysm.pipeline.pump.TimerPumpOptionsValidation.validInterval;
+import static fr.myprysm.pipeline.validation.JsonValidation.isEnum;
+import static fr.myprysm.pipeline.validation.JsonValidation.isNull;
 
-public interface FileSinkOptionValidation {
+public interface CounterEmitterProcessorOptionsValidation {
 
     static ValidationResult validate(JsonObject config) {
-        return isNull("path").or(isString("path"))
-                .and(isNull("file").or(isString("file")))
-                .and(isNull("mode").or(isEnum("mode", Mode.class)))
-                .and(isNull("format").or(isEnum("format", Format.class)))
-                .and(isNull("batchSize").or(gt("batchSize", 0L)))
+        return validInterval()
+                .and(validSignal())
                 .apply(config);
+    }
+
+    static JsonValidation validSignal() {
+        return isNull("signal").or(isEnum("signal", Signal.FLUSH, Signal.TERMINATE));
     }
 }

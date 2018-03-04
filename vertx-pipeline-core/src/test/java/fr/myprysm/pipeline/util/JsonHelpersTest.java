@@ -21,8 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static fr.myprysm.pipeline.util.JsonHelpers.obj;
-import static org.assertj.core.api.Assertions.*;
+import static fr.myprysm.pipeline.util.JsonHelpers.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class JsonHelpersTest {
 
@@ -34,17 +34,37 @@ class JsonHelpersTest {
     }
 
     @Test
-    @DisplayName("Write operations work")
+    @DisplayName("JSON write operations")
     void testWriteOperations() {
         JsonObject obj = obj();
-        JsonHelpers.writeObject(json, "test.path", "test");
+        writeObject(json, "test.path", "test");
         assertThat(json.getJsonObject("test").getString("path")).isEqualTo("test");
-        JsonHelpers.writeObject(json, "a.long.path.to.test.an.int", 1_000_000);
-        assertThat(JsonHelpers.extractInt(json, "a.long.path.to.test.an.int")).hasValue(1_000_000);
+
+        writeObject(json, "a.long.path.to.test.an.int", 1_000_000);
+        assertThat(extractInt(json, "a.long.path.to.test.an.int")).hasValue(1_000_000);
         assertThat(obj == JsonHelpers.createOrGet(json, "test")).isFalse();
 
-        JsonHelpers.writeObject(json, "obj", obj);
+        writeObject(json, "obj", obj);
         assertThat(obj == JsonHelpers.createOrGet(json, "obj")).isTrue();
+
+    }
+
+    @Test
+    @DisplayName("JSON extractors")
+    @SuppressWarnings("unchecked")
+    void testExtractors() {
+        JsonObject obj = obj();
+        JsonObject nb = obj();
+
+        obj.put("numbers", nb);
+        nb.put("int", 1).put("long", 10L).put("float", 2.5F).put("double", 25.75D);
+        obj.put("deeper", obj().put("deeper", obj().put("numbers", nb.copy())));
+
+        assertThat(extractInt(obj, "numbers.int")).hasValue(1);
+        assertThat(extractLong(obj, "deeper.deeper.numbers.long")).hasValue(10L);
+        assertThat(extractDouble(obj, "numbers.double")).hasValue(25.75D);
+        assertThat(extractFloat(obj, "deeper.deeper.numbers.float")).hasValue(2.5F);
+
 
     }
 

@@ -26,7 +26,7 @@ import io.vertx.reactivex.core.eventbus.Message;
  *
  * @param <T> type of items it will consume
  */
-public interface Consumer<T> {
+public interface Consumer<T> extends Stream {
 
     /**
      * Provides the address this consumer listen to.

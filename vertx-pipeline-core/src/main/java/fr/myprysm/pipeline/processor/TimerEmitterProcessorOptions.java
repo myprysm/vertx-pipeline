@@ -14,51 +14,51 @@
  *    limitations under the License.
  */
 
-package fr.myprysm.pipeline.pump;
+package fr.myprysm.pipeline.processor;
 
+import fr.myprysm.pipeline.util.Signal;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static fr.myprysm.pipeline.util.JsonHelpers.obj;
-
 @DataObject(generateConverter = true)
-public class TimerPumpOptions extends PumpOptions {
+public class TimerEmitterProcessorOptions extends ProcessorOptions {
+
     public static final Long DEFAULT_INTERVAL = 1000L;
     public static final TimeUnit DEFAULT_UNIT = TimeUnit.MILLISECONDS;
-    public static final JsonObject DEFAULT_DATA = obj();
+    public static final Signal DEFAULT_SIGNAL = Signal.FLUSH;
 
 
     private Long interval = DEFAULT_INTERVAL;
     private TimeUnit unit = DEFAULT_UNIT;
-    private JsonObject data = DEFAULT_DATA;
+    private Signal signal = DEFAULT_SIGNAL;
 
-    public TimerPumpOptions() {
+    public TimerEmitterProcessorOptions() {
 
     }
 
-    public TimerPumpOptions(TimerPumpOptions other) {
+    public TimerEmitterProcessorOptions(TimerEmitterProcessorOptions other) {
         super(other);
         interval = other.interval;
         unit = other.unit;
-        data = other.data;
+        signal = other.signal;
     }
 
-    public TimerPumpOptions(PumpOptions other) {
+    public TimerEmitterProcessorOptions(ProcessorOptions other) {
         super(other);
     }
 
-    public TimerPumpOptions(JsonObject json) {
+    public TimerEmitterProcessorOptions(JsonObject json) {
         super(json);
-        TimerPumpOptionsConverter.fromJson(json, this);
+        TimerEmitterProcessorOptionsConverter.fromJson(json, this);
     }
 
     @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
-        TimerPumpOptionsConverter.toJson(this, json);
+        TimerEmitterProcessorOptionsConverter.toJson(this, json);
         return json;
     }
 
@@ -82,7 +82,7 @@ public class TimerPumpOptions extends PumpOptions {
      * @param interval the interval to set.
      * @return this
      */
-    public TimerPumpOptions setInterval(Long interval) {
+    public TimerEmitterProcessorOptions setInterval(Long interval) {
         this.interval = interval;
         return this;
     }
@@ -104,32 +104,30 @@ public class TimerPumpOptions extends PumpOptions {
      * @param unit the time unit of the pump
      * @return this
      */
-    public TimerPumpOptions setUnit(TimeUnit unit) {
+    public TimerEmitterProcessorOptions setUnit(TimeUnit unit) {
         this.unit = unit;
         return this;
     }
 
     /**
-     * The custom data to add with the tick
+     * The signal to emit every interval.
      *
-     * @return the custom data to add with the tick
+     * @return the signal to emit.
      */
-    public JsonObject getData() {
-        return data;
+    public Signal getSignal() {
+        return signal;
     }
 
     /**
-     * The custom data to add with the tick
+     * The signal to emit every interval.
      * <p>
-     * It can be any arbitrary json/yaml data.
-     * <p>
-     * No additional data is sent when it is null or empty
+     * Can be one of <code>FLUSH</code> or <code>TERMINATE</code>
      *
-     * @param data the additional data
+     * @param signal the signal to emit
      * @return this
      */
-    public TimerPumpOptions setData(JsonObject data) {
-        this.data = data;
+    public TimerEmitterProcessorOptions setSignal(Signal signal) {
+        this.signal = signal;
         return this;
     }
 
@@ -139,8 +137,8 @@ public class TimerPumpOptions extends PumpOptions {
     }
 
     @Override
-    public TimerPumpOptions setName(String name) {
-        return (TimerPumpOptions) super.setName(name);
+    public TimerEmitterProcessorOptions setName(String name) {
+        return (TimerEmitterProcessorOptions) super.setName(name);
     }
 
     @Override
@@ -149,33 +147,33 @@ public class TimerPumpOptions extends PumpOptions {
     }
 
     @Override
-    public TimerPumpOptions setType(String type) {
-        return (TimerPumpOptions) super.setType(type);
+    public TimerEmitterProcessorOptions setType(String type) {
+        return (TimerEmitterProcessorOptions) super.setType(type);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof TimerPumpOptions)) return false;
+        if (!(o instanceof TimerEmitterProcessorOptions)) return false;
         if (!super.equals(o)) return false;
-        TimerPumpOptions that = (TimerPumpOptions) o;
+        TimerEmitterProcessorOptions that = (TimerEmitterProcessorOptions) o;
         return Objects.equals(interval, that.interval) &&
                 unit == that.unit &&
-                Objects.equals(data, that.data);
+                signal == that.signal;
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(super.hashCode(), interval, unit, data);
+        return Objects.hash(super.hashCode(), interval, unit, signal);
     }
 
     @Override
     public String toString() {
-        return "TimerPumpOptions{" +
+        return "TimerEmitterProcessorOptions{" +
                 "interval=" + interval +
                 ", unit=" + unit +
-                ", data=" + data +
+                ", signal=" + signal +
                 "} " + super.toString();
     }
 }

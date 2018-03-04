@@ -27,6 +27,9 @@ import io.vertx.core.json.JsonArray;
 public class ExchangeOptionsConverter {
 
   public static void fromJson(JsonObject json, ExchangeOptions obj) {
+    if (json.getValue("controlChannel") instanceof String) {
+      obj.setControlChannel((String)json.getValue("controlChannel"));
+    }
     if (json.getValue("from") instanceof String) {
       obj.setFrom((String)json.getValue("from"));
     }
@@ -41,6 +44,9 @@ public class ExchangeOptionsConverter {
   }
 
   public static void toJson(ExchangeOptions obj, JsonObject json) {
+    if (obj.getControlChannel() != null) {
+      json.put("controlChannel", obj.getControlChannel());
+    }
     if (obj.getFrom() != null) {
       json.put("from", obj.getFrom());
     }

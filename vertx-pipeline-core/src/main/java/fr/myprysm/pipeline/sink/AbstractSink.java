@@ -34,6 +34,7 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSink.class);
     private String name;
     private EventBus eventBus;
+    private ExchangeOptions exchange;
     private String from;
     private MessageConsumer<I> consumer;
     private Flowable<Message<I>> flowableConsumer;
@@ -47,10 +48,10 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
     @Override
     protected JsonObject preConfiguration(JsonObject config) {
         SinkOptions options = new SinkOptions(config);
-        ExchangeOptions deploy = new ExchangeOptions(config);
+        exchange = new ExchangeOptions(config);
         name = options.getName();
         eventBus = vertx.eventBus();
-        from = deploy.getFrom();
+        from = exchange.getFrom();
         return config;
     }
 
@@ -90,13 +91,14 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
         return from;
     }
 
-    /**
-     * The event bus bound to this pump
-     *
-     * @return the event bus
-     */
+    @Override
     public EventBus eventBus() {
         return eventBus;
+    }
+
+    @Override
+    public ExchangeOptions exchange() {
+        return exchange;
     }
 
     @Override
@@ -105,10 +107,9 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
         LOG.debug("Message received: {}", input);
         try {
             drain(input);
-        } catch (Exception e) {
-            LOG.error("An error occurred while processing item: ", e);
+        } catch (Exception exc) {
+            error("An error occured while draining item.", exc);
         }
-
     }
 
     @Override

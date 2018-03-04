@@ -14,8 +14,9 @@
  *    limitations under the License.
  */
 
-package fr.myprysm.pipeline.pipeline;
+package fr.myprysm.pipeline.util;
 
+import fr.myprysm.pipeline.pipeline.PipelineVerticle;
 import fr.myprysm.pipeline.processor.Processor;
 import fr.myprysm.pipeline.pump.Pump;
 import fr.myprysm.pipeline.sink.Sink;
@@ -42,7 +43,7 @@ public enum Signal {
      * This is emitted by any kind of component to signal the whole pipeline has finished
      * his processing, thus resources can be released and {@link PipelineVerticle} can be undeployed.
      */
-    SHUTDOWN,
+    TERMINATE,
 
     /**
      * Indicates to all the {@link fr.myprysm.pipeline.util.Flushable} processors

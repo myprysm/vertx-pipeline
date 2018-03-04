@@ -24,17 +24,14 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxTestContext;
-import org.apache.commons.lang3.tuple.Triple;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class PipelineVerticleTest implements VertxTest {
@@ -111,6 +108,36 @@ class PipelineVerticleTest implements VertxTest {
         );
 
         ctx.awaitCompletion(5, TimeUnit.SECONDS);
+    }
+
+    @Test
+    @DisplayName("Test timer shutdown signal triggers pipeline verticle signal.")
+    void testTimerShutdown(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        DeploymentOptions options = getDeploymentOptions("timer-shutdown-test");
+        vertx.eventBus().<String>consumer("test-shutdown", message -> {
+            assertThat(message.headers().get("action")).isEqualTo("undeploy");
+            assertThat(message.body()).isEqualTo("timer-shutdown-test");
+            ctx.completeNow();
+        });
+
+        vertx.deployVerticle(PIPELINE_VERTICLE, options, ctx.succeeding());
+
+        ctx.awaitCompletion(15, TimeUnit.SECONDS);
+    }
+
+    @Test
+    @DisplayName("Test counter shutdown signal triggers pipeline verticle signal.")
+    void testCounterShutdown(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        DeploymentOptions options = getDeploymentOptions("counter-shutdown-test");
+        vertx.eventBus().<String>consumer("test-shutdown", message -> {
+            assertThat(message.headers().get("action")).isEqualTo("undeploy");
+            assertThat(message.body()).isEqualTo("counter-shutdown-test");
+            ctx.completeNow();
+        });
+
+        vertx.deployVerticle(PIPELINE_VERTICLE, options, ctx.succeeding());
+
+        ctx.awaitCompletion(15, TimeUnit.SECONDS);
     }
 
     private DeploymentOptions getDeploymentOptions(String pipeline) {

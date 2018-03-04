@@ -42,6 +42,7 @@ import java.util.List;
 abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends ConfigurableVerticle<T> implements Processor<I, O> {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractProcessor.class);
 
+    private ExchangeOptions exchange;
     private List<String> recipients;
     private Iterator<String> to;
     private MessageConsumer<I> consumer;
@@ -56,9 +57,9 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
     @Override
     protected JsonObject preConfiguration(JsonObject config) {
         ProcessorOptions options = new ProcessorOptions(config);
-        ExchangeOptions deploy = new ExchangeOptions(config);
-        from = deploy.getFrom();
-        recipients = deploy.getTo();
+        exchange = new ExchangeOptions(config);
+        from = exchange.getFrom();
+        recipients = exchange.getTo();
         to = RoundRobin.of(recipients).iterator();
         eventBus = vertx.eventBus();
         return config;
@@ -90,24 +91,26 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
         return recipients;
     }
 
-    /**
-     * The event bus bound to this processor
-     *
-     * @return the event bus
-     */
+    @Override
     public EventBus eventBus() {
         return eventBus;
+    }
+
+    @Override
+    public ExchangeOptions exchange() {
+        return exchange;
     }
 
     @Override
     public void consume(Message<I> item) {
         I input = item.body();
         LOG.debug("[{}] Message received: {}", name(), input);
-        transform(input).subscribe(this::publish, this::handleError);
-    }
 
-    private void handleError(Throwable throwable) {
-        error("An error occurred while processing item: ", throwable);
+        try {
+            transform(input).subscribe(this::publish);
+        } catch (Exception e) {
+            error("An error occurred while processing item: ", e);
+        }
     }
 
     @Override

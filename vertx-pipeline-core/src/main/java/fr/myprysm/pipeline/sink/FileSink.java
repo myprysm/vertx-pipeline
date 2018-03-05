@@ -19,6 +19,8 @@ package fr.myprysm.pipeline.sink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import fr.myprysm.pipeline.sink.FileSinkOptions.Format;
+import fr.myprysm.pipeline.sink.FileSinkOptions.Mode;
 import fr.myprysm.pipeline.util.Signal;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.*;
@@ -48,14 +50,18 @@ import static java.util.stream.Collectors.joining;
  */
 public class FileSink extends FlushableJsonSink<FileSinkOptions> implements FlowableOnSubscribe<JsonObject> {
 
-    private FileSinkOptions options;
     private FileSystem fs;
     private ObjectMapper mapper;
     private String fullPath;
 
     private Disposable disposable;
     private FlowableEmitter<JsonObject> emitter;
-    private AsyncFile file;
+    private AsyncFile asyncFile;
+    private Integer batchSize;
+    private Format format;
+    private String path;
+    private String file;
+    private Mode mode;
 
     @Override
     public void drain(JsonObject item) {
@@ -75,7 +81,7 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
     @Override
     protected Completable startVerticle() {
         disposable = Flowable.create(this, BackpressureStrategy.BUFFER)
-                .buffer(batchSize())
+                .buffer(batchSize)
                 .subscribe(this::write, this::handleError);
         emitter.setDisposable(disposable);
         return complete();
@@ -85,7 +91,7 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
     public Completable shutdown() {
         emitter.onComplete();
         disposable.dispose();
-        return file.rxFlush().andThen(defer(file::rxClose));
+        return asyncFile.rxFlush().andThen(defer(asyncFile::rxClose));
     }
 
     /**
@@ -102,12 +108,12 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
                         return mapper.writeValueAsString(o);
                     } catch (JsonProcessingException exc) {
                         // That should never happen.....
-                        info("Error during " + options.getFormat().name() + " serialization.", exc);
+                        info("Error during " + format.name() + " serialization.", exc);
                         return "{\"error\": \"serialization error\", \"message\": \"" + exc.getMessage().replaceAll("\"", "\\\"") + "\"}";
                     }
                 }).collect(joining("\n")) + "\n"); // Ending line to concatenate each buffer when writing.
 
-        file.write(buffer);
+        asyncFile.write(buffer);
     }
 
     private void handleError(Throwable throwable) {
@@ -116,9 +122,14 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
 
     @Override
     public Completable configure(FileSinkOptions config) {
-        options = config;
-        fullPath = config.getPath() + "/" + config.getFile() + "." + config.getFormat().toString();
         fs = vertx.fileSystem();
+        batchSize = config.getBatchSize();
+        format = config.getFormat();
+        mode = config.getMode();
+        path = config.getPath();
+        file = config.getFile();
+        fullPath = path + "/" + file + "." + format.toString();
+
 
         return folderExists()
                 .andThen(defer(this::fileCheck))
@@ -126,7 +137,7 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
     }
 
     private Completable prepareMapper() {
-        switch (options.getFormat()) {
+        switch (format) {
             case yaml:
                 mapper = new YAMLMapper();
                 break;
@@ -140,7 +151,7 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
     private Completable fileCheck() {
         OpenOptions openOpts = new OpenOptions().setWrite(true).setCreate(true);
 
-        switch (options.getMode()) {
+        switch (mode) {
             case append:
                 openOpts.setAppend(true);
                 break;
@@ -154,19 +165,19 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
         }
 
         return fs.rxOpen(fullPath, openOpts).flatMapCompletable(async -> {
-            file = async;
+            asyncFile = async;
             return complete();
         });
     }
 
     private Completable folderExists() {
-        return fs.rxExists(options.getPath())
-                .flatMapCompletable(exists -> exists ? complete() : fs.rxMkdirs(options.getPath(), "rwxr-x---"));
+        return fs.rxExists(path)
+                .flatMapCompletable(exists -> exists ? complete() : fs.rxMkdirs(path, "rwxr-x---"));
     }
 
     @Override
     public Integer batchSize() {
-        return options.getBatchSize();
+        return batchSize;
     }
 
     @Override
@@ -181,6 +192,6 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
 
     @Override
     public Completable onSignal(Signal signal) {
-        return file.rxFlush();
+        return asyncFile.rxFlush();
     }
 }

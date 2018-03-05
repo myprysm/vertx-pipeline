@@ -59,12 +59,13 @@ class JsonHelpersTest {
         obj.put("numbers", nb);
         nb.put("int", 1).put("long", 10L).put("float", 2.5F).put("double", 25.75D);
         obj.put("deeper", obj().put("deeper", obj().put("numbers", nb.copy())));
+        writeObject(obj, "nested.array", arr().add("item"));
 
         assertThat(extractInt(obj, "numbers.int")).hasValue(1);
         assertThat(extractLong(obj, "deeper.deeper.numbers.long")).hasValue(10L);
         assertThat(extractDouble(obj, "numbers.double")).hasValue(25.75D);
         assertThat(extractFloat(obj, "deeper.deeper.numbers.float")).hasValue(2.5F);
-
+        assertThat(extractJsonArray(obj, "nested.array")).hasValue(arr().add("item"));
 
     }
 

@@ -109,9 +109,7 @@ public interface JsonHelpers {
     static JsonObject createOrGet(JsonObject json, String field) {
         Object value = json.getValue(field);
         JsonObject f = obj();
-        if (value == null) {
-            json.put(field, f);
-        } else if (value instanceof JsonObject) {
+        if (value instanceof JsonObject) {
             f = (JsonObject) value;
         } else {
             json.put(field, f);

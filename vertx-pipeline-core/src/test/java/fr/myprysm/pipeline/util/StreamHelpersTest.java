@@ -34,9 +34,11 @@ class StreamHelpersTest {
         String[] array = new String[]{"foo", "bar", "baz"};
         List<String> arrayList = Arrays.asList(array);
         LinkedList<String> linkedList = new LinkedList<>(arrayList);
+        List<String> linkedListAsList = linkedList;
 
         assertThat(streamInReverse(array).findFirst()).hasValue("baz");
         assertThat(streamInReverse(arrayList).findFirst()).hasValue("baz");
+        assertThat(streamInReverse(linkedListAsList).findFirst()).hasValue("baz");
         assertThat(streamInReverse(linkedList).findFirst()).hasValue("baz");
     }
 

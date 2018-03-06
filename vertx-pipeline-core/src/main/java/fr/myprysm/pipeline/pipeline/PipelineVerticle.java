@@ -224,17 +224,17 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
 
     @Override
     public String controlChannel() {
-        return config.getControlChannel();
+        return controlChannel;
     }
 
     @Override
     public Completable onSignal(Signal signal) {
-        return null;
+        return complete();
     }
 
     @Override
     public void emitSignal(Signal signal) {
-
+        // Does nothing
     }
 
     @Override

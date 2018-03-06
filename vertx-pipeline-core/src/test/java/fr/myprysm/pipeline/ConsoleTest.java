@@ -71,7 +71,16 @@ public abstract class ConsoleTest {
      * @param pattern the pattern to test
      */
     protected void assertConsoleContainsLine(String pattern) {
-        assertThat(Pattern.compile(pattern, Pattern.MULTILINE).matcher(getConsoleOutput()).find()).isTrue();
+        assertConsoleContainPattern(Pattern.compile(pattern, Pattern.MULTILINE));
+    }
+
+    /**
+     * Asserts that the console output contains the provided {@link Pattern}.
+     *
+     * @param pattern the pattern to test
+     */
+    protected void assertConsoleContainPattern(Pattern pattern) {
+        assertThat(pattern.matcher(getConsoleOutput()).find()).isTrue();
     }
 
     /**
@@ -81,7 +90,16 @@ public abstract class ConsoleTest {
      * @param pattern the pattern to test
      */
     protected void assertConsoleDoesNotContainLine(String pattern) {
-        assertThat(Pattern.compile(pattern, Pattern.MULTILINE).matcher(getConsoleOutput()).find()).isFalse();
+        assertConsoleDoesNotContainPattern(Pattern.compile(pattern, Pattern.MULTILINE));
+    }
+
+    /**
+     * Asserts that the console output does not contain the provided {@link Pattern}.
+     *
+     * @param pattern the pattern to test
+     */
+    protected void assertConsoleDoesNotContainPattern(Pattern pattern) {
+        assertThat(pattern.matcher(getConsoleOutput()).find()).isFalse();
     }
 
     /**

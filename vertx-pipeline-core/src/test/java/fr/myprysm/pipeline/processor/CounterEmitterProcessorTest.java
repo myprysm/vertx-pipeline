@@ -18,7 +18,6 @@ package fr.myprysm.pipeline.processor;
 
 import fr.myprysm.pipeline.VertxTest;
 import fr.myprysm.pipeline.util.Signal;
-import io.reactivex.Observable;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -71,7 +70,7 @@ class CounterEmitterProcessorTest implements VertxTest {
     @Test
     @DisplayName("Testing counter will emit some FLUSH...")
     void testCounterFlush(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
-        Checkpoint cp = ctx.checkpoint(20);
+        Checkpoint cp = ctx.checkpoint(5);
 
         vertx.eventBus().<String>consumer("channel", message -> {
             String signal = message.body();
@@ -80,10 +79,11 @@ class CounterEmitterProcessorTest implements VertxTest {
         });
 
         DeploymentOptions opts = new DeploymentOptions().setConfig(CONFIG.copy().put("signal", "FLUSH"));
-        vertx.deployVerticle(VERTICLE, opts, ctx.succeeding(id ->
-                Observable.interval(10, TimeUnit.MILLISECONDS)
-                        .subscribe(tick -> vertx.eventBus().send("from", obj()))
-        ));
+        vertx.deployVerticle(VERTICLE, opts, ctx.succeeding(id -> {
+            for (int i = 0; i < 50; i++) {
+                vertx.eventBus().send("from", obj());
+            }
+        }));
 
 
         ctx.awaitCompletion(2, TimeUnit.SECONDS);

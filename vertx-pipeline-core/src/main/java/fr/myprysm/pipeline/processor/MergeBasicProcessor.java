@@ -283,7 +283,7 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
 
     @Override
     public Integer batchSize() {
-        return map.size();
+        return Optional.ofNullable(map).map(ConcurrentHashMap::size).orElse(0);
     }
 
     @Override

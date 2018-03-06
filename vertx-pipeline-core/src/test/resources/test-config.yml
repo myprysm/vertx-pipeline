@@ -67,7 +67,7 @@ multi-instance-multi-processor:
 logger-test:
   pump:
     type:     fr.myprysm.pipeline.pump.TimerPump
-    interval: 50
+    interval: 10
     unit:     MILLISECONDS
   processors:
     - type:   fr.myprysm.pipeline.processor.LogProcessor
@@ -100,12 +100,12 @@ timer-shutdown-test:
   deployChannel: test-shutdown
   pump:
     type:       fr.myprysm.pipeline.pump.TimerPump
-    interval:   75
+    interval:   5
     unit:       MILLISECONDS
   processors:
     - type:     fr.myprysm.pipeline.processor.TimerEmitterProcessor
-      interval: 2
-      unit:     SECONDS
+      interval: 50
+      unit:     MILLISECONDS
       signal:   TERMINATE
   sink:
     type: fr.myprysm.pipeline.sink.ConsoleSink
@@ -118,7 +118,7 @@ counter-shutdown-test:
     unit:     MILLISECONDS
 
   processors:
-    - type:     fr.myprysm.pipeline.processor.TimerEmitterProcessor
+    - type:     fr.myprysm.pipeline.processor.CounterEmitterProcessor
       interval: 10
       signal:   TERMINATE
   sink:

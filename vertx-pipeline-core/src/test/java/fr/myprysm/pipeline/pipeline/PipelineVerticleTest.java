@@ -16,7 +16,9 @@
 
 package fr.myprysm.pipeline.pipeline;
 
+import fr.myprysm.pipeline.ConsoleTest;
 import fr.myprysm.pipeline.VertxTest;
+import fr.myprysm.pipeline.util.Signal;
 import io.vertx.config.ConfigRetriever;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
@@ -27,20 +29,20 @@ import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.slf4j.event.Level;
 
 import java.util.concurrent.TimeUnit;
 
+import static io.reactivex.Completable.complete;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class PipelineVerticleTest implements VertxTest {
+class PipelineVerticleTest extends ConsoleTest implements VertxTest {
 
     private static final String PIPELINE_VERTICLE = "fr.myprysm.pipeline.pipeline.PipelineVerticle";
-    private JsonObject config;
+    private static JsonObject config;
 
     @BeforeAll
-    void setUp(Vertx vertx, VertxTestContext ctx) {
+    static void setUp(Vertx vertx, VertxTestContext ctx) {
         ConfigStoreOptions store = new ConfigStoreOptions()
                 .setType("file")
                 .setFormat("yaml")
@@ -56,25 +58,24 @@ class PipelineVerticleTest implements VertxTest {
     @DisplayName("PipelineVerticle is able to start simple pipeline")
     void testPipelineVerticleStartsSimpleFlow(Vertx vertx, VertxTestContext ctx) {
         DeploymentOptions options = getDeploymentOptions("simple");
-        vertx.deployVerticle(PIPELINE_VERTICLE, options,
-                ctx.succeeding(id ->
-                        vertx.setTimer(2_000L, timer ->
-                                vertx.undeploy(id, ctx.succeeding(v -> ctx.completeNow())))
-                )
-        );
+        vertx.deployVerticle(PIPELINE_VERTICLE, options, ctx.succeeding(id ->
+                vertx.setTimer(100L, timer -> vertx.undeploy(id, ctx.succeeding(v -> ctx.completeNow())))
+        ));
     }
 
     @Test
     @DisplayName("PipelineVerticle is able to start multi instance / processors with file output in /tmp/output.json")
     void testPipelineVerticleStartsMultiInstanceMultiProcessorWithFileSink(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
         DeploymentOptions options = getDeploymentOptions("multi-instance-multi-processor");
+        PipelineVerticle verticle = new PipelineVerticle();
+        vertx.deployVerticle(verticle, options, ctx.succeeding(id -> {
+            assertThat(verticle.controlChannel()).isNotBlank();
+            assertThat(verticle.exchange()).isNull();
+            verticle.emitSignal(Signal.UNRECOVERABLE); // Does nothing.
+            assertThat(verticle.onSignal(Signal.UNRECOVERABLE)).isEqualTo(complete());
 
-        vertx.deployVerticle(PIPELINE_VERTICLE, options,
-                ctx.succeeding(id ->
-                        vertx.setTimer(2_000L, timer ->
-                                vertx.undeploy(id, ctx.succeeding(v -> ctx.completeNow())))
-                )
-        );
+            vertx.undeploy(id, ctx.succeeding(v -> ctx.completeNow()));
+        }));
 
         ctx.awaitCompletion(5, TimeUnit.SECONDS);
     }
@@ -84,31 +85,16 @@ class PipelineVerticleTest implements VertxTest {
     void testLoggerProcessors(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
         DeploymentOptions options = getDeploymentOptions("logger-test");
 
-        vertx.deployVerticle(PIPELINE_VERTICLE, options,
-                ctx.succeeding(id ->
-                        vertx.setTimer(2_000L, timer ->
-                                vertx.undeploy(id, ctx.succeeding(v -> ctx.completeNow())))
-                )
-        );
+        vertx.deployVerticle(PIPELINE_VERTICLE, options, ctx.succeeding(id -> vertx.setTimer(100, timer -> {
+            for (Level level : Level.values()) {
+                assertConsoleContainsLine(level.toString() + ".*LogProcessor.*log-processor");
+            }
+            ctx.completeNow();
+        })));
 
         ctx.awaitCompletion(5, TimeUnit.SECONDS);
     }
 
-
-    @Test
-    @DisplayName("Data extractor maps fields")
-    void testDataExtractorProcessor(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
-        DeploymentOptions options = getDeploymentOptions("data-extractor-test");
-
-        vertx.deployVerticle(PIPELINE_VERTICLE, options,
-                ctx.succeeding(id ->
-                        vertx.setTimer(2_000L, timer ->
-                                vertx.undeploy(id, ctx.succeeding(v -> ctx.completeNow())))
-                )
-        );
-
-        ctx.awaitCompletion(5, TimeUnit.SECONDS);
-    }
 
     @Test
     @DisplayName("Test timer shutdown signal triggers pipeline verticle signal.")
@@ -122,7 +108,6 @@ class PipelineVerticleTest implements VertxTest {
 
         vertx.deployVerticle(PIPELINE_VERTICLE, options, ctx.succeeding());
 
-        ctx.awaitCompletion(15, TimeUnit.SECONDS);
     }
 
     @Test
@@ -137,7 +122,6 @@ class PipelineVerticleTest implements VertxTest {
 
         vertx.deployVerticle(PIPELINE_VERTICLE, options, ctx.succeeding());
 
-        ctx.awaitCompletion(15, TimeUnit.SECONDS);
     }
 
     private DeploymentOptions getDeploymentOptions(String pipeline) {

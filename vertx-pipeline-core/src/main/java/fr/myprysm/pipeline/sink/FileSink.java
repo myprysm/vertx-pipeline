@@ -37,6 +37,7 @@ import java.util.List;
 import static io.reactivex.Completable.complete;
 import static io.reactivex.Completable.defer;
 import static java.util.stream.Collectors.joining;
+import static strman.Strman.ensureRight;
 
 
 /**
@@ -128,7 +129,7 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
         mode = config.getMode();
         path = config.getPath();
         file = config.getFile();
-        fullPath = path + "/" + file + "." + format.toString();
+        fullPath = ensureRight(path, "/") + file + "." + format.toString();
 
 
         return folderExists()
@@ -160,7 +161,7 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
                 break;
             case fail:
             default:
-                openOpts.setCreateNew(true).setWrite(true);
+                openOpts.setCreateNew(true);
                 break;
         }
 
@@ -182,7 +183,7 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
 
     @Override
     public Completable flush() {
-        return null;
+        return complete();
     }
 
     @Override

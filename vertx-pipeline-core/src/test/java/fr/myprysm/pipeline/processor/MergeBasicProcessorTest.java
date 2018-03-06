@@ -22,18 +22,13 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
-import static fr.myprysm.pipeline.util.JsonHelpers.arr;
-import static fr.myprysm.pipeline.util.JsonHelpers.obj;
-import static fr.myprysm.pipeline.util.JsonHelpers.writeObject;
+import static fr.myprysm.pipeline.util.JsonHelpers.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class MergeBasicProcessorTest implements VertxTest {
@@ -61,6 +56,28 @@ class MergeBasicProcessorTest implements VertxTest {
                     )
             );
     static DeploymentOptions OPTIONS = new DeploymentOptions().setConfig(CONFIG);
+
+    @Test
+    @DisplayName("Testing batch size")
+    void testBatchSize(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        JsonObject message1 = new JsonObject("{\"nested\":{\"field\":\"foo\"},\"some\":{\"array\":[{\"counter\":1},{\"counter\":2},{\"counter\":3}],\"string\":\"first string\"}}");
+        JsonObject message2 = new JsonObject("{\"nested\":{\"field\":\"bar\"},\"some\":{\"array\":[{\"counter\":2},{\"counter\":4},{\"counter\":5}],\"string\":\"second string\"}}");
+        MergeBasicProcessor verticle = new MergeBasicProcessor();
+
+        assertThat(verticle.batchSize()).isEqualTo(0);
+        vertx.deployVerticle(verticle, OPTIONS, ctx.succeeding(id -> {
+            vertx.eventBus()
+                    .send("from", message1)
+                    .send("from", message2);
+
+            // Wait a bit before checking to let the time for data to be processed.
+            vertx.setTimer(250L, timer -> {
+                assertThat(verticle.batchSize()).isEqualTo(2);
+                ctx.completeNow();
+            });
+
+        }));
+    }
 
     @Test
     @DisplayName("Testing merge and sort longs on input array")

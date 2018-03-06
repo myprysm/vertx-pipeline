@@ -16,8 +16,11 @@
 
 package fr.myprysm.pipeline.sink;
 
+import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.vertx.core.json.JsonObject;
+
+import static fr.myprysm.pipeline.validation.ValidationResult.valid;
 
 final public class ConsoleSink extends BaseJsonSink<SinkOptions> {
 
@@ -32,7 +35,17 @@ final public class ConsoleSink extends BaseJsonSink<SinkOptions> {
     }
 
     @Override
+    public SinkOptions readConfiguration(JsonObject config) {
+        return new SinkOptions(config);
+    }
+
+    @Override
     public Completable configure(SinkOptions config) {
         return Completable.complete();
+    }
+
+    @Override
+    public ValidationResult validate(JsonObject config) {
+        return valid();
     }
 }

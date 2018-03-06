@@ -19,8 +19,8 @@ package fr.myprysm.pipeline.sink;
 import fr.myprysm.pipeline.ConsoleTest;
 import fr.myprysm.pipeline.VertxTest;
 import fr.myprysm.pipeline.pipeline.ExchangeOptions;
-import fr.myprysm.pipeline.util.ConfigurableVerticle;
 import fr.myprysm.pipeline.validation.ValidationException;
+import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
@@ -141,8 +141,18 @@ public class SinkTest extends ConsoleTest implements VertxTest {
         }
 
         @Override
+        public SinkOptions readConfiguration(JsonObject config) {
+            return new SinkOptions(config);
+        }
+
+        @Override
         public Completable configure(SinkOptions config) {
             return Completable.complete();
+        }
+
+        @Override
+        public ValidationResult validate(JsonObject config) {
+            return ValidationResult.valid();
         }
     }
 }

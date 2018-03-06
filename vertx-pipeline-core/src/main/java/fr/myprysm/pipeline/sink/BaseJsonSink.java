@@ -18,20 +18,8 @@ package fr.myprysm.pipeline.sink;
 
 import io.reactivex.Completable;
 import io.vertx.core.json.JsonObject;
-import fr.myprysm.pipeline.validation.ValidationResult;
 
 public abstract class BaseJsonSink<T extends SinkOptions> extends AbstractSink<JsonObject, T> {
-    @Override
-    public ValidationResult validate(JsonObject config) {
-        return ValidationResult.valid();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public T readConfiguration(JsonObject config) {
-        return (T) new SinkOptions(config);
-    }
-
     @Override
     public Completable shutdown() {
         return Completable.complete();

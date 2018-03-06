@@ -68,9 +68,12 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
     }
 
     /**
-     * Processes the incoming event when it is possible
-     * @param input
-     * @param result
+     * Processes the incoming event when it is possible.
+     * <p>
+     * The event is discarded.
+     *
+     * @param input  the input event
+     * @param result the result of the async processing.
      */
     private void internalTransform(JsonObject input, Future<JsonObject> result) {
         JsonObject data = input.copy();
@@ -93,8 +96,10 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
         JsonObject original = json;
 
         if (!map.containsKey(keyToObj.getKey())) {
+            debug("No item on key {}", keyToObj.getKey());
             map.put(keyToObj.getKey(), json);
         } else {
+            debug("Already an item on key {}", keyToObj.getKey());
             original = map.get(keyToObj.getKey());
         }
 
@@ -120,6 +125,7 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
         if (arrayPath != null) {
             extractJsonArray(json, arrayPath)
                     .ifPresent(newValues -> {
+                        debug("Merging array at path {}", arrayPath);
                         JsonArray array = extractJsonArray(original, arrayPath).orElse(arr());
                         List<Object> toAdd = newValues.stream().filter(value -> !array.contains(value)).collect(toList());
 

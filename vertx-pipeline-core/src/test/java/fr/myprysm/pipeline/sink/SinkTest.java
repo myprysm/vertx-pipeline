@@ -18,6 +18,8 @@ package fr.myprysm.pipeline.sink;
 
 import fr.myprysm.pipeline.ConsoleTest;
 import fr.myprysm.pipeline.VertxTest;
+import fr.myprysm.pipeline.pipeline.ExchangeOptions;
+import fr.myprysm.pipeline.util.ConfigurableVerticle;
 import fr.myprysm.pipeline.validation.ValidationException;
 import io.reactivex.Completable;
 import io.vertx.core.DeploymentOptions;
@@ -30,6 +32,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
+import static fr.myprysm.pipeline.util.JsonHelpers.arr;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SinkTest extends ConsoleTest implements VertxTest {
@@ -43,6 +46,8 @@ public class SinkTest extends ConsoleTest implements VertxTest {
     private static DeploymentOptions CONFIG = new DeploymentOptions()
             .setConfig(new JsonObject()
                     .put("from", TEST_FROM)
+                    .put("to", arr().add("to"))
+                    .put("controlChannel", "controlChannel")
                     .put("name", "test")
                     .put("type", "fr.myprysm.pipeline.sink.ConsoleSink")
             );
@@ -79,13 +84,36 @@ public class SinkTest extends ConsoleTest implements VertxTest {
 
     @Test
     @DisplayName("Validates that errors are not blocking the processor lifecycle")
-    void testProcessorFailures(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+    void testSinkFailures(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
         vertx.deployVerticle(new FailureSink(), CONFIG, (id) -> {
 
             vertx.eventBus().send(TEST_FROM, FAIL_DATA);
             vertx.eventBus().send(TEST_FROM, DATA);
             vertx.setTimer(100, timer -> {
                 assertConsoleContainsLine(PATTERN_CONSOLE_OUTPUT);
+                ctx.completeNow();
+            });
+        });
+
+        ctx.awaitCompletion(5, TimeUnit.SECONDS);
+    }
+
+    @Test
+    @DisplayName("Validates that blackhole sink does not write anything in console output")
+    void testBlackHoleSink(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        BlackholeSink blackHoleSink = new BlackholeSink();
+        vertx.deployVerticle(blackHoleSink, CONFIG, (id) -> {
+            // Verticle is started, thus config is written and we can test exchange options
+            assertThat(blackHoleSink.name()).isEqualTo("test");
+            ExchangeOptions exchange = blackHoleSink.exchange();
+            assertThat(exchange.getFrom()).isEqualTo(TEST_FROM);
+            assertThat(exchange.getControlChannel()).isEqualTo("controlChannel");
+            assertThat(exchange.getTo()).containsExactly("to");
+
+            vertx.eventBus().send(TEST_FROM, FAIL_DATA);
+            vertx.eventBus().send(TEST_FROM, DATA);
+            vertx.setTimer(100, timer -> {
+                assertConsoleDoesNotContainLine(PATTERN_CONSOLE_OUTPUT);
                 ctx.completeNow();
             });
         });

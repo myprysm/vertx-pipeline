@@ -63,6 +63,12 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
         return Completable.complete();
     }
 
+    /**
+     * Prints the received error from the bus.
+     * Should almost never happen.
+     *
+     * @param throwable the error thrown.
+     */
     private void onMessageError(Throwable throwable) {
         error("An error occured when receiving message: ", throwable);
     }

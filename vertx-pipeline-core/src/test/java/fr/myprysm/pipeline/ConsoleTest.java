@@ -75,6 +75,16 @@ public abstract class ConsoleTest {
     }
 
     /**
+     * Asserts that the console output does not contain a line matching the provided pattern.
+     * A {@link Pattern} is used with <code>MULTILINE</code> option to validate against console output.
+     *
+     * @param pattern the pattern to test
+     */
+    protected void assertConsoleDoesNotContainLine(String pattern) {
+        assertThat(Pattern.compile(pattern, Pattern.MULTILINE).matcher(getConsoleOutput()).find()).isFalse();
+    }
+
+    /**
      * Returns the console output.
      *
      * @return the console output

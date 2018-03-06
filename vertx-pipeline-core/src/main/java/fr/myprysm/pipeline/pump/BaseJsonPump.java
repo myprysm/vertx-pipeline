@@ -16,16 +16,10 @@
 
 package fr.myprysm.pipeline.pump;
 
-import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.vertx.core.json.JsonObject;
 
 public abstract class BaseJsonPump<T extends PumpOptions> extends AbstractPump<JsonObject, T> {
-    @Override
-    public ValidationResult validate(JsonObject config) {
-        return ValidationResult.valid();
-    }
-
     @Override
     public Completable shutdown() {
         return Completable.complete();

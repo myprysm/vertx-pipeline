@@ -1,26 +1,20 @@
 = Cheatsheets
 
-[[EventBusSinkOptions]]
-== EventBusSinkOptions
+[[EventBusPumpOptions]]
+== EventBusPumpOptions
 
 
 [cols=">25%,^25%,50%"]
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[address]]`address`|`String`|
++++
+The address to listen on the event bus.
+ <p>
+ The pump can only listen to one topic.
++++
 |[[name]]`name`|`String`|-
-|[[publish]]`publish`|`Array of String`|
-+++
-Publication addresses.
- <p>
- Those publications are broadcasted to each registered consumer.
-+++
-|[[send]]`send`|`Array of String`|
-+++
-Publication addresses.
- <p>
- Those publications are casted to the first registered consumer that get the message.
-+++
 |[[type]]`type`|`String`|-
 |===
 

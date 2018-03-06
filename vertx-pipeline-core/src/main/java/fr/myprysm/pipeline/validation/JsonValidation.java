@@ -29,6 +29,7 @@ import static fr.myprysm.pipeline.validation.ValidationResult.valid;
 import static java.lang.Boolean.TRUE;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * Base JSON validation class.
@@ -286,7 +287,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
     static JsonValidation isString(String field, String message) {
         requireNonNull(field);
         return isNotNull(field)
-                .and(holds(json -> String.class.isAssignableFrom(json.getValue(field).getClass()), message));
+                .and(holds(json -> String.class.isAssignableFrom(json.getValue(field).getClass()) && isNotBlank(json.getString(field)), message));
     }
 
     /**

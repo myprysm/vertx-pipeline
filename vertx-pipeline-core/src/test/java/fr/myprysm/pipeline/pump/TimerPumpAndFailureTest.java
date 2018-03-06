@@ -18,6 +18,7 @@ package fr.myprysm.pipeline.pump;
 
 import fr.myprysm.pipeline.VertxTest;
 import fr.myprysm.pipeline.validation.ValidationException;
+import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
 import io.vertx.core.DeploymentOptions;
@@ -36,7 +37,8 @@ import static fr.myprysm.pipeline.util.JsonHelpers.arr;
 import static fr.myprysm.pipeline.util.JsonHelpers.obj;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class PumpTest implements VertxTest {
+@DisplayName("TimerPump tests + Failure tests")
+public class TimerPumpAndFailureTest implements VertxTest {
 
     public static final String TEST_TO = "test-timer-pump";
     public static final Long TEST_INTERVAL = 5L;
@@ -115,6 +117,11 @@ public class PumpTest implements VertxTest {
         @Override
         public Completable configure(PumpOptions config) {
             return Completable.complete();
+        }
+
+        @Override
+        public ValidationResult validate(JsonObject config) {
+            return ValidationResult.valid();
         }
     }
 }

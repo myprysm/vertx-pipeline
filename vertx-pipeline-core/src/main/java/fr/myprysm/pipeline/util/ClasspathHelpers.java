@@ -16,6 +16,7 @@
 
 package fr.myprysm.pipeline.util;
 
+import fr.myprysm.pipeline.processor.Accumulator;
 import fr.myprysm.pipeline.processor.Processor;
 import fr.myprysm.pipeline.pump.Pump;
 import fr.myprysm.pipeline.sink.Sink;
@@ -32,6 +33,7 @@ public class ClasspathHelpers {
     private static List<String> processorClassNames;
     private static List<String> sinkClassNames;
     private static List<String> pumpClassNames;
+    private static List<String> accumulatorClassName;
 
     private ClasspathHelpers() {
     }
@@ -51,14 +53,25 @@ public class ClasspathHelpers {
         return scan;
     }
 
+    /**
+     * Get the list of classes annotated with {@link Accumulator}
+     * to ensure during startup that those components will be only instanciated once.
+     *
+     * @return the list of classes annotated {@link Accumulator}
+     */
+    public synchronized static List<String> getAccumulatorClassNames() {
+        if (accumulatorClassName == null) {
+            accumulatorClassName = getScan().getNamesOfClassesWithAnnotation(Accumulator.class);
+        }
+        return accumulatorClassName;
+    }
 
-
-//    public static List<Class<Processor>> getProcessors() {
-//        return getProcessorClassNames().stream()
-//                .map(ClasspathHelpers::<Processor>toClass)
-//                .collect(toList());
-//    }
-
+    /**
+     * Get the list of classes implementing {@link Processor}
+     * to validate during startup each element in a pipeline chain are valids.
+     *
+     * @return the list of classes implementing {@link Processor}
+     */
     public synchronized static List<String> getProcessorClassNames() {
         if (processorClassNames == null) {
             processorClassNames = getScan().getNamesOfClassesImplementing(Processor.class);

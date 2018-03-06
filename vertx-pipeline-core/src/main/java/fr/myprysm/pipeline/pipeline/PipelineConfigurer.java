@@ -22,6 +22,7 @@ import fr.myprysm.pipeline.pump.Pump;
 import fr.myprysm.pipeline.pump.PumpOptions;
 import fr.myprysm.pipeline.sink.Sink;
 import fr.myprysm.pipeline.sink.SinkOptions;
+import fr.myprysm.pipeline.util.ClasspathHelpers;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -209,6 +210,13 @@ class PipelineConfigurer extends PipelineOptions {
     private List<Triple<String, String, DeploymentOptions>> prepareProcessorSet(Pair<Integer, JsonObject> configPair) {
         JsonObject config = configPair.getRight();
         ProcessorOptions options = new ProcessorOptions(config);
+
+        // Forces only one instance for accumulators
+        if (ClasspathHelpers.getAccumulatorClassNames().contains(config.getString("type"))) {
+            options.setInstances(1);
+            config.put("loadFactor", 1);
+        }
+
         return IntStream.rangeClosed(1, options.getInstances())
                 .mapToObj(i -> prepareProcessor(config, options, configPair.getLeft(), i))
                 .collect(toList());

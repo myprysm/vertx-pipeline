@@ -177,16 +177,57 @@ class PipelineConfigurerTest implements VertxTest {
         assertThat(to).contains(sink.getRight().getConfig().getString("from"));
     }
 
+    @Test
+    @DisplayName("Accumulator in a pipeline should be single instance")
+    void testAccumulatorIsSingleInstance() {
+        setPipeline("accumulator-single-instance-test");
+        assertThat(sink.getLeft()).isEqualTo("accumulator-single-instance-test-blackhole-sink");
+        assertThat(sink.getMiddle()).isEqualTo("fr.myprysm.pipeline.sink.BlackholeSink");
+        assertThat(pump.getLeft()).isEqualTo("accumulator-single-instance-test-timer-pump");
+        assertThat(pump.getMiddle()).isEqualTo("fr.myprysm.pipeline.pump.TimerPump");
+        assertThat(processors.size()).isEqualTo(3);
+
+        List<Triple<String, String, DeploymentOptions>> processorSet = processors.get(0);
+
+        assertThat(processorSet.size()).isEqualTo(1);
+        Triple<String, String, DeploymentOptions> processor = processorSet.get(0);
+        assertThat(processor.getLeft()).isEqualTo("accumulator-single-instance-test-merge-basic-processor-3-1");
+        assertThat(processor.getMiddle()).isEqualTo("fr.myprysm.pipeline.processor.MergeBasicProcessor");
+        assertThat(processor.getRight().getInstances()).isEqualTo(1);
+    }
+
+    /**
+     * Assert processor configuration ({@link Triple}) against the provided values.
+     *
+     * @param processor the {@link Triple} representing the processor configuration
+     * @param to        the recipient list
+     * @param clazz     the type of the processor
+     * @param baseName  basename of the processor
+     * @param group     the group of the processor (basically the position in the chain)
+     * @param instance  the instance of the processor (basically its index when <code>instances</code> is greater than <code>1</code>)
+     */
     private void assertProcessor(Triple<String, String, DeploymentOptions> processor, JsonArray to, String clazz, String baseName, int group, int instance) {
         assertThat(processor.getLeft()).isEqualTo(baseName + "-" + group + "-" + instance);
         assertThat(processor.getMiddle()).isEqualTo(clazz);
         assertThat(to).contains(processor.getRight().getConfig().getString("from"));
     }
 
+    /**
+     * Build a new {@link PipelineConfigurer} from the input {@link JsonObject}
+     *
+     * @param config the json config
+     * @return the configuration object
+     */
     private PipelineConfigurer fromConfig(JsonObject config) {
         return new PipelineConfigurer(new PipelineOptions(config));
     }
 
+    /**
+     * sets the configuration for test a named pipeline
+     * when no configuration is found, an empty {@link JsonObject} is created.
+     *
+     * @param pipeline the name of the pipeline
+     */
     void setPipeline(String pipeline) {
         JsonObject conf = config.getJsonObject(pipeline);
         if (conf == null) {

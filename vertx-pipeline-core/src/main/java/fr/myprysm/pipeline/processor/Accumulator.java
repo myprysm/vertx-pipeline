@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
  * An accumulator is a kind of {@link Processor} that will accumulate incoming items before
  * flushing them to the next {@link Processor} or to the {@link fr.myprysm.pipeline.sink.Sink}
  * <p>
- * Accumulators are ensured to be deployed as last {@link Processor} in the pipeline chain.
+ * Accumulators are ensured to be instanciated <b>once</b> within a pipeline chain.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

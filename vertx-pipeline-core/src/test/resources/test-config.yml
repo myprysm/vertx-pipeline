@@ -2,17 +2,17 @@ empty:
 
 simple:
   pump:
-    type: fr.myprysm.pipeline.pump.TimerPump
+    type:     fr.myprysm.pipeline.pump.TimerPump
     interval: 10
-    unit: MILLISECONDS
+    unit:     MILLISECONDS
   sink:
     type: fr.myprysm.pipeline.sink.ConsoleSink
 
 basic:
   pump:
-    type: fr.myprysm.pipeline.pump.TimerPump
+    type:     fr.myprysm.pipeline.pump.TimerPump
     interval: 1
-    unit: SECONDS
+    unit:     SECONDS
 
   processors:
     - type: fr.myprysm.pipeline.processor.NoOpProcessor
@@ -22,10 +22,10 @@ basic:
 
 named:
   pump:
-    name: Custom Name
-    type: fr.myprysm.pipeline.pump.TimerPump
+    name:     Custom Name
+    type:     fr.myprysm.pipeline.pump.TimerPump
     interval: 1
-    unit: SECONDS
+    unit:     SECONDS
 
   processors:
     - type: fr.myprysm.pipeline.processor.NoOpProcessor
@@ -37,12 +37,12 @@ named:
 
 multi-instance-processor:
   pump:
-    type: fr.myprysm.pipeline.pump.TimerPump
+    type:     fr.myprysm.pipeline.pump.TimerPump
     interval: 1
-    unit: SECONDS
+    unit:     SECONDS
   processors:
-    - type: fr.myprysm.pipeline.processor.NoOpProcessor
-      instances: 10
+    - type:       fr.myprysm.pipeline.processor.NoOpProcessor
+      instances:  10
   sink:
     type: fr.myprysm.pipeline.sink.ConsoleSink
 
@@ -54,71 +54,100 @@ multi-instance-multi-processor:
     unit: MILLISECONDS
 
   processors:
-    - type: fr.myprysm.pipeline.processor.NoOpProcessor
-      instances: 10
-    - type: fr.myprysm.pipeline.processor.LogProcessor
-      instances: 3
-      level: DEBUG
+    - type:       fr.myprysm.pipeline.processor.NoOpProcessor
+      instances:  10
+    - type:       fr.myprysm.pipeline.processor.LogProcessor
+      instances:  3
+      level:      DEBUG
   sink:
-    type: fr.myprysm.pipeline.sink.FileSink
-    mode: overwrite
+    type:   fr.myprysm.pipeline.sink.FileSink
+    mode:   overwrite
     format: json
 
 logger-test:
   pump:
-    type: fr.myprysm.pipeline.pump.TimerPump
+    type:     fr.myprysm.pipeline.pump.TimerPump
     interval: 50
-    unit: MILLISECONDS
+    unit:     MILLISECONDS
   processors:
-    - type: fr.myprysm.pipeline.processor.LogProcessor
-      level: TRACE
-    - type: fr.myprysm.pipeline.processor.LogProcessor
-      level: DEBUG
-    - type: fr.myprysm.pipeline.processor.LogProcessor
-      level: INFO
-    - type: fr.myprysm.pipeline.processor.LogProcessor
-      level: WARN
-    - type: fr.myprysm.pipeline.processor.LogProcessor
-      level: ERROR
+    - type:   fr.myprysm.pipeline.processor.LogProcessor
+      level:  TRACE
+    - type:   fr.myprysm.pipeline.processor.LogProcessor
+      level:  DEBUG
+    - type:   fr.myprysm.pipeline.processor.LogProcessor
+      level:  INFO
+    - type:   fr.myprysm.pipeline.processor.LogProcessor
+      level:  WARN
+    - type:   fr.myprysm.pipeline.processor.LogProcessor
+      level:  ERROR
   sink:
     type: fr.myprysm.pipeline.sink.ConsoleSink
 
 data-extractor-test:
   pump:
-    type: fr.myprysm.pipeline.pump.TimerPump
-    interval: 50
-    unit: MILLISECONDS
+    type:       fr.myprysm.pipeline.pump.TimerPump
+    interval:   50
+    unit:       MILLISECONDS
   processors:
-    - type: fr.myprysm.pipeline.processor.DataExtractorProcessor
+    - type:         fr.myprysm.pipeline.processor.DataExtractorProcessor
       extract:
-        "counter": "another.field.counter"
-        "timestamp": "that.damn.works"
+        counter:    another.field.counter
+        timestamp:  that.damn.works
   sink:
     type: fr.myprysm.pipeline.sink.ConsoleSink
 
 timer-shutdown-test:
   deployChannel: test-shutdown
   pump:
-    type: fr.myprysm.pipeline.pump.TimerPump
-    interval: 75
-    unit: MILLISECONDS
+    type:       fr.myprysm.pipeline.pump.TimerPump
+    interval:   75
+    unit:       MILLISECONDS
   processors:
-    - type: fr.myprysm.pipeline.processor.TimerEmitterProcessor
+    - type:     fr.myprysm.pipeline.processor.TimerEmitterProcessor
       interval: 2
-      unit: SECONDS
-      signal: TERMINATE
+      unit:     SECONDS
+      signal:   TERMINATE
   sink:
     type: fr.myprysm.pipeline.sink.ConsoleSink
 
 counter-shutdown-test:
   deployChannel: test-shutdown
   pump:
-    type: fr.myprysm.pipeline.pump.TimerPump
+    type:     fr.myprysm.pipeline.pump.TimerPump
     interval: 10
-    unit: MILLISECONDS
+    unit:     MILLISECONDS
+
   processors:
-    - type: fr.myprysm.pipeline.processor.TimerEmitterProcessor
+    - type:     fr.myprysm.pipeline.processor.TimerEmitterProcessor
       interval: 10
-      signal: TERMINATE
+      signal:   TERMINATE
   sink:
     type: fr.myprysm.pipeline.sink.ConsoleSink
+
+accumulator-single-instance-test:
+  deployChannel: accumulator-single-instance
+  pump:
+    type:     fr.myprysm.pipeline.pump.TimerPump
+    interval: 10
+    unit:     MILLISECONDS
+    data:
+      type: timer
+  processors:
+    - type:         fr.myprysm.pipeline.processor.DataExtractorProcessor
+      extract:
+        counter:    counter.tick
+        timestamp:  counter.timestamp
+        type:       type
+    - type:         fr.myprysm.pipeline.processor.ObjectToArrayProcessor
+      fields:       counter
+    - type:         fr.myprysm.pipeline.processor.MergeBasicProcessor
+      instances:    10
+      loadFactor:   3
+      keyToObj:     type
+      mergeArrays: counter
+      sortArrays:
+        path:   counter
+        field:  tick
+        order:  DESC
+  sink:
+    type:     fr.myprysm.pipeline.sink.BlackholeSink

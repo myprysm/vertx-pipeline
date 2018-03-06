@@ -42,6 +42,17 @@ import static fr.myprysm.pipeline.validation.ValidationResult.valid;
 import static io.reactivex.Completable.complete;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * Merge processor that combines incoming events by mapping them from a unique key until it receives a <code>FLUSH</code> signal.
+ * <p>
+ * It provides the capability to merge some array on the incoming message to another one already stored in the accumulator.
+ * It provides also the capability to sort this array based on some field of the objects stored in this array.
+ * This field <b>MUST</b> a <code>string</code> or a <code>number</code>.
+ * If this field is not set on one of the items, <b>the item is discarded</b>.
+ * <p>
+ * When flushing accumulated data, it is also possible to sort the list of accumulated events based on a specific field.
+ */
+@Accumulator
 public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProcessorOptions> {
 
 
@@ -49,12 +60,18 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
     private JsonObject operations;
     private JsonObject onFlush;
 
+    @Override
     public Single<JsonObject> transform(JsonObject input) {
         // Execute those steps as they come and wait for each to be done
         // before starting to ingest the next event.
         return vertx.rxExecuteBlocking(result -> this.internalTransform(input, result), true);
     }
 
+    /**
+     * Processes the incoming event when it is possible
+     * @param input
+     * @param result
+     */
     private void internalTransform(JsonObject input, Future<JsonObject> result) {
         JsonObject data = input.copy();
         getKeyToObj(data).ifPresent(this::insertItem);
@@ -62,6 +79,15 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
         result.fail(new DiscardableEventException(input));
     }
 
+    /**
+     * Inserts the item if it does not already exists.
+     * <p>
+     * When it has not been inserted then it will try to perform the merge arrays operation.
+     * <p>
+     * Once object is inserted or merge is done, then it will try to apply the sort.
+     *
+     * @param keyToObj the paire with key on the left and object on the right.
+     */
     private void insertItem(Pair<Object, JsonObject> keyToObj) {
         JsonObject json = keyToObj.getRight();
         JsonObject original = json;
@@ -82,6 +108,9 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
 
     /**
      * Original is the object that will received the merged array.
+     * <p>
+     * It filters new incoming values that are already contained in the original array
+     * before adding remaining values.
      *
      * @param original the original object to merge the array
      * @param json     the json to export values into original.
@@ -90,19 +119,27 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
         String arrayPath = operations.getString(MERGE_ARRAYS);
         if (arrayPath != null) {
             extractJsonArray(json, arrayPath)
-                .ifPresent(newValues -> {
-                    JsonArray array = extractJsonArray(original, arrayPath).orElse(arr());
-                    List<Object> toAdd = newValues.stream().filter(value -> !array.contains(value)).collect(toList());
+                    .ifPresent(newValues -> {
+                        JsonArray array = extractJsonArray(original, arrayPath).orElse(arr());
+                        List<Object> toAdd = newValues.stream().filter(value -> !array.contains(value)).collect(toList());
 
-                    if (!toAdd.isEmpty()) {
-                        array.addAll(new JsonArray(toAdd));
-                    }
+                        if (!toAdd.isEmpty()) {
+                            array.addAll(new JsonArray(toAdd));
+                        }
 
-                    writeObject(json, arrayPath, array);
-                });
+                        writeObject(json, arrayPath, array);
+                    });
         }
     }
 
+    /**
+     * Sorts the array configured when accumulating values.
+     * <p>
+     * If the provided path does not exists, simply does nothing.
+     * Defaults to "ASC" for order, "string" for comparison.
+     *
+     * @param json the json object to sort array in.
+     */
     private void sortArray(JsonObject json) {
         JsonObject sort = operations.getJsonObject(SORT_ARRAY);
         if (sort != null && canSort(sort)) {
@@ -112,12 +149,12 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
             String type = sort.getString(SORT_TYPE, "string");
 
             extractJsonArray(json, path)
-                .ifPresent(array -> writeObject(json, path,
-                    array.stream()
-                        .filter(item -> item instanceof JsonObject && ((JsonObject) item).getValue(field) != null)
-                        .map(JsonObject.class::cast)
-                        .sorted(this.getComparator(field, type, order)).collect(JsonHelpers::arr, JsonArray::add, JsonArray::addAll)
-                ));
+                    .ifPresent(array -> writeObject(json, path,
+                            array.stream()
+                                    .filter(item -> item instanceof JsonObject && ((JsonObject) item).getValue(field) != null)
+                                    .map(JsonObject.class::cast)
+                                    .sorted(this.getComparator(field, type, order)).collect(JsonHelpers::arr, JsonArray::add, JsonArray::addAll)
+                    ));
         }
     }
 
@@ -164,16 +201,29 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
         return Comparator.nullsLast(comparator);
     }
 
+    /**
+     * Validates that the sort configuration is valid for sortArray operation.
+     *
+     * @param json the configuration
+     * @return <code>true</code> when configuration is considered as valid for sort.
+     */
     private boolean canSort(JsonObject json) {
         return json.getValue(SORT_PATH) instanceof String &&
-            json.getValue(SORT_FIELD) instanceof String &&
-            (json.getValue("order") == null || json.getValue("order") instanceof String);
+                json.getValue(SORT_FIELD) instanceof String &&
+                (json.getValue("order") == null || json.getValue("order") instanceof String);
     }
 
+    /**
+     * Extracts the key in data object, asserts that it is an acceptable type for a key
+     * and returns a pair with the key on the left hand and data on the right hand
+     *
+     * @param data the event
+     * @return an optional pair with key on the left hand and data on the right hand.
+     */
     private Optional<Pair<Object, JsonObject>> getKeyToObj(JsonObject data) {
         return JsonHelpers.extractObject(data, operations.getString(OBJ_TO_KEY))
-            .filter(this::filterAcceptedTypes)
-            .map(value -> Pair.of(value, data));
+                .filter(this::filterAcceptedTypes)
+                .map(value -> Pair.of(value, data));
     }
 
     /**
@@ -183,21 +233,24 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
      * @return true if it can be used as a key
      */
     private boolean filterAcceptedTypes(Object value) {
-        return value != null && (
-            value instanceof String ||
-                value instanceof Long ||
-                value instanceof Integer
-        );
+        return value != null &&
+                (value instanceof String ||
+                        value instanceof Long ||
+                        value instanceof Integer);
     }
 
+    @Override
     protected Completable startVerticle() {
         return complete();
     }
 
+    @Override
     public MergeBasicProcessorOptions readConfiguration(JsonObject config) {
         return new MergeBasicProcessorOptions(config);
     }
 
+
+    @Override
     public Completable configure(MergeBasicProcessorOptions config) {
         operations = config.getOperations();
         onFlush = config.getOnFlush();
@@ -205,6 +258,7 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
         return complete();
     }
 
+    @Override
     public Completable onSignal(Signal signal) {
         return flush();
     }
@@ -218,7 +272,7 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
      */
     public ValidationResult validate(JsonObject config) {
         return MergeBasicProcessorOptionsValidation.validate(config).and(() ->
-            config.getJsonObject("operations").containsKey(OBJ_TO_KEY) ? valid() : invalid("No mapping set."));
+                config.getJsonObject("operations").containsKey(OBJ_TO_KEY) ? valid() : invalid("No mapping set."));
     }
 
     @Override
@@ -231,23 +285,22 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
         JsonObject obj = obj();
         JsonArray arr = arr();
 
+        // Build output anyway, thus even if sort does not apply, then the next component will still receive data.
+        for (JsonObject json : map.values()) {
+            arr.add(json);
+        }
+
         JsonObject sort = onFlush.getJsonObject("sort");
         if (sort != null) {
             String type = sort.getString("type", "string");
             String path = sort.getString("path", "");
             String order = "DESC".equals(sort.getString(SORT_ORDER)) ? "DESC" : "ASC";
+
             if (!EMPTY_STRING.equals(path)) {
                 error("Sorting on {}", type, path, order);
                 List<JsonObject> list = new ArrayList<>(map.values());
                 list.sort(this.getComparator(path, type, order));
                 arr = new JsonArray(list);
-            }
-
-            // If sort is not valid, nothing outputs.
-        } else {
-            error("No sort applied");
-            for (JsonObject json : map.values()) {
-                arr.add(json);
             }
         }
 
@@ -257,6 +310,13 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
         return this.resetMap();
     }
 
+    /**
+     * Resets the map.
+     * <p>
+     * Triggered usually as last operation of a flush
+     *
+     * @return complete when the map has been reset.
+     */
     private Completable resetMap() {
         map = new ConcurrentHashMap<>(configuration().getDefaultCapacity().intValue());
         return complete();

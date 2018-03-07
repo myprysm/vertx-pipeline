@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fr.myprysm.pipeline.processor;
+package fr.myprysm.pipeline.sink;
 
 import fr.myprysm.pipeline.util.Signal;
 import fr.myprysm.pipeline.util.SignalReceiver;
@@ -25,15 +25,7 @@ import io.vertx.reactivex.core.eventbus.MessageConsumer;
 
 import static io.reactivex.Completable.defer;
 
-/**
- * Base {@link Signal} receiver processor.
- * <p>
- * It offers capability to communicate with the {@link fr.myprysm.pipeline.pipeline.PipelineVerticle}
- * as well as the other components in the chain.
- *
- * @param <T> the type of options
- */
-public abstract class ReceiverJsonProcessor<T extends ProcessorOptions> extends BaseJsonProcessor<T> implements SignalReceiver {
+public abstract class ReceiverJsonSink<T extends SinkOptions> extends BaseJsonSink<T> implements SignalReceiver {
     private String controlChannel;
     private MessageConsumer<String> controlChannelConsumer;
 
@@ -52,7 +44,8 @@ public abstract class ReceiverJsonProcessor<T extends ProcessorOptions> extends 
 
     @Override
     protected Completable preShutdown() {
-        return super.preShutdown().andThen(defer(controlChannelConsumer::rxUnregister));
+        return super.preShutdown()
+                .andThen(defer(controlChannelConsumer::rxUnregister));
     }
 
     private void handleSignal(Message<String> message) {
@@ -73,3 +66,4 @@ public abstract class ReceiverJsonProcessor<T extends ProcessorOptions> extends 
         debug("Signal handled.");
     }
 }
+

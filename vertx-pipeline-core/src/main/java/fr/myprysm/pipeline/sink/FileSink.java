@@ -1,17 +1,17 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline.sink;
@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import fr.myprysm.pipeline.sink.FileSinkOptions.Format;
 import fr.myprysm.pipeline.sink.FileSinkOptions.Mode;
-import fr.myprysm.pipeline.util.Signal;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.*;
 import io.reactivex.disposables.Disposable;
@@ -83,7 +82,7 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
     protected Completable startVerticle() {
         disposable = Flowable.create(this, BackpressureStrategy.BUFFER)
                 .buffer(batchSize)
-                .subscribe(this::write, this::handleError);
+                .subscribe(this::write);
         emitter.setDisposable(disposable);
         return complete();
     }
@@ -107,18 +106,14 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
                 .map(o -> {
                     try {
                         return mapper.writeValueAsString(o);
-                    } catch (JsonProcessingException exc) {
-                        // That should never happen.....
-                        info("Error during " + format.name() + " serialization.", exc);
-                        return "{\"error\": \"serialization error\", \"message\": \"" + exc.getMessage().replaceAll("\"", "\\\"") + "\"}";
+                    } catch (JsonProcessingException ignored) {
+                        // we are manipulating json objects.....
+                        error("Error during " + format.name() + " serialization.", ignored);
+                        return "{\"error\": \"serialization error\", \"message\": \"" + ignored.getMessage().replaceAll("\"", "\\\"") + "\"}";
                     }
                 }).collect(joining("\n")) + "\n"); // Ending line to concatenate each buffer when writing.
 
         asyncFile.write(buffer);
-    }
-
-    private void handleError(Throwable throwable) {
-        error("Received an error: ", throwable);
     }
 
     @Override
@@ -183,7 +178,7 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
 
     @Override
     public Completable flush() {
-        return complete();
+        return asyncFile.rxFlush();
     }
 
     @Override
@@ -191,8 +186,5 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
         this.emitter = emitter;
     }
 
-    @Override
-    public Completable onSignal(Signal signal) {
-        return asyncFile.rxFlush();
-    }
+
 }

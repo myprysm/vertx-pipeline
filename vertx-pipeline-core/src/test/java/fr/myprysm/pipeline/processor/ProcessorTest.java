@@ -1,24 +1,22 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline.processor;
 
 import fr.myprysm.pipeline.VertxTest;
-import fr.myprysm.pipeline.processor.BaseJsonProcessor;
-import fr.myprysm.pipeline.processor.ProcessorOptions;
 import fr.myprysm.pipeline.validation.ValidationException;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
@@ -41,6 +39,7 @@ class ProcessorTest implements VertxTest {
 
     public static final String TEST_FROM = "test-from";
     public static final String TEST_TO = "test-to";
+    private static final String VERTICLE = "fr.myprysm.pipeline.processor.NoOpProcessor";
     private static DeploymentOptions CONFIG = new DeploymentOptions()
             .setConfig(new JsonObject()
                     .put("from", TEST_FROM)
@@ -51,25 +50,32 @@ class ProcessorTest implements VertxTest {
 
     public static JsonObject DATA = new JsonObject().put("foo", "bar");
     public static JsonObject FAIL_DATA = new JsonObject().put("fail", true);
+    public static JsonObject THROW_DATA = new JsonObject().put("throw", true);
 
     @Test
     @DisplayName("NoOp emits values as they come")
     void testNoOpProcessorEmitsItems(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
         EventBus eb = vertx.eventBus();
-
+        NoOpProcessor verticle = new NoOpProcessor();
         eb.<JsonObject>consumer(TEST_TO, (message) -> {
-            assertThat(message.body()).isEqualTo(DATA);
-            ctx.completeNow();
+            ctx.verify(() -> {
+                assertThat(verticle.from()).isEqualTo(TEST_FROM);
+                assertThat(verticle.recipients()).containsExactly(TEST_TO);
+
+                assertThat(message.body()).isEqualTo(DATA);
+                ctx.completeNow();
+            });
+
         });
 
-        vertx.deployVerticle("fr.myprysm.pipeline.processor.NoOpProcessor", CONFIG, ctx.succeeding((id) -> eb.send(TEST_FROM, DATA)));
+        vertx.deployVerticle(verticle, CONFIG, ctx.succeeding((id) -> eb.send(TEST_FROM, DATA)));
         ctx.awaitCompletion(1, TimeUnit.SECONDS);
     }
 
     @Test
     @DisplayName("Configuration must be present and must be valid")
     void testProcessorCannotRunWithoutConfiguration(Vertx vertx, VertxTestContext ctx) {
-        vertx.deployVerticle("fr.myprysm.pipeline.processor.NoOpProcessor", (id) -> {
+        vertx.deployVerticle(VERTICLE, (id) -> {
             assertThat(id.failed()).isTrue();
             assertThat(id.cause()).isInstanceOf(ValidationException.class);
             ctx.completeNow();
@@ -85,6 +91,7 @@ class ProcessorTest implements VertxTest {
         });
         vertx.deployVerticle(new FailureProcessor(), CONFIG, ctx.succeeding((id) -> {
             vertx.eventBus().send(TEST_FROM, FAIL_DATA);
+            vertx.eventBus().send(TEST_FROM, THROW_DATA);
             vertx.eventBus().send(TEST_FROM, DATA);
         }));
     }
@@ -93,7 +100,11 @@ class ProcessorTest implements VertxTest {
 
         @Override
         public Single<JsonObject> transform(JsonObject input) {
-            if (input.equals(FAIL_DATA)) return Single.error(new NullPointerException());
+            if (input.equals(FAIL_DATA)) {
+                return Single.error(new NullPointerException());
+            } else if (input.equals(THROW_DATA)) {
+                throw new NullPointerException();
+            }
             return Single.just(input);
         }
 

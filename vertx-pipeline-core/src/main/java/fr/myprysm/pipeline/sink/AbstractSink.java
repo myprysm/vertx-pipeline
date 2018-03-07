@@ -1,17 +1,17 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline.sink;
@@ -21,8 +21,6 @@ import fr.myprysm.pipeline.util.ConfigurableVerticle;
 import fr.myprysm.pipeline.util.Named;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
-import io.reactivex.Flowable;
-import io.reactivex.disposables.Disposable;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.EventBus;
 import io.vertx.reactivex.core.eventbus.Message;
@@ -37,8 +35,6 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
     private ExchangeOptions exchange;
     private String from;
     private MessageConsumer<I> consumer;
-    private Flowable<Message<I>> flowableConsumer;
-    private Disposable subscriber;
 
     @Override
     protected ValidationResult preValidate(JsonObject config) {
@@ -57,25 +53,13 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
 
     @Override
     protected Completable postStartVerticle() {
-        consumer = eventBus().consumer(from());
-        flowableConsumer = consumer.toFlowable();
-        subscriber = flowableConsumer.subscribe(this::consume, this::onMessageError);
+        consumer = eventBus().<I>consumer(from()).handler(this::consume);
         return Completable.complete();
     }
 
-    /**
-     * Prints the received error from the bus.
-     * Should almost never happen.
-     *
-     * @param throwable the error thrown.
-     */
-    private void onMessageError(Throwable throwable) {
-        error("An error occured when receiving message: ", throwable);
-    }
 
     @Override
     protected Completable preShutdown() {
-        subscriber.dispose();
         return consumer.rxUnregister();
     }
 

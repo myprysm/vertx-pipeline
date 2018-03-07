@@ -14,27 +14,20 @@
  * limitations under the License.
  */
 
-package fr.myprysm.pipeline.sink;
+package fr.myprysm.pipeline.processor;
 
-import fr.myprysm.pipeline.validation.JsonValidation;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.vertx.core.json.JsonObject;
 
-import static fr.myprysm.pipeline.validation.JsonValidation.*;
+import static fr.myprysm.pipeline.sink.EventBusSinkOptionsValidation.existsAndMaxTwenty;
+import static fr.myprysm.pipeline.sink.EventBusSinkOptionsValidation.hasAtLeastPublishOrSend;
 
-public interface EventBusSinkOptionsValidation {
+public interface ForkProcessorOptionsValidation {
     static ValidationResult validate(JsonObject config) {
         return hasAtLeastPublishOrSend()
                 .or(existsAndMaxTwenty("publish").and(existsAndMaxTwenty("send")))
                 .apply(config);
     }
 
-    static JsonValidation existsAndMaxTwenty(String field) {
-        return arrayOf(field, String.class).and(isArray(field, 20));
-    }
 
-    static JsonValidation hasAtLeastPublishOrSend() {
-        return existsAndMaxTwenty("publish").and(isNull("send"))
-                .or(existsAndMaxTwenty("send").and(isNull("publish")));
-    }
 }

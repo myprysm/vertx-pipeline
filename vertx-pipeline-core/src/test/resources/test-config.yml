@@ -97,7 +97,7 @@ data-extractor-test:
     type: fr.myprysm.pipeline.sink.ConsoleSink
 
 timer-shutdown-test:
-  deployChannel: test-shutdown
+  deployChannel: test-shutdown-timer
   pump:
     type:       fr.myprysm.pipeline.pump.TimerPump
     interval:   5
@@ -111,7 +111,7 @@ timer-shutdown-test:
     type: fr.myprysm.pipeline.sink.ConsoleSink
 
 counter-shutdown-test:
-  deployChannel: test-shutdown
+  deployChannel: test-shutdown-counter
   pump:
     type:     fr.myprysm.pipeline.pump.TimerPump
     interval: 10
@@ -151,3 +151,32 @@ accumulator-single-instance-test:
         order:  DESC
   sink:
     type:     fr.myprysm.pipeline.sink.BlackholeSink
+
+http-get-processor-test:
+  deployChannel: http-get-processor
+  pump:
+    type: fr.myprysm.pipeline.pump.TimerPump
+    interval: 10
+    unit: MILLISECONDS
+    data:
+      type: timer-http-get-processor
+  processors:
+    - type:             fr.myprysm.pipeline.processor.HttpGetProcessor
+      port:             8271
+      injection:        another.place
+      responseType:     LIST
+      userAgent:        Vert.X Pipeline Test agent
+      url:              /tick/:tick/counter/:counter/type/:type
+      headers:
+        X-Test-Tick:    $event.tick
+        X-Test-Counter: $event.counter
+        X-Test-Type:    $event.type
+        X-Test-Value:   a value
+      queryParams:
+        tick:     $event.tick
+        counter:  $event.counter
+        type:     $event.type
+      pathParams:
+        tick:     $event.tick
+        counter:  $event.counter
+        type:     $event.type

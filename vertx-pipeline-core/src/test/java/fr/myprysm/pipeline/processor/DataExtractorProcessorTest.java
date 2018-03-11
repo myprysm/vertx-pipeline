@@ -1,17 +1,17 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline.processor;
@@ -42,7 +42,7 @@ class DataExtractorProcessorTest implements VertxTest {
             .put("extract", obj()
                     .put("first.path", "a.very.deep.path.down.below")
                     .put("second.path", "foo.bar")
-                    .put("this", "copy")
+                    .put("$event", "copy")
                     .put("non.existing.path", "to.an.empty.container")
             );
     static DeploymentOptions OPTIONS = new DeploymentOptions().setConfig(CONFIG);
@@ -56,12 +56,15 @@ class DataExtractorProcessorTest implements VertxTest {
     void testDataExtractorProcessor(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
         Checkpoint cp = ctx.checkpoint(10);
         vertx.eventBus().<JsonObject>consumer("to", message -> {
-            JsonObject json = message.body();
-            assertThat(JsonHelpers.extractObject(json, "a.very.deep.path.down.below")).hasValue("a secret");
-            assertThat(JsonHelpers.extractObject(json, "foo.bar")).hasValue("another secret");
-            assertThat(JsonHelpers.extractObject(json, "copy")).hasValue(INPUT);
-            assertThat(JsonHelpers.extractObject(json, "to.an.empty.container")).hasValue(obj());
-            cp.flag();
+            ctx.verify(() -> {
+                JsonObject json = message.body();
+                assertThat(JsonHelpers.extractObject(json, "a.very.deep.path.down.below")).hasValue("a secret");
+                assertThat(JsonHelpers.extractObject(json, "foo.bar")).hasValue("another secret");
+                assertThat(JsonHelpers.extractObject(json, "copy")).hasValue(INPUT);
+                assertThat(JsonHelpers.extractObject(json, "to.an.empty.container")).hasValue(obj());
+                cp.flag();
+            });
+
         });
 
         vertx.deployVerticle(VERTICLE, OPTIONS, ctx.succeeding(id -> {

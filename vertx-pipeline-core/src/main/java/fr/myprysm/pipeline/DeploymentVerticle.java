@@ -24,7 +24,6 @@ import fr.myprysm.pipeline.util.Signal;
 import fr.myprysm.pipeline.util.SignalReceiver;
 import io.reactivex.Completable;
 import io.reactivex.Single;
-import io.reactivex.functions.Consumer;
 import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.DeploymentOptions;
@@ -133,12 +132,10 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
         return fromIterable(config.fieldNames())
                 .map(config::getJsonObject)
                 .filter(Objects::nonNull)
-                .map(this::startPipeline)
-                .reduceWith(this::getPipelineDeployments, (list, deployment) -> {
-                    deployment.subscribe((Consumer<Pair<String, String>>) list::add);
-                    return list;
-                }).toCompletable();
-        //.andThen(defer(this::hasRunningPipelines));
+                .flatMapSingle(this::startPipeline)
+                .collect(this::getPipelineDeployments, LinkedList::add)
+                .toCompletable()
+                .andThen(defer(this::hasRunningPipelines));
 
     }
 

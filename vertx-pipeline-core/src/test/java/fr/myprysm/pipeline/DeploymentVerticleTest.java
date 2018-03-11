@@ -16,12 +16,16 @@
 
 package fr.myprysm.pipeline;
 
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
+
+import static fr.myprysm.pipeline.util.JsonHelpers.obj;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class DeploymentVerticleTest implements VertxTest {
 
@@ -34,19 +38,22 @@ class DeploymentVerticleTest implements VertxTest {
         ctx.awaitCompletion(10, TimeUnit.SECONDS);
     }
 
-//    @Test
-//    @Disabled
-//    @DisplayName("Deployment verticle shuts down vertx when requested")
-//    void testDeploymentVerticleShutsDownVertxWhenRequested(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
-//        vertx.deployVerticle("fr.myprysm.pipeline.DeploymentVerticle", new DeploymentOptions().setConfig(obj().put("path", "deployment-should-shutdown.yml")), ctx.succeeding(id -> {
-//            vertx.setTimer(100, timer -> {
-//                ctx.verify(() -> {
-//                    assertThat(vertx.deploymentIDs()).doesNotContain(id);
-//                    ctx.completeNow();
-//                });
-//
-//            });
-//        }));
-//        ctx.awaitCompletion(10, TimeUnit.SECONDS);
-//    }
+    @Test
+    @DisplayName("Deployment verticle shuts down itself when no remaining pipeline")
+    void testDeploymentVerticleShutsDownVertxWhenRequested(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        DeploymentOptions options = new DeploymentOptions().setConfig(obj()
+                .put("path", "deployment-should-shutdown.yml")
+                .put("on.terminate.shutdown", false)
+        );
+        vertx.deployVerticle("fr.myprysm.pipeline.DeploymentVerticle", options, ctx.succeeding(id -> {
+            vertx.setTimer(100, timer -> {
+                ctx.verify(() -> {
+                    assertThat(vertx.deploymentIDs()).doesNotContain(id);
+                    ctx.completeNow();
+                });
+
+            });
+        }));
+        ctx.awaitCompletion(10, TimeUnit.SECONDS);
+    }
 }

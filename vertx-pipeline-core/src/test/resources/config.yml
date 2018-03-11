@@ -1,5 +1,3 @@
-empty:
-
 simple:
   pump:
     type:     fr.myprysm.pipeline.pump.TimerPump
@@ -60,9 +58,7 @@ multi-instance-multi-processor:
       instances:  3
       level:      DEBUG
   sink:
-    type:   fr.myprysm.pipeline.sink.FileSink
-    mode:   overwrite
-    format: json
+    type:   fr.myprysm.pipeline.sink.BlackholeSink
 
 logger-test:
   pump:

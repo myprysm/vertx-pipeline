@@ -1,17 +1,17 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline;
@@ -52,11 +52,16 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
     public static final String UNDEPLOY = "undeploy";
     public static final String PIPELINE_VERTICLE = "fr.myprysm.pipeline.pipeline.PipelineVerticle";
     public static final String DEPLOYMENT_ERROR = "Unable to deploy pipeline";
+    public static final String CONFIG_PATH = "path";
+    public static final String CONFIG_ON_TERMINATE_SHUTDOWN = "on.terminate.shutdown";
 
     private LinkedList<Pair<String, String>> pipelineDeployments = new LinkedList<>();
     private String deployChannel = UUID.randomUUID().toString();
     private EventBus eventBus;
     private MessageConsumer<String> consumer;
+
+    private Boolean onTerminateShutdown;
+    private String path;
 
     private static boolean runningPipeline(Pair<String, String> dep) {
         return !DEPLOYMENT_ERROR.equals(dep.getValue());
@@ -64,6 +69,9 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
 
     @Override
     public void start(Future<Void> started) {
+        path = config().getString(CONFIG_PATH, "config.yml");
+        onTerminateShutdown = config().getBoolean(CONFIG_ON_TERMINATE_SHUTDOWN, true);
+
         readConfiguration()
                 .map(this::prepareConfiguration)
                 .flatMap(this::loadClasses)
@@ -84,7 +92,7 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
      */
     private JsonObject prepareConfiguration(JsonObject json) {
         eventBus = vertx.eventBus();
-        consumer = eventBus.<String>consumer(deployChannel, this::handleSignal);
+        consumer = eventBus.consumer(deployChannel, this::handleSignal);
         json.fieldNames().forEach(name ->
                 json.getJsonObject(name)
                         .put("name", name)
@@ -102,8 +110,10 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
                     .flatMapCompletable(this::stopPipeline)
                     .andThen(defer(this::hasRunningPipelines))
                     .doOnError(throwable -> {
-                        if (throwable instanceof DeploymentException) {
+                        if (throwable instanceof DeploymentException && onTerminateShutdown) {
                             vertx.close();
+                        } else {
+                            vertx.undeploy(deploymentID());
                         }
                     })
                     .subscribe(
@@ -169,7 +179,7 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
                 .setType("file")
                 .setFormat("yaml")
                 .setConfig(new JsonObject()
-                        .put("path", "config.yml")
+                        .put("path", path)
                 );
 
         ConfigRetriever retriever = ConfigRetriever.create(vertx, new ConfigRetrieverOptions()

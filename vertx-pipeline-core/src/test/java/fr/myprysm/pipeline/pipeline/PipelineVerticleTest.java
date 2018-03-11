@@ -1,17 +1,17 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline.pipeline;
@@ -100,7 +100,7 @@ class PipelineVerticleTest extends ConsoleTest implements VertxTest {
     @DisplayName("Test timer shutdown signal triggers pipeline verticle signal.")
     void testTimerShutdown(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
         DeploymentOptions options = getDeploymentOptions("timer-shutdown-test");
-        vertx.eventBus().<String>consumer("test-shutdown", message -> {
+        vertx.eventBus().<String>consumer("test-shutdown-timer", message -> {
             assertThat(message.headers().get("action")).isEqualTo("undeploy");
             assertThat(message.body()).isEqualTo("timer-shutdown-test");
             ctx.completeNow();
@@ -114,7 +114,7 @@ class PipelineVerticleTest extends ConsoleTest implements VertxTest {
     @DisplayName("Test counter shutdown signal triggers pipeline verticle signal.")
     void testCounterShutdown(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
         DeploymentOptions options = getDeploymentOptions("counter-shutdown-test");
-        vertx.eventBus().<String>consumer("test-shutdown", message -> {
+        vertx.eventBus().<String>consumer("test-shutdown-counter", message -> {
             assertThat(message.headers().get("action")).isEqualTo("undeploy");
             assertThat(message.body()).isEqualTo("counter-shutdown-test");
             ctx.completeNow();

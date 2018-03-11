@@ -1,17 +1,17 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline.pump;
@@ -21,7 +21,6 @@ import fr.myprysm.pipeline.util.ConfigurableVerticle;
 import fr.myprysm.pipeline.util.RoundRobin;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
-import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.EventBus;
@@ -77,11 +76,15 @@ abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVertic
     }
 
     /**
-     * Handles source error emission.
+     * Delegate to handle errors properly.
+     * <p>
+     * Default behaviour is to log as <code>ERROR</code> anything.
+     * <p>
+     * Through this method you can handle the errors of all your pumps.
      *
-     * @param throwable the error thrown by the {@link Flowable}
+     * @param throwable the error
      */
-    private void handleError(Throwable throwable) {
+    protected void handleError(Throwable throwable) {
         LOG.error("[" + name() + "] encountered an error: ", throwable);
 
     }
@@ -114,14 +117,17 @@ abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVertic
         return exchange;
     }
 
-    @Override
+    /**
+     * Address list of this pump.
+     *
+     * @return the address list of this pump.
+     */
     public List<String> recipients() {
         return recipients;
     }
 
-    @Override
-    public void publish(O item) {
-        LOG.debug("Sending item: {}", item.toString());
+    private void publish(O item) {
+        debug("Sending item: {}", item.toString());
         eventBus().send(to(), item);
     }
 

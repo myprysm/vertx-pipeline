@@ -1,17 +1,17 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline.processor;
@@ -76,17 +76,30 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
         return consumer.rxUnregister();
     }
 
-    @Override
+
+    /**
+     * Provides the address to publish an item
+     *
+     * @return the address to publish.
+     */
     public String to() {
         return to.next();
     }
 
-    @Override
+    /**
+     * Provides the address this processor listens to.
+     *
+     * @return the address.
+     */
     public String from() {
         return from;
     }
 
-    @Override
+    /**
+     * Address list of this processor.
+     *
+     * @return the address list of this processor.
+     */
     public List<String> recipients() {
         return recipients;
     }
@@ -101,19 +114,31 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
         return exchange;
     }
 
-    @Override
-    public void consume(Message<I> item) {
+    private void consume(Message<I> item) {
         I input = item.body();
         LOG.debug("[{}] Message received: {}", name(), input);
 
         try {
-            transform(input).subscribe(this::publish, this::handleError);
+            transform(input).subscribe(this::publish, throwable -> this.handleError(item, throwable));
         } catch (Exception e) {
+            handleError(item, e);
             error("An error occurred while processing item: ", e);
         }
     }
 
-    private void handleError(Throwable throwable) {
+
+    /**
+     * Delegate to handle errors properly.
+     * <p>
+     * Default behaviour is to log as <code>INFO</code> all errors flagged as <code>DiscardableEventException</code>,
+     * as <code>ERROR</code> anything else.
+     * <p>
+     * Through this method you can handle the errors of all your processors as you want.
+     *
+     * @param item      the message that provoked the error
+     * @param throwable the error
+     */
+    protected void handleError(Message<I> item, Throwable throwable) {
         if (throwable instanceof DiscardableEventException) {
             if (LOG.isInfoEnabled()) {
                 info("Discarding event: {}", ((DiscardableEventException) throwable).getEvent());
@@ -123,8 +148,7 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
         }
     }
 
-    @Override
-    public void publish(O item) {
+    private void publish(O item) {
         LOG.debug("[{}] Emitting message: {}", name(), item);
         eventBus().send(to(), item);
     }

@@ -63,19 +63,15 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
         return consumer.rxUnregister();
     }
 
-    /**
-     * The name of this pump.
-     *
-     * @return the name of this pump.
-     */
+    @Override
     public String name() {
         return name;
     }
 
     /**
-     * The address to receive messages.
+     * Provides the address this sink listens to.
      *
-     * @return the address to receive messages.
+     * @return the address.
      */
     public String from() {
         return from;
@@ -91,15 +87,34 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
         return exchange;
     }
 
-    @Override
-    public void consume(Message<I> item) {
+    private void consume(Message<I> item) {
         I input = item.body();
         LOG.debug("Message received: {}", input);
         try {
             drain(input);
         } catch (Exception exc) {
-            error("An error occured while draining item.", exc);
+            handleError(item, exc);
         }
+    }
+
+    /**
+     * Delegate to handle errors properly.
+     * <p>
+     * Default behaviour is to log as <code>ERROR</code> anything.
+     * <p>
+     * Through this method you can handle the errors of all your sinks.
+     *
+     * @param item      the message that provoked the error
+     * @param throwable the error
+     */
+    protected void handleError(Message<I> item, Throwable throwable) {
+        if (item.body() != null) {
+            error("An error occured while draining item {}", item.body());
+            error("Error is: ", throwable);
+        } else {
+            error("An error occured while draining item.", throwable);
+        }
+
     }
 
     @Override

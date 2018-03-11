@@ -112,11 +112,6 @@ public class HttpGetRequestProcessor extends BaseJsonProcessor<HttpGetRequestPro
             }
         }
 
-        // We are not on "/", remove trailing "/"
-        if (builder.charAt(builder.length() - 1) == '/') {
-            builder.deleteCharAt(builder.length() - 1);
-        }
-
         return builder.toString();
     }
 

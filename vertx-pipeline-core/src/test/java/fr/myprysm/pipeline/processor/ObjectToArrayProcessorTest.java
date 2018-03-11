@@ -1,17 +1,17 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline.processor;
@@ -53,7 +53,7 @@ class ObjectToArrayProcessorTest implements VertxTest {
 
     @Test
     @DisplayName("Testing transformations with object to array")
-    void testDataExtractorProcessor(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+    void testObjectToArrayProcessor(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
         Checkpoint cp = ctx.checkpoint(10);
         vertx.eventBus().<JsonObject>consumer("to", message -> {
             cp.flag();
@@ -77,5 +77,27 @@ class ObjectToArrayProcessorTest implements VertxTest {
 
         ctx.awaitCompletion(2, TimeUnit.SECONDS);
     }
+
+    @Test
+    @DisplayName("ObjectToArray does nothing when already an array")
+    void testObjectToArrayDoesNothingWhenAlreadyAnArray(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        Checkpoint cp = ctx.checkpoint(10);
+        vertx.eventBus().<JsonObject>consumer("to", message -> {
+            cp.flag();
+            JsonObject json = message.body();
+            Optional<Object> opt = JsonHelpers.extractObject(json, "object");
+            assertThat(opt).hasValue(arr().add(obj().put("foo", "bar")));
+
+        });
+
+        vertx.deployVerticle(VERTICLE, OPTIONS, ctx.succeeding(id -> {
+            for (int i = 0, max = 15; i < max; i++) {
+                vertx.eventBus().send("from", obj().put("object", arr().add(obj().put("foo", "bar"))));
+            }
+        }));
+
+        ctx.awaitCompletion(2, TimeUnit.SECONDS);
+    }
+
 
 }

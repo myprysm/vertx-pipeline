@@ -379,8 +379,9 @@ public class HttpGetRequestProcessorOptions extends ProcessorOptions {
      *
      * @param responseType the response type
      */
-    public void setResponseType(ResponseType responseType) {
+    public HttpGetRequestProcessorOptions setResponseType(ResponseType responseType) {
         this.responseType = responseType;
+        return this;
     }
 
     /**

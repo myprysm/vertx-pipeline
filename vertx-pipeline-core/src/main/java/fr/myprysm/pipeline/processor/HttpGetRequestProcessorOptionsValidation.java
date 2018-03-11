@@ -33,7 +33,7 @@ public interface HttpGetRequestProcessorOptionsValidation {
                         .and(validUrl())
                         .and(validInjection())
                         .and(validUserAgent())
-                        .and(isEnum("onError", OnError.class))
+                        .and(isNull("onError").or(isEnum("onError", OnError.class)))
                         .apply(config);
     }
 

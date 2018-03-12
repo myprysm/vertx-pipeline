@@ -1,0 +1,12 @@
+deployment-should-shutdown:
+  pump:
+    type: fr.myprysm.pipeline.pump.TimerPump
+    interval: 5
+    unit:     MILLISECONDS
+
+  processors:
+    - type: fr.myprysm.pipeline.processor.CounterEmitterProcessor
+      interval: 5
+      signal:   TERMINATE
+  sink:
+    type: fr.myprysm.pipeline.sink.BlackholeSink

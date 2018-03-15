@@ -236,11 +236,8 @@ to ensure a proper run and the pipeline stability.
 
 ## In the pipe
 
-- [ ] `ForkProcessor`                   - duplicates the signal to another `pipeline`
+- [x] `ForkProcessor`                   - duplicates the signal to another `pipeline` or any other `MessageConsumer`
 - [x] `DataExtractorProcessor`          - extracts and transform input event to a new brand output event
-- [ ] `KeyToValueListProcessor`         - maps some fields of the input as key and some other field (may be the input) as value in a list.
-                                        this processor is an accumulator, thus it needs to receive a signal to flush its data.
-                                        key as well as value can be any kind of object but a `null` value.
 - [x] `ObjectToArrayProcessor`          - transforms a field into an array. When field is null, array is empty, 
                                         otherwise array contains the previous field value
 - [x] `CounterSignalEmitterProcessor`   - Emits a signal to the `PipelineVerticle` controller every n received events 
@@ -254,8 +251,7 @@ to ensure a proper run and the pipeline stability.
 
 - [ ] Pipeline pause/resume
 - [ ] Pipeline hot redeployment
-- [ ] `PumpAndSink` - output to your input!! (thus web handlers can be quickly configured and their behaviour described)
-- [ ] Metrics pipeline - know you throughput and your success rate
+- [x] Pipeline metrics - know you throughput
 - [ ] Web interface - check the status, reconfigure
 - [ ] More processors...
 - [ ] More sinks (database, web, ...)

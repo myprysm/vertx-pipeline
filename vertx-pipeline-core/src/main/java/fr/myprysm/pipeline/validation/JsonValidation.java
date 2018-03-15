@@ -1,17 +1,17 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline.validation;
@@ -22,6 +22,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import static fr.myprysm.pipeline.util.JsonHelpers.extractObject;
 import static fr.myprysm.pipeline.validation.ValidationResult.invalid;
@@ -288,6 +289,38 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
         requireNonNull(field);
         return isNotNull(field)
                 .and(holds(json -> String.class.isAssignableFrom(json.getValue(field).getClass()) && isNotBlank(json.getString(field)), message));
+    }
+
+    /**
+     * Validates that <code>field</code> matches <code>pattern</code>.
+     * <p>
+     * Pattern is expected as a regular expression.
+     *
+     * @param field   the name of the field
+     * @param pattern the pattern to test
+     * @return validation result combinator
+     */
+    static JsonValidation matches(String field, String pattern) {
+        requireNonNull(field);
+        requireNonNull(pattern);
+        return matches(field, pattern, message(field, "does not match pattern " + pattern));
+    }
+
+    /**
+     * Validates that <code>field</code> matches <code>pattern</code>.
+     * <p>
+     * Pattern is expected as a regular expression.
+     *
+     * @param field   the name of the field
+     * @param pattern the pattern to test
+     * @param message the custom message for validation
+     * @return validation result combinator
+     */
+    static JsonValidation matches(String field, String pattern, String message) {
+        requireNonNull(field);
+        requireNonNull(pattern);
+        return isString(field)
+                .and(holds(json -> Pattern.matches(pattern, json.getString(field)), message));
     }
 
     /**

@@ -95,6 +95,18 @@ The type of the processor.
 +++
 |===
 
+[[DeploymentVerticleOptions]]
+== DeploymentVerticleOptions
+
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[jmxEnabled]]`jmxEnabled`|`Boolean`|-
+|[[metrics]]`metrics`|`Boolean`|-
+|===
+
 [[EventBusPumpOptions]]
 == EventBusPumpOptions
 

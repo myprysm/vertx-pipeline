@@ -16,6 +16,8 @@
 
 package fr.myprysm.pipeline.pump;
 
+import fr.myprysm.pipeline.metrics.MetricsProvider;
+import fr.myprysm.pipeline.metrics.PumpMetrics;
 import fr.myprysm.pipeline.pipeline.ExchangeOptions;
 import fr.myprysm.pipeline.util.ConfigurableVerticle;
 import fr.myprysm.pipeline.util.RoundRobin;
@@ -39,6 +41,7 @@ abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVertic
     private Iterator<String> to;
     private EventBus eventBus;
     private Disposable source;
+    private PumpMetrics metrics;
 
     @Override
     protected ValidationResult preValidate(JsonObject config) {
@@ -60,12 +63,13 @@ abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVertic
         recipients = exchange.getTo();
         to = RoundRobin.of(recipients).iterator();
         eventBus = vertx.eventBus();
+        metrics = MetricsProvider.forPump(this);
         return config;
     }
 
     @Override
     protected Completable postStartVerticle() {
-        source = pump().subscribe(this::publish, this::handleError);
+        source = pump().subscribe(this::publish, this::handleInternalError);
         return Completable.complete();
     }
 
@@ -73,6 +77,11 @@ abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVertic
     protected Completable preShutdown() {
         source.dispose();
         return Completable.complete();
+    }
+
+    private void handleInternalError(Throwable throwable) {
+        metrics.eventError();
+        handleError(throwable);
     }
 
     /**
@@ -129,6 +138,7 @@ abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVertic
     private void publish(O item) {
         debug("Sending item: {}", item.toString());
         eventBus().send(to(), item);
+        metrics.eventSent();
     }
 
 

@@ -16,6 +16,8 @@
 
 package fr.myprysm.pipeline.sink;
 
+import fr.myprysm.pipeline.metrics.MetricsProvider;
+import fr.myprysm.pipeline.metrics.SinkMetrics;
 import fr.myprysm.pipeline.pipeline.ExchangeOptions;
 import fr.myprysm.pipeline.util.ConfigurableVerticle;
 import fr.myprysm.pipeline.util.Named;
@@ -35,6 +37,7 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
     private ExchangeOptions exchange;
     private String from;
     private MessageConsumer<I> consumer;
+    private SinkMetrics metrics;
 
     @Override
     protected ValidationResult preValidate(JsonObject config) {
@@ -48,6 +51,7 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
         name = options.getName();
         eventBus = vertx.eventBus();
         from = exchange.getFrom();
+        metrics = MetricsProvider.forSink(this);
         return config;
     }
 
@@ -88,13 +92,19 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
     }
 
     private void consume(Message<I> item) {
+        metrics.eventReceived();
         I input = item.body();
         LOG.debug("Message received: {}", input);
         try {
             drain(input);
         } catch (Exception exc) {
-            handleError(item, exc);
+            handleInternalError(item, exc);
         }
+    }
+
+    private void handleInternalError(Message<I> item, Exception exc) {
+        metrics.eventError();
+        handleError(item, exc);
     }
 
     /**
@@ -108,6 +118,7 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
      * @param throwable the error
      */
     protected void handleError(Message<I> item, Throwable throwable) {
+
         if (item.body() != null) {
             error("An error occured while draining item {}", item.body());
             error("Error is: ", throwable);

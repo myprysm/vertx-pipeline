@@ -17,6 +17,8 @@
 package fr.myprysm.pipeline.processor;
 
 
+import fr.myprysm.pipeline.metrics.MetricsProvider;
+import fr.myprysm.pipeline.metrics.ProcessorMetrics;
 import fr.myprysm.pipeline.pipeline.ExchangeOptions;
 import fr.myprysm.pipeline.util.ConfigurableVerticle;
 import fr.myprysm.pipeline.util.RoundRobin;
@@ -48,6 +50,7 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
     private MessageConsumer<I> consumer;
     private EventBus eventBus;
     private String from;
+    private ProcessorMetrics metrics;
 
     @Override
     protected ValidationResult preValidate(JsonObject config) {
@@ -56,12 +59,12 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
 
     @Override
     protected JsonObject preConfiguration(JsonObject config) {
-        ProcessorOptions options = new ProcessorOptions(config);
         exchange = new ExchangeOptions(config);
         from = exchange.getFrom();
         recipients = exchange.getTo();
         to = RoundRobin.of(recipients).iterator();
         eventBus = vertx.eventBus();
+        metrics = MetricsProvider.forProcessor(this);
         return config;
     }
 
@@ -115,20 +118,26 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
     }
 
     private void consume(Message<I> item) {
+        metrics.eventReceived();
         I input = item.body();
         LOG.debug("[{}] Message received: {}", name(), input);
 
         try {
-            transform(input).subscribe(this::publish, throwable -> this.handleError(item, throwable));
+            transform(input).subscribe(this::publish, throwable -> this.handleInternalError(item, throwable));
         } catch (Exception e) {
-            handleError(item, e);
+            handleInternalError(item, e);
             error("An error occurred while processing item: ", e);
         }
     }
 
+    private void handleInternalError(Message<I> item, Throwable throwable) {
+        metrics.eventError();
+        this.handleError(item, throwable);
+    }
+
 
     /**
-     * Delegate to handle errors properly.
+     * Delegate to handle errors.
      * <p>
      * Default behaviour is to log as <code>INFO</code> all errors flagged as <code>DiscardableEventException</code>,
      * as <code>ERROR</code> anything else.
@@ -151,6 +160,7 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
     private void publish(O item) {
         LOG.debug("[{}] Emitting message: {}", name(), item);
         eventBus().send(to(), item);
+        metrics.eventSent();
     }
 
     @Override

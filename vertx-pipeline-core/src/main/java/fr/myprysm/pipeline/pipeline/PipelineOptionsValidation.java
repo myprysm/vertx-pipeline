@@ -1,43 +1,45 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline.pipeline;
 
-import fr.myprysm.pipeline.util.ClasspathHelpers;
 import fr.myprysm.pipeline.validation.JsonValidation;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Observable;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.lang3.tuple.Pair;
 
-import static fr.myprysm.pipeline.util.ClasspathHelpers.getProcessorClassNames;
-import static fr.myprysm.pipeline.util.ClasspathHelpers.getPumpClassNames;
-import static fr.myprysm.pipeline.util.ClasspathHelpers.getSinkClassNames;
+import static fr.myprysm.pipeline.util.ClasspathHelpers.*;
 import static fr.myprysm.pipeline.util.JsonHelpers.extractString;
 import static fr.myprysm.pipeline.validation.JsonValidation.*;
 
 public interface PipelineOptionsValidation {
 
     static ValidationResult validate(JsonObject config) {
-        return hasPump().and(pumpExists())
+        return nameIsOnlyCharactersAndPunctuation()
+                .and(hasPump().and(pumpExists()))
                 .and(hasSink().and(sinkExists()))
                 .and(isNull("processors")
                         .or(isArray("processors").and(processorsExist()))
                 )
                 .apply(config);
+    }
+
+    static JsonValidation nameIsOnlyCharactersAndPunctuation() {
+        return matches("name", "[a-zA-Z.-]+", "Name should contain only letters, dashes and dots.");
     }
 
     static JsonValidation pumpExists() {

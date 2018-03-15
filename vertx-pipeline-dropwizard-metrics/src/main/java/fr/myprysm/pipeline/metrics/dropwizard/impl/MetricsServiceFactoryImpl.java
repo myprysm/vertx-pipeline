@@ -14,28 +14,15 @@
  * limitations under the License.
  */
 
-package fr.myprysm.pipeline.util;
+package fr.myprysm.pipeline.metrics.dropwizard.impl;
 
-import fr.myprysm.pipeline.pipeline.ExchangeOptions;
-import io.vertx.reactivex.core.eventbus.EventBus;
+import fr.myprysm.pipeline.DeploymentVerticleOptions;
+import fr.myprysm.pipeline.metrics.MetricsService;
+import fr.myprysm.pipeline.spi.MetricsServiceFactory;
 
-/**
- * A verticle marked as <code>Stream</code>
- * should provide an interface to Vert.x {@link EventBus}.
- */
-public interface Stream extends Named {
-
-    /**
-     * Returns the addresses of the stream object
-     *
-     * @return bound addresses
-     */
-    ExchangeOptions exchange();
-
-    /**
-     * Vert.x {@link EventBus}
-     *
-     * @return the event bus
-     */
-    EventBus eventBus();
+public class MetricsServiceFactoryImpl implements MetricsServiceFactory {
+    @Override
+    public MetricsService create(DeploymentVerticleOptions opts) {
+        return new MetricsServiceImpl(opts);
+    }
 }

@@ -53,7 +53,7 @@ class PipelineConfigurer extends PipelineOptions {
     private Triple<String, String, DeploymentOptions> pump;
 
 
-    PipelineConfigurer(PipelineOptions config) {
+    public PipelineConfigurer(JsonObject config) {
         super(config);
     }
 
@@ -129,7 +129,7 @@ class PipelineConfigurer extends PipelineOptions {
 
     /**
      * Travels from {@link Sink} to {@link Pump} through {@link Processor}s
-     * to configure {@link fr.myprysm.pipeline.util.Publisher}s address lists.
+     * to configure address lists.
      * <p>
      * It will reuse all the generated listening addresses to bind them
      * on the publisher side.
@@ -179,7 +179,9 @@ class PipelineConfigurer extends PipelineOptions {
         if (getSink() != null && !getSink().isEmpty()) {
             JsonObject config = getSink();
             SinkOptions options = new SinkOptions(config);
-            String name = prepareName(getName(), options.getName(), SinkOptions.DEFAULT_NAME, options.getType(), "sink");
+            // Get the position of the sink in the pipeline to allow easier ordering for metrics
+            int position = getProcessors().size() + 1;
+            String name = prepareName(getName(), options.getName(), SinkOptions.DEFAULT_NAME, options.getType(), "sink", "-" + position + "-1");
             sink = Triple.of(name, options.getType(), getDeploymentOptions(config, name, true));
         }
     }
@@ -254,7 +256,7 @@ class PipelineConfigurer extends PipelineOptions {
         if (getPump() != null && !getPump().isEmpty()) {
             JsonObject config = getPump();
             PumpOptions options = new PumpOptions(config);
-            String name = prepareName(getName(), options.getName(), PumpOptions.DEFAULT_NAME, options.getType(), "pump");
+            String name = prepareName(getName(), options.getName(), PumpOptions.DEFAULT_NAME, options.getType(), "pump", "-0-1");
             pump = Triple.of(name, options.getType(), getDeploymentOptions(config, name, false));
         }
     }
@@ -297,18 +299,25 @@ class PipelineConfigurer extends PipelineOptions {
      * @param defaultName the default name
      * @param type        the class name
      * @param component   one of "sink", "pump", "processor"
+     * @param position    the position of the the component in the chain, must be something like "-POSITION-INSTANCE".
      * @return a formatted and standardised name for the verticle
      */
-    private String prepareName(String prefix, String name, String defaultName, String type, String component, String suffix) {
-        String finalName;
-        if (!name.equals(defaultName)) {
-            finalName = concatNames(prefix, name, component);
-        } else {
-            finalName = concatNames(prefix, type.substring(lastIndexOf(type, ".") + 1));
+    private String prepareName(String prefix, String name, String defaultName, String type, String component, String position) {
+        String finalName = toKebabCase(prefix);
+
+        if (isNotBlank(position)) {
+            finalName += position;
         }
 
-        if (isNotBlank(suffix)) {
-            finalName += suffix;
+        if (finalName.charAt(finalName.length() - 1) != '-') {
+            finalName += "-";
+        }
+
+
+        if (!name.equals(defaultName)) {
+            finalName += concatNames(name, component);
+        } else {
+            finalName += concatNames(type.substring(lastIndexOf(type, ".") + 1));
         }
 
         return finalName;

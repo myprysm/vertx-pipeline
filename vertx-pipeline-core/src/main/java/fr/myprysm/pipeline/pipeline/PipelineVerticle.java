@@ -42,9 +42,8 @@ import java.util.List;
 import static io.reactivex.Completable.complete;
 import static io.reactivex.Completable.defer;
 import static io.reactivex.Observable.fromIterable;
-import static strman.Strman.toKebabCase;
 
-public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> implements SignalEmitter, SignalReceiver {
+public class PipelineVerticle extends ConfigurableVerticle<PipelineConfigurer> implements SignalEmitter, SignalReceiver {
     private static final Logger LOG = LoggerFactory.getLogger(PipelineVerticle.class);
     /**
      * Pair with on the left side the name of the {@link fr.myprysm.pipeline.pump.Pump}
@@ -61,8 +60,6 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
 
     private EventBus eventBus;
 
-    private String name;
-    private PipelineConfigurer config;
     private String deployChannel;
     private String controlChannel;
     private MessageConsumer<String> controlChannelConsumer;
@@ -73,16 +70,14 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
     }
 
     @Override
-    public PipelineOptions readConfiguration(JsonObject config) {
-        return new PipelineOptions(config);
+    public PipelineConfigurer readConfiguration(JsonObject config) {
+        return new PipelineConfigurer(config);
     }
 
     @Override
-    public Completable configure(PipelineOptions config) {
-        this.name = toKebabCase(config.getName());
-        this.config = new PipelineConfigurer(config);
-        deployChannel = this.config.getDeployChannel();
-        controlChannel = this.config.getControlChannel();
+    public Completable configure(PipelineConfigurer config) {
+        deployChannel = config.getDeployChannel();
+        controlChannel = config.getControlChannel();
         eventBus = vertx.eventBus();
         controlChannelConsumer = eventBus.consumer(controlChannel, this::handleSignal);
         return complete();
@@ -100,7 +95,7 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
     }
 
     private Completable notifyUndeploy() {
-        eventBus().publish(deployChannel, name, new DeliveryOptions().addHeader("action", "undeploy"));
+        eventBus().publish(deployChannel, name(), new DeliveryOptions().addHeader("action", "undeploy"));
         return complete();
     }
 
@@ -118,13 +113,13 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
     }
 
     private Completable startPump() {
-        return startVerticle(config.getPumpDeployment())
+        return startVerticle(configuration().getPumpDeployment())
                 .doOnSuccess(this::setPumpDeployment)
                 .toCompletable();
     }
 
     private Completable startProcessors() {
-        LinkedList<List<Triple<String, String, DeploymentOptions>>> deployments = config.getProcessorDeployments();
+        LinkedList<List<Triple<String, String, DeploymentOptions>>> deployments = configuration().getProcessorDeployments();
         if (deployments.isEmpty()) {
             return complete();
         }
@@ -141,7 +136,7 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
                 .doOnEach(this::logDeployProcessor)
                 .flatMapSingle(this::startVerticle)
                 .collect(ArrayList::new, (list, deployment) -> {
-                    debug("Component [{}]: {}", deployment.getLeft(), deployment.getRight());
+                    debug("Component {}: {}", deployment.getLeft(), deployment.getRight());
                     list.add(deployment);
                 });
 
@@ -149,7 +144,7 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
     }
 
     private Completable startSink() {
-        return startVerticle(config.getSinkDeployment())
+        return startVerticle(configuration().getSinkDeployment())
                 .doOnSuccess(this::setSinkDeployment)
                 .toCompletable();
     }
@@ -158,7 +153,7 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineOptions> impl
     private Single<Pair<String, String>> startVerticle(Triple<String, String, DeploymentOptions> deployment) {
         return vertx.rxDeployVerticle(deployment.getMiddle(), deployment.getRight())
                 .map(id -> Pair.of(deployment.getLeft(), id))
-                .doOnSuccess(dep -> info("Deployed component [{}]...", dep.getRight()));
+                .doOnSuccess(dep -> info("Deployed component {}...", dep.getRight()));
     }
 
 

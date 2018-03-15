@@ -57,7 +57,7 @@ public class SinkTest extends ConsoleTest implements VertxTest {
         vertx.deployVerticle("fr.myprysm.pipeline.sink.ConsoleSink", CONFIG, ctx.succeeding(id -> {
             vertx.eventBus().send(TEST_FROM, DATA);
             vertx.setTimer(100, timer -> {
-                assertConsoleContainsLine(PATTERN_CONSOLE_OUTPUT);
+                ctx.verify(() -> assertConsoleContainsLine(PATTERN_CONSOLE_OUTPUT));
                 ctx.completeNow();
             });
         }));
@@ -68,7 +68,7 @@ public class SinkTest extends ConsoleTest implements VertxTest {
     @DisplayName("Configuration must be present and must be valid")
     void testSinkCannotRunWithoutConfiguration(Vertx vertx, VertxTestContext ctx) {
         vertx.deployVerticle("fr.myprysm.pipeline.sink.ConsoleSink", ctx.failing(error -> {
-            assertThat(error).isInstanceOf(ValidationException.class);
+            ctx.verify(() -> assertThat(error).isInstanceOf(ValidationException.class));
             ctx.completeNow();
         }));
     }
@@ -81,7 +81,7 @@ public class SinkTest extends ConsoleTest implements VertxTest {
             vertx.eventBus().send(TEST_FROM, FAIL_DATA);
             vertx.eventBus().send(TEST_FROM, DATA);
             vertx.setTimer(100, timer -> {
-                assertConsoleContainsLine(PATTERN_CONSOLE_OUTPUT);
+                ctx.verify(() -> assertConsoleContainsLine(PATTERN_CONSOLE_OUTPUT));
                 ctx.completeNow();
             });
         });
@@ -104,7 +104,7 @@ public class SinkTest extends ConsoleTest implements VertxTest {
             vertx.eventBus().send(TEST_FROM, FAIL_DATA);
             vertx.eventBus().send(TEST_FROM, DATA);
             vertx.setTimer(100, timer -> {
-                assertConsoleDoesNotContainLine(PATTERN_CONSOLE_OUTPUT);
+                ctx.verify(() -> assertConsoleDoesNotContainLine(PATTERN_CONSOLE_OUTPUT));
                 ctx.completeNow();
             });
         });

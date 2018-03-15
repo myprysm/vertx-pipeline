@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2018 the original author or the original authors
  *
@@ -14,28 +15,7 @@
  * limitations under the License.
  */
 
-package fr.myprysm.pipeline.util;
+@ModuleGen(name = "vertx-pipeline-metrics", groupPackage = "fr.myprysm.pipeline.metrics")
+package fr.myprysm.pipeline.metrics;
 
-import fr.myprysm.pipeline.pipeline.ExchangeOptions;
-import io.vertx.reactivex.core.eventbus.EventBus;
-
-/**
- * A verticle marked as <code>Stream</code>
- * should provide an interface to Vert.x {@link EventBus}.
- */
-public interface Stream extends Named {
-
-    /**
-     * Returns the addresses of the stream object
-     *
-     * @return bound addresses
-     */
-    ExchangeOptions exchange();
-
-    /**
-     * Vert.x {@link EventBus}
-     *
-     * @return the event bus
-     */
-    EventBus eventBus();
-}
+import io.vertx.codegen.annotations.ModuleGen;

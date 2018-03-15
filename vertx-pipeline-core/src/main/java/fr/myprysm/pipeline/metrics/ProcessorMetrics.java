@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-package fr.myprysm.pipeline.util;
+package fr.myprysm.pipeline.metrics;
 
-import fr.myprysm.pipeline.pipeline.ExchangeOptions;
-import io.vertx.reactivex.core.eventbus.EventBus;
+import io.vertx.core.spi.metrics.Metrics;
 
 /**
- * A verticle marked as <code>Stream</code>
- * should provide an interface to Vert.x {@link EventBus}.
+ * Metrics for a processor.
+ * Counts the number of events received and sent as well as errors during processing.
  */
-public interface Stream extends Named {
+public interface ProcessorMetrics extends Metrics {
 
     /**
-     * Returns the addresses of the stream object
-     *
-     * @return bound addresses
+     * Marks an event reception
      */
-    ExchangeOptions exchange();
+    void eventReceived();
 
     /**
-     * Vert.x {@link EventBus}
-     *
-     * @return the event bus
+     * Marks an event emission
      */
-    EventBus eventBus();
+    void eventSent();
+
+    /**
+     * Marks an error
+     */
+    void eventError();
 }

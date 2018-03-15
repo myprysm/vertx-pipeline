@@ -17,8 +17,12 @@
 package fr.myprysm.pipeline;
 
 
+import fr.myprysm.pipeline.metrics.MetricsProvider;
+import fr.myprysm.pipeline.metrics.MetricsService;
+import fr.myprysm.pipeline.metrics.impl.DummyMetricsServiceImpl;
 import fr.myprysm.pipeline.pipeline.ExchangeOptions;
 import fr.myprysm.pipeline.pipeline.PipelineVerticle;
+import fr.myprysm.pipeline.spi.MetricsServiceFactory;
 import fr.myprysm.pipeline.util.ClasspathHelpers;
 import fr.myprysm.pipeline.util.Signal;
 import fr.myprysm.pipeline.util.SignalReceiver;
@@ -28,6 +32,7 @@ import io.vertx.config.ConfigRetrieverOptions;
 import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
+import io.vertx.core.ServiceHelper;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.CompletableHelper;
 import io.vertx.reactivex.config.ConfigRetriever;
@@ -48,6 +53,8 @@ import static io.reactivex.Observable.fromIterable;
 
 public class DeploymentVerticle extends AbstractVerticle implements SignalReceiver {
     private static final Logger LOG = LoggerFactory.getLogger(DeploymentVerticle.class);
+
+    public static final String NAME = "deployment-verticle";
     public static final String UNDEPLOY = "undeploy";
     public static final String PIPELINE_VERTICLE = "fr.myprysm.pipeline.pipeline.PipelineVerticle";
     public static final String DEPLOYMENT_ERROR = "Unable to deploy pipeline";
@@ -61,6 +68,7 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
 
     private Boolean onTerminateShutdown;
     private String path;
+    private String name = NAME + ":" + deployChannel;
 
     private static boolean runningPipeline(Pair<String, String> dep) {
         return !DEPLOYMENT_ERROR.equals(dep.getValue());
@@ -74,12 +82,30 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
         readConfiguration()
                 .map(this::prepareConfiguration)
                 .flatMap(this::loadClasses)
+                .map(this::initializeMetrics)
                 .flatMapCompletable(this::startPipelines)
                 .subscribe(CompletableHelper.toObserver(started));
     }
 
+    private JsonObject initializeMetrics(JsonObject config) {
+        DeploymentVerticleOptions opts = new DeploymentVerticleOptions(config());
+        MetricsService metrics = new DummyMetricsServiceImpl();
+        if (opts.getMetrics() && MetricsProvider.getMetricsService() == null) {
+            MetricsServiceFactory factory = ServiceHelper.loadFactoryOrNull(MetricsServiceFactory.class);
+            if (factory != null) {
+                metrics = factory.create(opts);
+            } else {
+                LOG.info("Requested metrics but no factory found on the classpath?!");
+            }
+        }
+
+        MetricsProvider.initialize(metrics);
+        return config;
+    }
+
     @Override
     public void stop(Future<Void> stopped) throws Exception {
+        MetricsProvider.close();
         consumer.rxUnregister().subscribe(CompletableHelper.toObserver(stopped));
     }
 
@@ -143,7 +169,7 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
         Boolean deployed = pipelineDeployments.stream()
                 .anyMatch(DeploymentVerticle::runningPipeline);
         if (!deployed) {
-            return error(new DeploymentException("No running pipeline... Shutting down."));
+            return error(new DeploymentException("No running pipeline..."));
         }
 
         return complete();
@@ -244,4 +270,8 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
         return eventBus;
     }
 
+    @Override
+    public String name() {
+        return name;
+    }
 }

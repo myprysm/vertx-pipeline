@@ -33,7 +33,7 @@ class DeploymentVerticleTest implements VertxTest {
     @DisplayName("Deployment verticle starts successfully")
     void testDeploymentVerticle(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
         vertx.deployVerticle("fr.myprysm.pipeline.DeploymentVerticle", ctx.succeeding(id -> {
-            vertx.undeploy(id, ctx.succeeding(zoid -> ctx.completeNow()));
+            ctx.completeNow();
         }));
         ctx.awaitCompletion(10, TimeUnit.SECONDS);
     }

@@ -1,0 +1,66 @@
+= Cheatsheets
+
+[[ElasticsearchSinkOptions]]
+== ElasticsearchSinkOptions
+
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[bulk]]`bulk`|`Boolean`|
++++
+Indicates whether bulk is enabled.
++++
+|[[bulkSize]]`bulkSize`|`Number (Integer)`|
++++
+The bulk size for bulk index operations.
+ <p>
+ Must be a positive integer
+ <p>
+ This option is ignored when <code>bulk</code> is <code>false</code>.
++++
+|[[cluster]]`cluster`|`String`|
++++
+The name of the remote elasticsearch cluster
++++
+|[[hosts]]`hosts`|`Json array`|
++++
+The remote elasticsearch cluster hosts
+ <p>
+ Must be a list of objects as follows.
+ <p>
+ YAML:
+ <pre>
+ - hostname: your.host
+   port: 9300
+ - hostname: 127.0.0.1
+   port: 9300
+ </pre>
+ <p>
+ JSON:
+ <pre>
+ [
+     {
+         "hostname": "your.host",
+         "port": 9300
+     },
+     {
+         "hostname": "127.0.0.1",
+         "port": 9300
+     }
+ ]
+ </pre>
++++
+|[[indexName]]`indexName`|`String`|
++++
+The index name to store incoming events.
++++
+|[[indexType]]`indexType`|`String`|
++++
+The index type to store incoming events
++++
+|[[name]]`name`|`String`|-
+|[[type]]`type`|`String`|-
+|===
+

@@ -87,7 +87,7 @@ class PipelineVerticleTest extends ConsoleTest implements VertxTest {
 
         vertx.deployVerticle(PIPELINE_VERTICLE, options, ctx.succeeding(id -> vertx.setTimer(100, timer -> {
             for (Level level : Level.values()) {
-                assertConsoleContainsLine(level.toString() + ".*LogProcessor.*log-processor");
+                assertConsoleContainsPattern(level.toString() + ".*LogProcessor.*log-processor");
             }
             ctx.completeNow();
         })));

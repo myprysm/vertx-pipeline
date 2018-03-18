@@ -1,17 +1,17 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline;
@@ -70,8 +70,8 @@ public abstract class ConsoleTest {
      *
      * @param pattern the pattern to test
      */
-    protected void assertConsoleContainsLine(String pattern) {
-        assertConsoleContainPattern(Pattern.compile(pattern, Pattern.MULTILINE));
+    protected void assertConsoleContainsPattern(String pattern) {
+        assertConsoleContainsPattern(Pattern.compile(pattern, Pattern.MULTILINE));
     }
 
     /**
@@ -79,7 +79,7 @@ public abstract class ConsoleTest {
      *
      * @param pattern the pattern to test
      */
-    protected void assertConsoleContainPattern(Pattern pattern) {
+    protected void assertConsoleContainsPattern(Pattern pattern) {
         assertThat(pattern.matcher(getConsoleOutput()).find()).isTrue();
     }
 
@@ -89,7 +89,7 @@ public abstract class ConsoleTest {
      *
      * @param pattern the pattern to test
      */
-    protected void assertConsoleDoesNotContainLine(String pattern) {
+    protected void assertConsoleDoesNotContainPattern(String pattern) {
         assertConsoleDoesNotContainPattern(Pattern.compile(pattern, Pattern.MULTILINE));
     }
 

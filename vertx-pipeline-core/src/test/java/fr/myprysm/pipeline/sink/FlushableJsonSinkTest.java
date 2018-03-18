@@ -52,7 +52,7 @@ class FlushableJsonSinkTest extends ConsoleTest implements VertxTest {
                     vertx.eventBus().publish("channel", Signal.FLUSH.toString());
                     vertx.eventBus().publish("channel", Signal.FLUSH.toString());
                     vertx.setTimer(20, timer -> {
-                        assertConsoleContainsLine("IllegalArgumentException.*This is a test");
+                        assertConsoleContainsPattern("IllegalArgumentException.*This is a test");
                         ctx.completeNow();
                     });
                 }));

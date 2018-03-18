@@ -77,7 +77,7 @@ class JoltProcessorTest implements VertxTest {
         readTestSpecs(vertx, "jolt-processor/jolt-sample.json", ctx.succeeding(specs -> {
             JsonObject config = BASE_CONFIG.copy();
             DeploymentOptions opts = new DeploymentOptions().setConfig(config);
-            config.put("path", pathFromResource("jolt-processor/jolt-invalid.json"));
+            config.put("path", "jolt-processor/jolt-invalid.json");
             vertx.deployVerticle(VERTICLE, opts, ctx.failing(t -> ctx.completeNow()));
         }));
     }
@@ -98,7 +98,7 @@ class JoltProcessorTest implements VertxTest {
 
     private void readTestSpecs(Vertx vertx, String path, Handler<AsyncResult<JoltTestSpecs>> handler) {
 
-        vertx.<JsonObject>executeBlocking(f -> f.complete(VertxTest.objectFromFile(path)), specs -> {
+        vertx.<JsonObject>executeBlocking(f -> f.complete(objectFromFile(path)), specs -> {
             Future<JoltTestSpecs> future = Future.future();
             if (specs.failed()) {
                 future.fail(specs.cause());

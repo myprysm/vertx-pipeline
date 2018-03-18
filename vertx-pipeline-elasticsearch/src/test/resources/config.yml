@@ -1,0 +1,17 @@
+test-es:
+  pump:
+    type:   fr.myprysm.pipeline.pump.TimerPump
+    interval: 10
+    unit:   MILLISECONDS
+    data:
+      test: elasticsearch
+  processors:
+    - type: fr.myprysm.pipeline.processor.CounterEmitterProcessor
+      interval: 100
+      signal: TERMINATE
+  sink:
+    type:   fr.myprysm.pipeline.elasticsearch.sink.ElasticsearchSink
+    bulk:       yes
+    bulkSize:   10
+    indexName:  test
+    indexType:  counter

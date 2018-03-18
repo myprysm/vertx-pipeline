@@ -28,8 +28,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import static fr.myprysm.pipeline.util.JsonHelpers.EMPTY_STRING;
-
 /**
  * Base Vertx test class.
  * It enables the {@link VertxExtension} to run tests with {@link io.vertx.core.Vertx}
@@ -41,17 +39,29 @@ public interface VertxTest {
     Logger LOG = LoggerFactory.getLogger(VertxTest.class);
     Map<String, String> RESOURCES = new HashMap<>();
 
-    static String stringFromFile(String path) {
+    /**
+     * Get the content of the resource at path as a {@link String}
+     *
+     * @param path the path of the resource
+     * @return the resource as string. an empty string if an error occured
+     */
+    default String stringFromFile(String path) {
         try {
             return readFileFromClassPath(path);
         } catch (Exception e) {
             LOG.error("Unable to load {} as JsonObject...", path);
             LOG.error("Reason: ", e);
-            return EMPTY_STRING;
+            return "";
         }
     }
 
-    static JsonObject objectFromFile(String path) {
+    /**
+     * Get the content of the resource at path as a {@link JsonObject}
+     *
+     * @param path the path of the resource
+     * @return the resource as json object. an empty object if an error occured
+     */
+    default JsonObject objectFromFile(String path) {
         try {
             return new JsonObject(readFileFromClassPath(path));
         } catch (Exception e) {
@@ -61,7 +71,13 @@ public interface VertxTest {
         }
     }
 
-    static JsonArray arrayFromFile(String path) {
+    /**
+     * Get the content of the resource at path as a {@link JsonArray}
+     *
+     * @param path the path of the resource
+     * @return the resource as json array. an empty array if an error occured
+     */
+    default JsonArray arrayFromFile(String path) {
         try {
             return new JsonArray(readFileFromClassPath(path));
         } catch (Exception e) {
@@ -77,7 +93,7 @@ public interface VertxTest {
      *
      * @return the file as a string
      */
-    static String readFileFromClassPath(String path) throws IOException {
+    default String readFileFromClassPath(String path) throws IOException {
         if (!RESOURCES.containsKey(path)) {
             RESOURCES.put(path, readFromInputStream(ClassLoader.getSystemResourceAsStream(path)));
         }
@@ -92,7 +108,7 @@ public interface VertxTest {
      * @return the text extracted from the input stream
      * @throws IOException If any error occurs. Should never happen as only call
      */
-    static String readFromInputStream(InputStream inputStream) throws IOException {
+    default String readFromInputStream(InputStream inputStream) throws IOException {
         StringBuilder resultStringBuilder = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
             String line;
@@ -103,6 +119,12 @@ public interface VertxTest {
         return resultStringBuilder.toString();
     }
 
+    /**
+     * Get the absolute path of a resource from classpath
+     *
+     * @param path the path to the resource
+     * @return the absolute path to the resource
+     */
     default String pathFromResource(String path) {
         ClassLoader cl = getClass().getClassLoader();
         URL url = cl.getResource(path);

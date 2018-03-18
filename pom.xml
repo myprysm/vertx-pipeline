@@ -26,7 +26,10 @@
     <version>1.0.0-SNAPSHOT</version>
     <modules>
         <module>vertx-pipeline-core</module>
+        <module>vertx-pipeline-elasticsearch</module>
+
         <module>vertx-pipeline-dropwizard-metrics</module>
+        <module>vertx-pipeline-tests</module>
         <!--<module>vertx-pipeline-twitter</module>-->
     </modules>
 

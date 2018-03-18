@@ -57,7 +57,7 @@ public class SinkTest extends ConsoleTest implements VertxTest {
         vertx.deployVerticle("fr.myprysm.pipeline.sink.ConsoleSink", CONFIG, ctx.succeeding(id -> {
             vertx.eventBus().send(TEST_FROM, DATA);
             vertx.setTimer(100, timer -> {
-                ctx.verify(() -> assertConsoleContainsLine(PATTERN_CONSOLE_OUTPUT));
+                ctx.verify(() -> assertConsoleContainsPattern(PATTERN_CONSOLE_OUTPUT));
                 ctx.completeNow();
             });
         }));
@@ -81,7 +81,7 @@ public class SinkTest extends ConsoleTest implements VertxTest {
             vertx.eventBus().send(TEST_FROM, FAIL_DATA);
             vertx.eventBus().send(TEST_FROM, DATA);
             vertx.setTimer(100, timer -> {
-                ctx.verify(() -> assertConsoleContainsLine(PATTERN_CONSOLE_OUTPUT));
+                ctx.verify(() -> assertConsoleContainsPattern(PATTERN_CONSOLE_OUTPUT));
                 ctx.completeNow();
             });
         });
@@ -104,7 +104,7 @@ public class SinkTest extends ConsoleTest implements VertxTest {
             vertx.eventBus().send(TEST_FROM, FAIL_DATA);
             vertx.eventBus().send(TEST_FROM, DATA);
             vertx.setTimer(100, timer -> {
-                ctx.verify(() -> assertConsoleDoesNotContainLine(PATTERN_CONSOLE_OUTPUT));
+                ctx.verify(() -> assertConsoleDoesNotContainPattern(PATTERN_CONSOLE_OUTPUT));
                 ctx.completeNow();
             });
         });

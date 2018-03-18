@@ -236,17 +236,26 @@ to ensure a proper run and the pipeline stability.
 
 ## In the pipe
 
-- [x] `ForkProcessor`                   - duplicates the signal to another `pipeline` or any other `MessageConsumer`
-- [x] `DataExtractorProcessor`          - extracts and transform input event to a new brand output event
+- [x] `ForkProcessor`                   - duplicates the signal to another `pipeline` or any other `MessageConsumer`.
+                                        ([options](https://github.com/myprysm/vertx-pipeline/blob/develop/vertx-pipeline-core/src/main/asciidoc/dataobjects.adoc#forkprocessoroptions))
+- [x] `DataExtractorProcessor`          - extracts and transform input event to a new brand output event.
+                                        ([options](https://github.com/myprysm/vertx-pipeline/blob/develop/vertx-pipeline-core/src/main/asciidoc/dataobjects.adoc#mergebasicprocessoroptions))
 - [x] `ObjectToArrayProcessor`          - transforms a field into an array. When field is null, array is empty, 
-                                        otherwise array contains the previous field value
+                                        otherwise array contains the previous field value.
+                                        ([options](https://github.com/myprysm/vertx-pipeline/blob/develop/vertx-pipeline-core/src/main/asciidoc/dataobjects.adoc#objecttoarrayprocessoroptions))
 - [x] `CounterSignalEmitterProcessor`   - Emits a signal to the `PipelineVerticle` controller every n received events 
-                                        to either broadcast a flush, or terminate the pipeline
+                                        to either broadcast a flush, or terminate the pipeline.
+                                        ([options](https://github.com/myprysm/vertx-pipeline/blob/develop/vertx-pipeline-core/src/main/asciidoc/dataobjects.adoc#countersignalemitterprocessoroptions))
 - [x] `TimerSignalEmitterProcessor`     - Emits a signal to the `PipelineVerticle` controller after configured duration
-                                        to either broadcast a flush, or terminate the pipeline
-- [x] `MapperBasicExtractor`            - Accumulates incoming events and map them to a key.
+                                        to either broadcast a flush, or terminate the pipeline.
+                                        ([options](https://github.com/myprysm/vertx-pipeline/blob/develop/vertx-pipeline-core/src/main/asciidoc/dataobjects.adoc#timersignalemitterprocessoroptions))
+- [x] `MergeBasicExtractor`            - Accumulates incoming events and map them to a key.
                                         Provides the ability to merge and sort incoming arrays when the key already
                                         exists. Provides the ability to send the accumulated events sorted (or not)
+                                        ([options](https://github.com/myprysm/vertx-pipeline/blob/develop/vertx-pipeline-core/src/main/asciidoc/dataobjects.adoc#mergebasicprocessoroptions))
+- [x] `JoltProcessor`                   - Perform complex `JSON` transformations using [JOLT](http://bazaarvoice.github.io/jolt/).
+                                        Can be configured either from a file or directly in pipeline configuration. 
+                                        ([options](https://github.com/myprysm/vertx-pipeline/blob/develop/vertx-pipeline-core/src/main/asciidoc/dataobjects.adoc#joltprocessoroptions))
 ## Next to come
 
 - [ ] Pipeline pause/resume

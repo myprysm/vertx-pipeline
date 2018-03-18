@@ -261,27 +261,27 @@ class PipelineConfigurer extends PipelineOptions {
         }
     }
 
-    /**
-     * Prepares a verticle name.
-     * <p>
-     * Uses the <code>type</code> in place of name if this is the default.
-     * Uses the <code>name</code> otherwise.
-     * <p>
-     * The name is kebab-cased.
-     * <p>
-     * Examples:
-     * * sample-pipeline-timer-pump
-     *
-     * @param prefix      the prefix
-     * @param name        the name
-     * @param defaultName the default name
-     * @param type        the class name
-     * @param component   one of "sink", "pump", "processor"
-     * @return a formatted and standardised name for the verticle
-     */
-    private String prepareName(String prefix, String name, String defaultName, String type, String component) {
-        return prepareName(prefix, name, defaultName, type, component, null);
-    }
+//    /**
+//     * Prepares a verticle name.
+//     * <p>
+//     * Uses the <code>type</code> in place of name if this is the default.
+//     * Uses the <code>name</code> otherwise.
+//     * <p>
+//     * The name is kebab-cased.
+//     * <p>
+//     * Examples:
+//     * * sample-pipeline-timer-pump
+//     *
+//     * @param prefix      the prefix
+//     * @param name        the name
+//     * @param defaultName the default name
+//     * @param type        the class name
+//     * @param component   one of "sink", "pump", "processor"
+//     * @return a formatted and standardised name for the verticle
+//     */
+//    private String prepareName(String prefix, String name, String defaultName, String type, String component) {
+//        return prepareName(prefix, name, defaultName, type, component, null);
+//    }
 
     /**
      * Prepares a verticle name.

@@ -441,7 +441,7 @@ The protocol to use
 +++
 The query parameters
  <p>
- Parameters will be added as <code>(?|&amp;)paramKey=paramValue</code> to the url.
+ Parameters will be added as <code>paramKey=paramValue</code> to the url.
  <p>
  To use data from current event, start the path to your value with <code>$event</code> (e.g. <code>$event.path.to.the.field</code>)
  <p>
@@ -495,6 +495,60 @@ The user agent to request
  Sets an arbitrary user agent to request the remote URL.
  <p>
  Defaults to <code>vertx-pipeline/1.0</code>
++++
+|===
+
+[[JoltProcessorOptions]]
+== JoltProcessorOptions
+
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[format]]`format`|`link:enums.html#Format[Format]`|
++++
+The format of the JOLT specs file.
+ <p>
+ Either <code>json</code> or <code>yaml</code>
++++
+|[[instances]]`instances`|`Number (Integer)`|
++++
+The number of instances to deploy.
+ <p>
+ Must be a positive link.
++++
+|[[name]]`name`|`String`|
++++
+The name of the processor.
+ <p>
+ This is automatically populated when the pipeline configuration is a list.
+ <p>
+ You still can name your processor for any purpose by using a map instead of a list
+ when you describe your pipeline.
++++
+|[[path]]`path`|`String`|
++++
+The path to a JOLT specs file.
+ <p>
+ The file can be either <code>JSON</code> or <code>YAML</code>.
+ It must be a list of JOLT transforms. Documentation can be found on their <a href="http://bazaarvoice.github.io/jolt/">website</a>.
+ <p>
+ <b>This option is exclusive with <code>specs</code> option. If a file is set and valid, file specs will overwrite <code>specs</code>.</b>
++++
+|[[specs]]`specs`|`Json array`|
++++
+The JOLT specs as a list of transforms.
+ <p>
+ Please check JOLT documentation on their <a href="http://bazaarvoice.github.io/jolt/">website</a>.
+ <p>
+ <b>This option is exclusive with <code>path</code> option. If a file is set and valid, <code>specs</code> will be overwritten.</b>
++++
+|[[type]]`type`|`String`|
++++
+The type of the processor.
+ <p>
+ This is the fully qualified name of the <code>class</code> that acts as processor.
 +++
 |===
 

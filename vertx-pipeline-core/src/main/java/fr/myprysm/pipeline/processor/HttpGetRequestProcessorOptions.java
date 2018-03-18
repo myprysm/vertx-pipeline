@@ -289,7 +289,7 @@ public class HttpGetRequestProcessorOptions extends ProcessorOptions {
     /**
      * The query parameters
      * <p>
-     * Parameters will be added as <code>(?|&amp;)paramKey=paramValue</code> to the url.
+     * Parameters will be added as <code>paramKey=paramValue</code> to the url.
      * <p>
      * To use data from current event, start the path to your value with <code>$event</code> (e.g. <code>$event.path.to.the.field</code>)
      * <p>

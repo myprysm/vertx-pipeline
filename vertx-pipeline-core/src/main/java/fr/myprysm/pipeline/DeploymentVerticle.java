@@ -18,8 +18,6 @@ package fr.myprysm.pipeline;
 
 
 import fr.myprysm.pipeline.metrics.MetricsProvider;
-import fr.myprysm.pipeline.metrics.MetricsService;
-import fr.myprysm.pipeline.metrics.impl.DummyMetricsServiceImpl;
 import fr.myprysm.pipeline.pipeline.ExchangeOptions;
 import fr.myprysm.pipeline.pipeline.PipelineVerticle;
 import fr.myprysm.pipeline.spi.MetricsServiceFactory;
@@ -89,17 +87,15 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
 
     private JsonObject initializeMetrics(JsonObject config) {
         DeploymentVerticleOptions opts = new DeploymentVerticleOptions(config());
-        MetricsService metrics = new DummyMetricsServiceImpl();
-        if (opts.getMetrics() && MetricsProvider.getMetricsService() == null) {
+        if (opts.getMetrics()) {
             MetricsServiceFactory factory = ServiceHelper.loadFactoryOrNull(MetricsServiceFactory.class);
             if (factory != null) {
-                metrics = factory.create(opts);
+                MetricsProvider.initialize(factory.create(opts));
             } else {
                 LOG.info("Requested metrics but no factory found on the classpath?!");
             }
         }
 
-        MetricsProvider.initialize(metrics);
         return config;
     }
 

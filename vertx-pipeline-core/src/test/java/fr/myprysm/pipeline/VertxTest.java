@@ -23,10 +23,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -74,10 +72,10 @@ public interface VertxTest {
     }
 
     /**
-     * Read the Event Bus console file from classpath resources and cache it for further calls to avoid reading resource everytime.
+     * Read the file from classpath resources and cache it for further calls to avoid reading resource everytime.
      * File is extracted manually to avoid vertx file cache to occur as feature can be explicitly disabled by user.
      *
-     * @return the Event Bus console file as a string
+     * @return the file as a string
      */
     static String readFileFromClassPath(String path) throws IOException {
         if (!RESOURCES.containsKey(path)) {
@@ -103,5 +101,14 @@ public interface VertxTest {
             }
         }
         return resultStringBuilder.toString();
+    }
+
+    default String pathFromResource(String path) {
+        ClassLoader cl = getClass().getClassLoader();
+        URL url = cl.getResource(path);
+        if (url != null) {
+            return new File(url.getFile()).getAbsolutePath();
+        }
+        return "";
     }
 }

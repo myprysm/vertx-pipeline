@@ -25,8 +25,6 @@ import org.slf4j.LoggerFactory;
 public class Launcher extends io.vertx.core.Launcher {
     private static final Logger LOG = LoggerFactory.getLogger(Launcher.class);
 
-    public static final String METRICS = "pipeline-metrics";
-
     /**
      * Main entry point.
      *
@@ -35,17 +33,6 @@ public class Launcher extends io.vertx.core.Launcher {
     public static void main(String[] args) {
         new Launcher().dispatch(args);
     }
-
-//    @Override
-//    public void beforeStartingVertx(VertxOptions options) {
-//        super.beforeStartingVertx(options);
-////        options.setMetricsOptions(new DropwizardMetricsOptions()
-////                .setEnabled(true)
-////                .setJmxEnabled(true)
-////                .setJmxDomain(METRICS)
-////                .setRegistryName(METRICS));
-////        LOG.info("Vertx configured in cluster mode");
-//    }
 
     @Override
     public void afterStartingVertx(Vertx vertx) {

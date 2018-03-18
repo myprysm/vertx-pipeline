@@ -30,6 +30,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
+
+        <jolt.version>0.1.0</jolt.version>
     </properties>
 
     <dependencies>
@@ -82,6 +84,12 @@
             <groupId>com.shekhargulati</groupId>
             <artifactId>strman</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.bazaarvoice.jolt</groupId>
+            <artifactId>jolt-core</artifactId>
+            <version>${jolt.version}</version>
+        </dependency>
+
 
         <dependency>
             <groupId>ch.qos.logback</groupId>

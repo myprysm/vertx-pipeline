@@ -16,6 +16,7 @@
 
 package fr.myprysm.pipeline.metrics;
 
+import fr.myprysm.pipeline.metrics.impl.DummyMetricsServiceImpl;
 import fr.myprysm.pipeline.processor.Processor;
 import fr.myprysm.pipeline.pump.Pump;
 import fr.myprysm.pipeline.sink.Sink;
@@ -26,7 +27,7 @@ import io.vertx.core.json.JsonObject;
  */
 public class MetricsProvider {
 
-    private static MetricsService metrics = null;
+    private static MetricsService metrics = new DummyMetricsServiceImpl();
 
     /**
      * Provdes metrics for a {@link Sink}

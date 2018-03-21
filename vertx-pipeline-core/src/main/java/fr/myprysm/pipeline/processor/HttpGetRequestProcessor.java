@@ -82,9 +82,13 @@ public class HttpGetRequestProcessor extends BaseJsonProcessor<HttpGetRequestPro
      */
     private Function<Throwable, Single<JsonObject>> handleRequestError(JsonObject input) {
         return (Throwable throwable) -> {
-            error("Request error: ", throwable);
+            if (throwable instanceof DiscardableEventException) {
+                error("Request error: {}", ((DiscardableEventException) throwable).getEvent());
+            }
+            error("Trace: ", throwable);
+
             if (onError == OnError.DISCARD) {
-                return Single.error(new DiscardableEventException(throwable, input));
+                return Single.error(throwable instanceof DiscardableEventException ? throwable : new DiscardableEventException(throwable, input));
             }
 
             return Single.just(input);
@@ -182,6 +186,7 @@ public class HttpGetRequestProcessor extends BaseJsonProcessor<HttpGetRequestPro
                 .orElseThrow(() -> new DiscardableEventException(obj()
                         .put("error", "unable to extract a value")
                         .put("path", path)
+                        .put("input", input)
                 ));
     }
 
@@ -307,7 +312,9 @@ public class HttpGetRequestProcessor extends BaseJsonProcessor<HttpGetRequestPro
      * @return the error
      */
     private JsonObject toJsonError(HttpResponse<String> response) {
-        return obj().put("status", response.statusCode())
+        return obj()
+                .put("error", "Request failed")
+                .put("status", response.statusCode())
                 .put("statusMessage", response.statusMessage());
     }
 

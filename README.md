@@ -260,8 +260,9 @@ to ensure a proper run and the pipeline stability.
 
 - [ ] Pipeline pause/resume
 - [ ] Pipeline hot redeployment
-- [x] Pipeline metrics - know you throughput
+- [x] Pipeline metrics - know you throughput [Dropwizard implementation](https://github.com/myprysm/vertx-pipeline/tree/develop/vertx-pipeline-dropwizard-metrics)
 - [ ] Web interface - check the status, reconfigure
 - [ ] More processors...
 - [ ] More sinks (database, web, ...)
 - [ ] More pumps (database, web, ...)
+- [ ] Datasource management [#1](https://github.com/myprysm/vertx-pipeline/issues/1)

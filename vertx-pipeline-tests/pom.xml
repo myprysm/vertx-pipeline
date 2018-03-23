@@ -29,12 +29,6 @@
 
 
     <dependencies>
-        <!--<dependency>-->
-        <!--<groupId>fr.myprysm</groupId>-->
-        <!--<artifactId>vertx-pipeline-core</artifactId>-->
-        <!--<version>${project.parent.version}</version>-->
-        <!--</dependency>-->
-
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
@@ -44,6 +38,11 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-junit5</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-rx-java2</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

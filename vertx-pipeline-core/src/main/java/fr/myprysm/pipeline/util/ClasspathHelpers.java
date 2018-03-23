@@ -1,17 +1,17 @@
 /*
  * Copyright 2018 the original author or the original authors
  *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package fr.myprysm.pipeline.util;
@@ -26,6 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClasspathHelpers {
     private static final Logger LOG = LoggerFactory.getLogger(ClasspathHelpers.class);
@@ -34,6 +36,7 @@ public class ClasspathHelpers {
     private static List<String> sinkClassNames;
     private static List<String> pumpClassNames;
     private static List<String> accumulatorClassName;
+    private static Map<String, String> aliasToComponents;
 
     private ClasspathHelpers() {
     }
@@ -51,6 +54,57 @@ public class ClasspathHelpers {
         }
 
         return scan;
+    }
+
+    public synchronized static String getSinkForAlias(String alias) {
+        String clazz = getComponentFromAlias(alias);
+        if (clazz != null && !Sink.class.isAssignableFrom(getScan().classNameToClassRef(clazz))) {
+            clazz = null;
+        }
+
+        return clazz;
+    }
+
+    public synchronized static String getProcessorForAlias(String alias) {
+        String clazz = getComponentFromAlias(alias);
+        if (clazz != null && !Processor.class.isAssignableFrom(getScan().classNameToClassRef(clazz))) {
+            clazz = null;
+        }
+
+        return clazz;
+    }
+
+    public synchronized static String getPumpForAlias(String alias) {
+        String clazz = getComponentFromAlias(alias);
+        if (clazz != null && !Pump.class.isAssignableFrom(getScan().classNameToClassRef(clazz))) {
+            clazz = null;
+        }
+
+        return clazz;
+    }
+
+    public synchronized static String getComponentFromAlias(String alias) {
+        return getAliasToComponents().get(alias);
+    }
+
+    public synchronized static Map<String, String> getAliasToComponents() {
+        if (aliasToComponents == null) {
+            aliasToComponents = new ConcurrentHashMap<>();
+            ScanResult scan = getScan();
+            scan.classNamesToClassRefs(scan.getNamesOfClassesWithAnnotation(Alias.class)).forEach(clazz -> {
+                if (Processor.class.isAssignableFrom(clazz) || Pump.class.isAssignableFrom(clazz) || Sink.class.isAssignableFrom(clazz)) {
+                    Alias annot = clazz.getAnnotation(Alias.class);
+                    String alias = (annot.prefix() + '.' + annot.name()).toLowerCase();
+                    if (aliasToComponents.putIfAbsent(alias, clazz.getName()) == null) {
+                        LOG.info("Mapped {} to {}", alias, clazz.getName());
+                    } else {
+                        LOG.error("Alias {} cannot be bound to {}. Already mapped to {}", alias, clazz.getName(), aliasToComponents.get(alias));
+                    }
+                }
+            });
+        }
+
+        return aliasToComponents;
     }
 
     /**

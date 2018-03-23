@@ -23,6 +23,7 @@ import fr.myprysm.pipeline.pump.PumpOptions;
 import fr.myprysm.pipeline.sink.Sink;
 import fr.myprysm.pipeline.sink.SinkOptions;
 import fr.myprysm.pipeline.util.ClasspathHelpers;
+import fr.myprysm.pipeline.util.Holder;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -136,8 +137,8 @@ class PipelineConfigurer extends PipelineOptions {
      */
     private void buildNetwork() {
         if (sink != null && pump != null) {
-            final JsonArray to = arr();
-            to.add(sink.getRight().getConfig().getString("from"));
+            final Holder<JsonArray> to = new Holder<>(arr());
+            to.get().add(sink.getRight().getConfig().getString("from"));
 
             processors.descendingIterator().forEachRemaining(processorSet -> {
                 JsonArray newTo = new JsonArray();
@@ -145,17 +146,15 @@ class PipelineConfigurer extends PipelineOptions {
 
                     // Shuffle addresses so that processors will not send message sequentially
                     // to the next level in the chain.
-                    processor.getRight().getConfig().put("to", shuffle(to.copy()));
+                    processor.getRight().getConfig().put("to", shuffle(to.get().copy()));
                     String from = processor.getRight().getConfig().getString("from");
                     newTo.add(from);
                 }
 
-                // Reuse the same list as the previous address book has been installed in the processor set
-                cleanupArray(to);
-                to.addAll(newTo);
+                to.set(newTo);
             });
 
-            pump.getRight().getConfig().put("to", to);
+            pump.getRight().getConfig().put("to", to.get());
 
             // Reverse processors to start from the closest to sink.
             Collections.reverse(processors);
@@ -168,22 +167,30 @@ class PipelineConfigurer extends PipelineOptions {
         return new JsonArray(list);
     }
 
-    private void cleanupArray(JsonArray array) {
-        while (!array.isEmpty()) {
-            array.remove(0);
-        }
-    }
-
-
     private void prepareSink() {
         if (getSink() != null && !getSink().isEmpty()) {
             JsonObject config = getSink();
+            config.put("type", resolveSink(config.getString("type")));
             SinkOptions options = new SinkOptions(config);
             // Get the position of the sink in the pipeline to allow easier ordering for metrics
             int position = getProcessors().size() + 1;
             String name = prepareName(getName(), options.getName(), SinkOptions.DEFAULT_NAME, options.getType(), "sink", "-" + position + "-1");
             sink = Triple.of(name, options.getType(), getDeploymentOptions(config, name, true));
         }
+    }
+
+    /**
+     * Resolves the final class name for a sink.
+     * <p>
+     * Resolves the name first with the alias.
+     * If no match found, then type is the final type.
+     *
+     * @param type the sink to resolve
+     * @return the fully qualified class name to the sink
+     */
+    private String resolveSink(String type) {
+        String clazz = ClasspathHelpers.getSinkForAlias(type);
+        return clazz != null ? clazz : type;
     }
 
     /**
@@ -211,6 +218,7 @@ class PipelineConfigurer extends PipelineOptions {
      */
     private List<Triple<String, String, DeploymentOptions>> prepareProcessorSet(Pair<Integer, JsonObject> configPair) {
         JsonObject config = configPair.getRight();
+        config.put("type", resolveProcessor(config.getString("type")));
         ProcessorOptions options = new ProcessorOptions(config);
 
         // Forces only one instance for accumulators
@@ -222,6 +230,20 @@ class PipelineConfigurer extends PipelineOptions {
         return IntStream.rangeClosed(1, options.getInstances())
                 .mapToObj(i -> prepareProcessor(config, options, configPair.getLeft(), i))
                 .collect(toList());
+    }
+
+    /**
+     * Resolves the final class name for a processor.
+     * <p>
+     * Resolves the name first with the alias.
+     * If no match found, then type is the final type.
+     *
+     * @param type the processor to resolve
+     * @return the fully qualified class name to the processor
+     */
+    private String resolveProcessor(String type) {
+        String clazz = ClasspathHelpers.getProcessorForAlias(type);
+        return clazz != null ? clazz : type;
     }
 
     /**
@@ -255,33 +277,26 @@ class PipelineConfigurer extends PipelineOptions {
     private void preparePump() {
         if (getPump() != null && !getPump().isEmpty()) {
             JsonObject config = getPump();
+            config.put("type", resolvePump(config.getString("type")));
             PumpOptions options = new PumpOptions(config);
             String name = prepareName(getName(), options.getName(), PumpOptions.DEFAULT_NAME, options.getType(), "pump", "-0-1");
             pump = Triple.of(name, options.getType(), getDeploymentOptions(config, name, false));
         }
     }
 
-//    /**
-//     * Prepares a verticle name.
-//     * <p>
-//     * Uses the <code>type</code> in place of name if this is the default.
-//     * Uses the <code>name</code> otherwise.
-//     * <p>
-//     * The name is kebab-cased.
-//     * <p>
-//     * Examples:
-//     * * sample-pipeline-timer-pump
-//     *
-//     * @param prefix      the prefix
-//     * @param name        the name
-//     * @param defaultName the default name
-//     * @param type        the class name
-//     * @param component   one of "sink", "pump", "processor"
-//     * @return a formatted and standardised name for the verticle
-//     */
-//    private String prepareName(String prefix, String name, String defaultName, String type, String component) {
-//        return prepareName(prefix, name, defaultName, type, component, null);
-//    }
+    /**
+     * Resolves the final class name for a pump.
+     * <p>
+     * Resolves the name first with the alias.
+     * If no match found, then type is the final type.
+     *
+     * @param type the pump to resolve
+     * @return the fully qualified class name to the pump
+     */
+    private String resolvePump(String type) {
+        String clazz = ClasspathHelpers.getPumpForAlias(type);
+        return clazz != null ? clazz : type;
+    }
 
     /**
      * Prepares a verticle name.

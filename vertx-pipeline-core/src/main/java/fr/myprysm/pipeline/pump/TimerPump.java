@@ -16,6 +16,7 @@
 
 package fr.myprysm.pipeline.pump;
 
+import fr.myprysm.pipeline.util.Alias;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.reactivex.Flowable;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
  * Pump that emits an event at fixed interval.
  * It can embed additional data.
  */
+@Alias(prefix = "pipeline-core", name = "timer-pump")
 public final class TimerPump extends BaseJsonPump<TimerPumpOptions> {
     private Long interval;
     private TimeUnit unit;

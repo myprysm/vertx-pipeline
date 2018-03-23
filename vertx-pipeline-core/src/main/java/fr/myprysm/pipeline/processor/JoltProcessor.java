@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import fr.myprysm.pipeline.processor.JoltProcessorOptions.Format;
+import fr.myprysm.pipeline.util.Alias;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.reactivex.Single;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 
+@Alias(prefix = "pipeline-core", name = "jolt-processor")
 public class JoltProcessor extends BaseJsonProcessor<JoltProcessorOptions> {
     private static final Logger LOG = LoggerFactory.getLogger(JoltProcessor.class);
     private JsonArray specs;

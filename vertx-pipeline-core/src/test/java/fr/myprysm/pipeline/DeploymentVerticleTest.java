@@ -16,9 +16,11 @@
 
 package fr.myprysm.pipeline;
 
+import fr.myprysm.pipeline.util.Signal;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxTestContext;
+import io.vertx.reactivex.core.eventbus.EventBus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +56,37 @@ class DeploymentVerticleTest implements VertxTest {
 
             });
         }));
+        ctx.awaitCompletion(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    @DisplayName("Deployment verticle starts pipeline with aliased components")
+    void testDeploymentVerticleStartsPipelineWithAliasedComponents(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        DeploymentOptions options = new DeploymentOptions().setConfig(obj()
+                .put("path", "config-with-aliases.yml")
+                .put("on.terminate.shutdown", false)
+        );
+        DeploymentVerticle verticle = new DeploymentVerticle();
+        vertx.deployVerticle(verticle, options, ctx.succeeding(id -> {
+            ctx.verify(() -> {
+                assertThat(verticle.eventBus()).isInstanceOf(EventBus.class);
+                assertThat(verticle.name()).isEqualTo(DeploymentVerticle.NAME + ':' + verticle.controlChannel());
+                assertThat(verticle.exchange()).isNull();
+                verticle.onSignal(Signal.INTERRUPT).test().assertComplete();
+                ctx.completeNow();
+            });
+        }));
+        ctx.awaitCompletion(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    @DisplayName("Deployment verticle cannot start pipeline with bad aliases")
+    void testDeploymentVerticleCannotStartPipelineWithBadAliases(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        DeploymentOptions options = new DeploymentOptions().setConfig(obj()
+                .put("path", "config-with-wrong-aliases.yml")
+                .put("on.terminate.shutdown", false)
+        );
+        vertx.deployVerticle("fr.myprysm.pipeline.DeploymentVerticle", options, ctx.failing(t -> ctx.completeNow()));
         ctx.awaitCompletion(10, TimeUnit.SECONDS);
     }
 }

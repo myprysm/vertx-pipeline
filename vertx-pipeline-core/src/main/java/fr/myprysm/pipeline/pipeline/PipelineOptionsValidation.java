@@ -44,14 +44,28 @@ public interface PipelineOptionsValidation {
 
     static JsonValidation pumpExists() {
         return hasPath("pump.type")
-                .and(holds(json -> getPumpClassNames().contains(extractString(json, "pump.type").orElse("")),
-                        "The class is not a kind of Pump"));
+                .and(pumpFromAlias().or(pumpFromClass()));
+    }
+
+    static JsonValidation pumpFromAlias() {
+        return holds(json -> getPumpForAlias(extractString(json, "pump.type").orElse("")) != null, "Unable to locate pump from alias");
+    }
+
+    static JsonValidation pumpFromClass() {
+        return holds(json -> getPumpClassNames().contains(extractString(json, "pump.type").orElse("")), "The class is not a kind of Pump");
     }
 
     static JsonValidation sinkExists() {
         return hasPath("sink.type")
-                .and(holds(json -> getSinkClassNames().contains(extractString(json, "sink.type").orElse("")),
-                        "The class is not a kind of Sink"));
+                .and(sinkFromAlias().or(sinkFromClass()));
+    }
+
+    static JsonValidation sinkFromAlias() {
+        return holds(json -> getSinkForAlias(extractString(json, "sink.type").orElse("")) != null, "Unable to locate sink from alias");
+    }
+
+    static JsonValidation sinkFromClass() {
+        return holds(json -> getSinkClassNames().contains(extractString(json, "sink.type").orElse("")), "The class is not a kind of Sink");
     }
 
     /**
@@ -63,11 +77,19 @@ public interface PipelineOptionsValidation {
         return (json) -> Observable.fromIterable(json.getJsonArray("processors"))
                 .map(JsonObject.class::cast)
                 .map(opt -> Pair.of(opt,
-                        isString("type").and(holds(o -> getProcessorClassNames().contains(o.getString("type")), "The class is not a kind of Processor")).apply(opt)))
+                        isString("type").and(processorFromAlias().or(processorFromClass())).apply(opt)))
                 .map(p -> Pair.of(p.getLeft(), p.getRight().and(() -> isNull("instances").or(gt("instances", 0L)).apply(p.getLeft()))))
                 .map(Pair::getRight)
                 .reduce((v1, v2) -> v1.and(() -> v2))
                 .blockingGet();
+    }
+
+    static JsonValidation processorFromAlias() {
+        return holds(o -> getProcessorForAlias(o.getString("type")) != null, "Unable to locate processor from alias");
+    }
+
+    static JsonValidation processorFromClass() {
+        return holds(o -> getProcessorClassNames().contains(o.getString("type")), "The class is not a kind of Processor");
     }
 
 

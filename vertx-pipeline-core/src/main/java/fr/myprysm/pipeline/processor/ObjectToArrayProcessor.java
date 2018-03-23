@@ -16,6 +16,7 @@
 
 package fr.myprysm.pipeline.processor;
 
+import fr.myprysm.pipeline.util.Alias;
 import fr.myprysm.pipeline.util.JsonHelpers;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.netty.channel.EventLoop;
@@ -42,6 +43,7 @@ import static io.reactivex.Completable.complete;
  * <p>
  * This processor runs its transformations on a worker thread to avoid blocking the {@link EventLoop}.
  */
+@Alias(prefix = "pipeline-core", name = "object-to-array-processor")
 public class ObjectToArrayProcessor extends BaseJsonProcessor<ObjectToArrayProcessorOptions> {
 
     private JsonArray fields;

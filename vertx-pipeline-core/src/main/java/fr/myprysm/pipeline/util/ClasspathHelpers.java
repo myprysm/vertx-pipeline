@@ -27,6 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClasspathHelpers {
     private static final Logger LOG = LoggerFactory.getLogger(ClasspathHelpers.class);
@@ -36,6 +38,7 @@ public class ClasspathHelpers {
     private static List<String> pumpClassNames;
     private static List<String> accumulatorClassName;
     private static List<String> cronEmitterClassName;
+    private static Map<String, String> aliasToComponents;
 
     private ClasspathHelpers() {
     }
@@ -53,6 +56,57 @@ public class ClasspathHelpers {
         }
 
         return scan;
+    }
+
+    public synchronized static String getSinkForAlias(String alias) {
+        String clazz = getComponentFromAlias(alias);
+        if (clazz != null && !Sink.class.isAssignableFrom(getScan().classNameToClassRef(clazz))) {
+            clazz = null;
+        }
+
+        return clazz;
+    }
+
+    public synchronized static String getProcessorForAlias(String alias) {
+        String clazz = getComponentFromAlias(alias);
+        if (clazz != null && !Processor.class.isAssignableFrom(getScan().classNameToClassRef(clazz))) {
+            clazz = null;
+        }
+
+        return clazz;
+    }
+
+    public synchronized static String getPumpForAlias(String alias) {
+        String clazz = getComponentFromAlias(alias);
+        if (clazz != null && !Pump.class.isAssignableFrom(getScan().classNameToClassRef(clazz))) {
+            clazz = null;
+        }
+
+        return clazz;
+    }
+
+    public synchronized static String getComponentFromAlias(String alias) {
+        return getAliasToComponents().get(alias);
+    }
+
+    public synchronized static Map<String, String> getAliasToComponents() {
+        if (aliasToComponents == null) {
+            aliasToComponents = new ConcurrentHashMap<>();
+            ScanResult scan = getScan();
+            scan.classNamesToClassRefs(scan.getNamesOfClassesWithAnnotation(Alias.class)).forEach(clazz -> {
+                if (Processor.class.isAssignableFrom(clazz) || Pump.class.isAssignableFrom(clazz) || Sink.class.isAssignableFrom(clazz)) {
+                    Alias annot = clazz.getAnnotation(Alias.class);
+                    String alias = (annot.prefix() + '.' + annot.name()).toLowerCase();
+                    if (aliasToComponents.putIfAbsent(alias, clazz.getName()) == null) {
+                        LOG.info("Mapped {} to {}", alias, clazz.getName());
+                    } else {
+                        LOG.error("Alias {} cannot be bound to {}. Already mapped to {}", alias, clazz.getName(), aliasToComponents.get(alias));
+                    }
+                }
+            });
+        }
+
+        return aliasToComponents;
     }
 
     /**

@@ -16,6 +16,7 @@
 
 package fr.myprysm.pipeline.processor;
 
+import fr.myprysm.pipeline.util.Alias;
 import fr.myprysm.pipeline.util.JsonHelpers;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
@@ -52,6 +53,7 @@ import static java.util.stream.Collectors.toList;
  * When flushing accumulated data, it is also possible to sort the list of accumulated events based on a specific field.
  */
 @Accumulator
+@Alias(prefix = "pipeline-core", name = "merge-basic-processor")
 public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProcessorOptions> {
 
 

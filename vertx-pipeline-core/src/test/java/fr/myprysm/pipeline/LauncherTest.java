@@ -39,8 +39,9 @@ class LauncherTest implements VertxTest {
             assertThat(RxJavaPlugins.getIoSchedulerHandler().getClass().getName()).matches(LAUNCHER_BIND);
             assertThat(RxJavaPlugins.getNewThreadSchedulerHandler().getClass().getName()).matches(LAUNCHER_BIND);
             RxJavaPlugins.reset();
+            ctx.completeNow();
         });
 
-        ctx.completeNow();
+
     }
 }

@@ -18,6 +18,7 @@ package fr.myprysm.pipeline.processor;
 
 import fr.myprysm.pipeline.processor.HttpGetRequestProcessorOptions.OnError;
 import fr.myprysm.pipeline.processor.HttpGetRequestProcessorOptions.ResponseType;
+import fr.myprysm.pipeline.util.Alias;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.reactivex.Single;
@@ -41,6 +42,7 @@ import java.util.Map;
 import static fr.myprysm.pipeline.processor.HttpGetRequestProcessorOptions.ResponseType.LIST_EXTRACT_FIRST;
 import static fr.myprysm.pipeline.util.JsonHelpers.*;
 
+@Alias(prefix = "pipeline-core", name = "http-get-request-processor")
 public class HttpGetRequestProcessor extends BaseJsonProcessor<HttpGetRequestProcessorConfigurer> {
     private static final Logger LOG = LoggerFactory.getLogger(HttpGetRequestProcessor.class);
 

@@ -1,0 +1,35 @@
+wrong-processor:
+  pump:
+    type: pipeline-core.timer-pump
+    interval: 1
+    unit:     SECONDS
+
+  processors:
+    - type: pipeline-core.timer-pump
+      level:  INFO
+  sink:
+    type: pipeline-playground.blackhole-sink
+
+wrong-pump:
+  pump:
+    type: pipeline-core.log-processor
+    interval: 1
+    unit:     SECONDS
+
+  processors:
+    - type: pipeline-core.log-processor
+      level:  INFO
+  sink:
+    type: pipeline-playground.blackhole-sink
+
+wrong-sink:
+  pump:
+    type: pipeline-core.timer-pump
+    interval: 1
+    unit:     SECONDS
+
+  processors:
+    - type: pipeline-core.log-processor
+      level:  INFO
+  sink:
+    type: pipeline-core.log-processor

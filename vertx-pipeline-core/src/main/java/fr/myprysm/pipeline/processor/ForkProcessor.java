@@ -16,6 +16,7 @@
 
 package fr.myprysm.pipeline.processor;
 
+import fr.myprysm.pipeline.util.Alias;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.reactivex.Single;
@@ -23,6 +24,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.List;
 
+@Alias(prefix = "pipeline-core", name = "fork-processor")
 public class ForkProcessor extends BaseJsonProcessor<ForkProcessorOptions> {
 
     private List<String> send;

@@ -135,6 +135,69 @@ The type of the processor.
 +++
 |===
 
+[[DatasourceConfiguration]]
+== DatasourceConfiguration
+
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[deployment]]`deployment`|`String`|-
+|[[name]]`name`|`String`|
++++
+The name of the configuration
+ <p>
+ This must be unique across the instance(s)
++++
+|[[properties]]`properties`|`Json object`|
++++
+The properties of the datasource as a json object.
+ <p>
+ This allows datasource configuration to be serialized across the event bus
++++
+|===
+
+[[DatasourcePumpOptions]]
+== DatasourcePumpOptions
+
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[datasource]]`datasource`|`link:dataobjects.html#DatasourceConfiguration[DatasourceConfiguration]`|-
+|[[name]]`name`|`String`|
++++
+The name of the pump.
+ <p>
+ This is automatically populated when the pipeline configuration is a list.
+ <p>
+ You still can name your pump for any purpose by using a map instead of a list
+ when you describe your pipeline.
++++
+|[[type]]`type`|`String`|
++++
+The type of the pump.
+ <p>
+ This is the fully qualified name of the <code>class</code> that acts as pump.
++++
+|===
+
+[[DatasourceRegistration]]
+== DatasourceRegistration
+
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[alias]]`alias`|`String`|-
+|[[component]]`component`|`String`|-
+|[[configuration]]`configuration`|`String`|-
+|[[deployment]]`deployment`|`String`|-
+|===
+
 [[DeploymentVerticleOptions]]
 == DeploymentVerticleOptions
 

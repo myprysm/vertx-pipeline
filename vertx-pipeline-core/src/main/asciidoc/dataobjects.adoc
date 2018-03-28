@@ -53,6 +53,33 @@ The type of the processor.
 +++
 |===
 
+[[CronPumpOptions]]
+== CronPumpOptions
+
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[cron]]`cron`|`String`|-
+|[[data]]`data`|`Json object`|-
+|[[name]]`name`|`String`|
++++
+The name of the pump.
+ <p>
+ This is automatically populated when the pipeline configuration is a list.
+ <p>
+ You still can name your pump for any purpose by using a map instead of a list
+ when you describe your pipeline.
++++
+|[[type]]`type`|`String`|
++++
+The type of the pump.
+ <p>
+ This is the fully qualified name of the <code>class</code> that acts as pump.
++++
+|===
+
 [[DataExtractorProcessorOptions]]
 == DataExtractorProcessorOptions
 

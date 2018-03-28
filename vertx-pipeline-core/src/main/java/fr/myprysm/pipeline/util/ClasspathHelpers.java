@@ -16,6 +16,8 @@
 
 package fr.myprysm.pipeline.util;
 
+import fr.myprysm.pipeline.datasource.DatasourceConfig;
+import fr.myprysm.pipeline.datasource.DatasourceConfiguration;
 import fr.myprysm.pipeline.processor.Accumulator;
 import fr.myprysm.pipeline.processor.Processor;
 import fr.myprysm.pipeline.pump.Pump;
@@ -35,8 +37,9 @@ public class ClasspathHelpers {
     private static List<String> processorClassNames;
     private static List<String> sinkClassNames;
     private static List<String> pumpClassNames;
-    private static List<String> accumulatorClassName;
+    private static List<String> accumulatorClassNames;
     private static Map<String, String> aliasToComponents;
+    private static List<String> datasourceComponentClassNames;
 
     private ClasspathHelpers() {
     }
@@ -55,6 +58,20 @@ public class ClasspathHelpers {
 
         return scan;
     }
+
+    public static List<Class<?>> toClasses(List<String> classes) {
+        return getScan().classNamesToClassRefs(classes);
+    }
+
+    public synchronized static String getDatasourceConfigurationForAlias(String alias) {
+        String clazz = getComponentFromAlias(alias);
+        if (clazz != null && !DatasourceConfiguration.class.isAssignableFrom(getScan().classNameToClassRef(clazz))) {
+            clazz = null;
+        }
+
+        return clazz;
+    }
+
 
     public synchronized static String getSinkForAlias(String alias) {
         String clazz = getComponentFromAlias(alias);
@@ -93,8 +110,8 @@ public class ClasspathHelpers {
             ScanResult scan = getScan();
             scan.classNamesToClassRefs(scan.getNamesOfClassesWithAnnotation(Alias.class)).forEach(clazz -> {
                 if (Processor.class.isAssignableFrom(clazz) || Pump.class.isAssignableFrom(clazz) || Sink.class.isAssignableFrom(clazz)) {
-                    Alias annot = clazz.getAnnotation(Alias.class);
-                    String alias = (annot.prefix() + '.' + annot.name()).toLowerCase();
+                    Alias anAlias = clazz.getAnnotation(Alias.class);
+                    String alias = (anAlias.prefix() + '.' + anAlias.name()).toLowerCase();
                     if (aliasToComponents.putIfAbsent(alias, clazz.getName()) == null) {
                         LOG.info("Mapped {} to {}", alias, clazz.getName());
                     } else {
@@ -107,6 +124,13 @@ public class ClasspathHelpers {
         return aliasToComponents;
     }
 
+    public synchronized static List<String> getDatasourceComponentClassNames() {
+        if (datasourceComponentClassNames == null) {
+            datasourceComponentClassNames = getScan().getNamesOfClassesWithAnnotation(DatasourceConfig.class);
+        }
+        return datasourceComponentClassNames;
+    }
+
     /**
      * Get the list of classes annotated with {@link Accumulator}
      * to ensure during startup that those components will be only instanciated once.
@@ -114,10 +138,10 @@ public class ClasspathHelpers {
      * @return the list of classes annotated {@link Accumulator}
      */
     public synchronized static List<String> getAccumulatorClassNames() {
-        if (accumulatorClassName == null) {
-            accumulatorClassName = getScan().getNamesOfClassesWithAnnotation(Accumulator.class);
+        if (accumulatorClassNames == null) {
+            accumulatorClassNames = getScan().getNamesOfClassesWithAnnotation(Accumulator.class);
         }
-        return accumulatorClassName;
+        return accumulatorClassNames;
     }
 
     /**

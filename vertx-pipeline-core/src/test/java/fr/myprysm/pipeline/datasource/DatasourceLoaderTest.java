@@ -1,0 +1,57 @@
+/*
+ * Copyright 2018 the original author or the original authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package fr.myprysm.pipeline.datasource;
+
+import fr.myprysm.pipeline.QuickAssert;
+import fr.myprysm.pipeline.VertxTest;
+import fr.myprysm.pipeline.pump.DummyDatasourcePump;
+import io.vertx.core.Vertx;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+class DatasourceLoaderTest implements VertxTest, QuickAssert {
+
+    private DatasourceRegistry registry;
+    private DatasourceLoader loader;
+
+    @BeforeEach
+    void setupRegistry(Vertx vertx, VertxTestContext ctx) {
+        registry = DatasourceRegistry.create(vertx, "deployment", ctx.succeeding(registry -> ctx.completeNow()));
+        loader = new DatasourceLoader(registry, "deployment");
+    }
+
+
+    @Test
+    @DisplayName("Datasource Loader can load dummy datasource")
+    void datasourceLoaderCanLoadDummyDatasource(VertxTestContext ctx) {
+        loader.load(ctx.succeeding(z -> {
+            registry.registrationsForDeployment("deployment", assertSuccess(deps -> {
+                assertThat(deps.size()).isEqualTo(1);
+                assertThat(deps.get(0)).isEqualTo(new DatasourceRegistration()
+                        .setDeployment("deployment")
+                        .setComponent(DummyDatasourcePump.class.getName())
+                        .setAlias("datasource.configuration")
+                        .setConfiguration(DatasourceConfiguration.class.getName()));
+            }, ctx.checkpoint(), ctx));
+        }));
+    }
+
+}

@@ -16,6 +16,7 @@
 
 package fr.myprysm.pipeline.datasource;
 
+import fr.myprysm.pipeline.util.Alias;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
@@ -23,6 +24,7 @@ import java.util.Objects;
 
 import static fr.myprysm.pipeline.util.JsonHelpers.obj;
 
+@Alias(prefix = "datasource", name = "configuration")
 @DataObject(generateConverter = true)
 public class DatasourceConfiguration {
 

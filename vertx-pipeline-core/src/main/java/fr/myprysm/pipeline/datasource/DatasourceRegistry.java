@@ -56,6 +56,20 @@ public interface DatasourceRegistry {
     DatasourceRegistry storeConfiguration(DatasourceConfiguration configuration, Handler<AsyncResult<Void>> handler);
 
     /**
+     * Removes a datasource configuration from its name.
+     * <p>
+     * Datasource configuration are identified with their name.
+     * <p>
+     * If you try to add an already existing datasource, the handler will receive a {@link DatasourceRegistryException}.
+     *
+     * @param name the name of the configuration to remove
+     * @param handler       the result handler
+     * @return this
+     */
+    @Fluent
+    DatasourceRegistry removeConfiguration(String name, Handler<AsyncResult<DatasourceConfiguration>> handler);
+
+    /**
      * Registers a datasource on the service.
      * <p>
      * Note that a single component can be registered once on a deployment.

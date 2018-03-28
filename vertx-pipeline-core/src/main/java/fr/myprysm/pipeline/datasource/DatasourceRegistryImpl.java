@@ -19,6 +19,7 @@ package fr.myprysm.pipeline.datasource;
 import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
+import io.reactivex.SingleSource;
 import io.reactivex.functions.Function;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -36,7 +37,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static io.reactivex.Completable.*;
 import static java.util.stream.Collectors.toList;
 
 class DatasourceRegistryImpl implements DatasourceRegistry {
@@ -66,13 +66,7 @@ class DatasourceRegistryImpl implements DatasourceRegistry {
     @Override
     public DatasourceRegistry getConfiguration(String name, Handler<AsyncResult<DatasourceConfiguration>> handler) {
         configurations.rxGet(name)
-                .flatMap(config -> {
-                    if (config == null) {
-                        return Single.error(new DatasourceRegistryException(DatasourceRegistryException.CONFIG_NOT_FOUND, "Could not find configuration for name '" + name + "'"));
-                    }
-
-                    return Single.just(new DatasourceConfiguration(config));
-                })
+                .flatMap(this.configNotNull(name))
                 .subscribe(SingleHelper.toObserver(handler));
         return this;
     }
@@ -82,12 +76,30 @@ class DatasourceRegistryImpl implements DatasourceRegistry {
         configurations.rxPutIfAbsent(configuration.getName(), configuration.toJson())
                 .flatMapCompletable(config -> {
                     if (config != null) {
-                        return error(new DatasourceRegistryException(DatasourceRegistryException.CONFIG_NAME_CONFLICT, "Configuration " + configuration.getName() + " is already registered"));
+                        return Completable.error(new DatasourceRegistryException(DatasourceRegistryException.CONFIG_NAME_CONFLICT, "Configuration " + configuration.getName() + " is already registered"));
                     }
 
-                    return complete();
+                    return Completable.complete();
                 }).subscribe(CompletableHelper.toObserver(handler));
         return this;
+    }
+
+    @Override
+    public DatasourceRegistry removeConfiguration(String name, Handler<AsyncResult<DatasourceConfiguration>> handler) {
+        configurations.rxRemove(name)
+                .flatMap(this.configNotNull(name))
+                .subscribe(SingleHelper.toObserver(handler));
+        return this;
+    }
+
+    private Function<JsonObject, Single<DatasourceConfiguration>> configNotNull(String name) {
+        return config -> {
+            if (config == null) {
+                return Single.error(new DatasourceRegistryException(DatasourceRegistryException.CONFIG_NOT_FOUND, "Could not find configuration for name '" + name + "'"));
+            }
+
+            return Single.just(new DatasourceConfiguration(config));
+        };
     }
 
     @Override
@@ -191,11 +203,11 @@ class DatasourceRegistryImpl implements DatasourceRegistry {
                 .flatMapObservable(Observable::fromIterable)
                 .flatMapCompletable(reg -> {
                     LOG.info("unregistering datasource: {}", reg);
-                    return complete();
+                    return Completable.complete();
                 })
                 .onErrorResumeNext(throwable -> {
                     LOG.error("No component registered for deployment[{}]", deployment);
-                    return complete();
+                    return Completable.complete();
                 });
 
         // Prepare to remove each configuration bound to the deployment id
@@ -220,7 +232,7 @@ class DatasourceRegistryImpl implements DatasourceRegistry {
 
         unregistrations
                 .andThen(unconfigurations)
-                .andThen(concat(unregs))
+                .andThen(Completable.concat(unregs))
                 .subscribe(CompletableHelper.toObserver(handler));
 
     }

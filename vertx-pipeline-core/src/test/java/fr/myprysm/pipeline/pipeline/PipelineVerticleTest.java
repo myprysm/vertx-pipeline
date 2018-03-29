@@ -124,6 +124,16 @@ class PipelineVerticleTest extends ConsoleTest implements VertxTest {
 
     }
 
+    @Test
+    @DisplayName("Pipeline verticle still stops when a component fails to undeploy.")
+    void pipelineShouldStopWhenComponentFailsToUndeploy(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        DeploymentOptions options = getDeploymentOptions("undeploy-component-error");
+
+        vertx.deployVerticle(PIPELINE_VERTICLE, options, ctx.succeeding((id) -> {
+            vertx.undeploy(id, ctx.succeeding(z -> ctx.completeNow()));
+        }));
+    }
+
     private DeploymentOptions getDeploymentOptions(String pipeline) {
         return new DeploymentOptions().setConfig(config.getJsonObject(pipeline).put("name", pipeline));
     }

@@ -182,3 +182,15 @@ http-get-processor-test:
         type:     $event.type
   sink:
     type: fr.myprysm.pipeline.sink.BlackholeSink
+
+undeploy-component-error:
+  deployChannel: undeploy-component-error
+  pump:
+    type: fr.myprysm.pipeline.pump.TimerPumpAndFailureTest$FailurePump
+
+  processors:
+    - type: fr.myprysm.pipeline.processor.CounterEmitterProcessor
+      interval: 5
+      signal:   TERMINATE
+  sink:
+    type: fr.myprysm.pipeline.sink.BlackholeSink

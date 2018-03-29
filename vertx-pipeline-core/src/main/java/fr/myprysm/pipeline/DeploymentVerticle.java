@@ -131,10 +131,15 @@ public class DeploymentVerticle extends AbstractVerticle implements SignalReceiv
                     .flatMapCompletable(this::stopPipeline)
                     .andThen(defer(this::hasRunningPipelines))
                     .doOnError(throwable -> {
-                        if (throwable instanceof DeploymentException && onTerminateShutdown) {
-                            vertx.close();
-                        } else {
-                            vertx.undeploy(deploymentID());
+                        if (throwable instanceof DeploymentException) {
+                            vertx.undeploy(deploymentID(), z1 -> {
+                                // Allow closing ONLY when there is no other verticle to avoid
+                                // applications embedding pipelines to shutdown unexpectedly
+                                if (onTerminateShutdown && vertx.deploymentIDs().size() == 0) {
+                                    LOG.info("Closing Vert.X...");
+                                    vertx.close(z -> LOG.info("Vert.X closed."));
+                                }
+                            });
                         }
                     })
                     .subscribe(

@@ -61,8 +61,21 @@ The type of the processor.
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[cron]]`cron`|`String`|-
-|[[data]]`data`|`Json object`|-
+|[[cron]]`cron`|`String`|
++++
+Quartz cron expression
+ <p>
+ The official documentation to write your own epression is available at
+ <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">this address</a>.
++++
+|[[data]]`data`|`Json object`|
++++
+The custom data to add with the tick
+ <p>
+ It can be any arbitrary json/yaml data.
+ <p>
+ No additional data is sent when it is null or empty
++++
 |[[name]]`name`|`String`|
 +++
 The name of the pump.

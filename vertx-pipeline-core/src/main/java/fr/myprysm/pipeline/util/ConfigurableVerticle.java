@@ -25,6 +25,7 @@ import io.vertx.core.Verticle;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.CompletableHelper;
 import io.vertx.reactivex.core.AbstractVerticle;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,10 +97,11 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
 
     @Override
     public void stop(Future<Void> stop) throws Exception {
-        LOG.info("[{}] Shutting down...", clazz);
+        info("[{}] Shutting down...", clazz);
         preShutdown().andThen(shutdown())
                 .doOnComplete(this::logShutdown)
                 .doOnError(this::logErrorShutdown)
+                .onErrorComplete()
                 .subscribe(CompletableHelper.toObserver(stop));
     }
 
@@ -113,13 +115,13 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
     }
 
     private void logShutdown() {
-        LOG.info("[{}] Shutdown.", clazz);
+        info("[{}] Shutdown.", clazz);
     }
 
     private void logErrorShutdown(Throwable throwable) {
-        LOG.error("An error occurred while closing [{}]", clazz);
-        LOG.error("Reason: ", throwable);
-        LOG.error("Shutting down anyway...");
+        error("An error occurred while closing [{}]", clazz);
+        error("Reason: ", throwable);
+        error("Shutting down anyway...");
     }
 
     protected Completable preShutdown() {
@@ -127,13 +129,13 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
     }
 
     private void logErrorStart(Throwable throwable) {
-        LOG.error("An error occured during deployment of [{}]", clazz);
-        LOG.error("Configuration is [{}]", config());
-        LOG.error("Reason: ", throwable);
+        error("An error occured during deployment of [{}]", clazz);
+        error("Configuration is [{}]", config());
+        error("Reason: ", throwable);
     }
 
     private void logStarted() {
-        LOG.info("[{}] Started.", clazz);
+        info("[{}] Started.", clazz);
     }
 
 
@@ -217,7 +219,7 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
     protected void trace(String message, Object... args) {
         Logger logger = getLogger();
         if (logger.isTraceEnabled()) {
-            logger.trace("[{}] " + message, name, args);
+            logger.trace("[{}] " + message, prepareArgs(name, args));
         }
     }
 
@@ -243,8 +245,9 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
      */
     protected void debug(String message, Object... args) {
         Logger logger = getLogger();
+
         if (logger.isDebugEnabled()) {
-            logger.debug("[{}] " + message, name, args);
+            logger.debug("[{}] " + message, prepareArgs(name, args));
         }
     }
 
@@ -271,7 +274,7 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
     protected void info(String message, Object... args) {
         Logger logger = getLogger();
         if (logger.isInfoEnabled()) {
-            logger.info("[{}] " + message, name, args);
+            logger.info("[{}] " + message, prepareArgs(name, args));
         }
     }
 
@@ -297,7 +300,7 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
     protected void warn(String message, Object... args) {
         Logger logger = getLogger();
         if (logger.isWarnEnabled()) {
-            logger.warn("[{}] " + message, name, args);
+            logger.warn("[{}] " + message, prepareArgs(name, args));
         }
     }
 
@@ -324,7 +327,7 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
     protected void error(String message, Object... args) {
         Logger logger = getLogger();
         if (logger.isErrorEnabled()) {
-            logger.error("[{}] " + message, name, args);
+            logger.error("[{}] " + message, prepareArgs(name, args));
         }
     }
 
@@ -342,4 +345,7 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
         }
     }
 
+    private Object[] prepareArgs(String name, Object... args) {
+        return ArrayUtils.addAll(new Object[]{name}, args);
+    }
 }

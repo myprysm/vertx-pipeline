@@ -16,7 +16,6 @@
 
 package fr.myprysm.pipeline.sink;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import fr.myprysm.pipeline.sink.FileSinkOptions.Format;
@@ -24,10 +23,12 @@ import fr.myprysm.pipeline.sink.FileSinkOptions.Mode;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.*;
 import io.reactivex.disposables.Disposable;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.buffer.Buffer;
+import io.vertx.core.streams.Pump;
+import io.vertx.reactivex.FlowableHelper;
 import io.vertx.reactivex.core.file.AsyncFile;
 import io.vertx.reactivex.core.file.FileSystem;
 
@@ -35,7 +36,6 @@ import java.util.List;
 
 import static io.reactivex.Completable.complete;
 import static io.reactivex.Completable.defer;
-import static java.util.stream.Collectors.joining;
 import static strman.Strman.ensureRight;
 
 
@@ -102,18 +102,10 @@ public class FileSink extends FlushableJsonSink<FileSinkOptions> implements Flow
      * @param objects the buffer of objects.
      */
     private void write(List<JsonObject> objects) {
-        Buffer buffer = Buffer.buffer(objects.stream()
-                .map(o -> {
-                    try {
-                        return mapper.writeValueAsString(o);
-                    } catch (JsonProcessingException ignored) {
-                        // we are manipulating json objects.....
-                        error("Error during " + format.name() + " serialization.", ignored);
-                        return "{\"error\": \"serialization error\", \"message\": \"" + ignored.getMessage().replaceAll("\"", "\\\"") + "\"}";
-                    }
-                }).collect(joining("\n")) + "\n"); // Ending line to concatenate each buffer when writing.
-
-        asyncFile.write(buffer);
+        Flowable<Buffer> items = Flowable.fromIterable(objects)
+                .map(object -> mapper.writeValueAsString(object) + "\n")
+                .map(Buffer::buffer);
+        Pump.pump(FlowableHelper.toReadStream(items), asyncFile.getDelegate()).start();
     }
 
     @Override

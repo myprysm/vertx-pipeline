@@ -80,6 +80,7 @@ public class SinkTest extends ConsoleTest implements VertxTest {
 
             vertx.eventBus().send(TEST_FROM, FAIL_DATA);
             vertx.eventBus().send(TEST_FROM, DATA);
+            vertx.eventBus().send(TEST_FROM, null);
             vertx.setTimer(100, timer -> {
                 ctx.verify(() -> assertConsoleContainsPattern(PATTERN_CONSOLE_OUTPUT));
                 ctx.completeNow();

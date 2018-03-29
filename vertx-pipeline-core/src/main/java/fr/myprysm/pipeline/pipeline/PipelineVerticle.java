@@ -87,10 +87,7 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineConfigurer> i
         Signal signal = Signal.valueOf(signalString.body());
         switch (signal) {
             case TERMINATE:
-                this.undeploy().andThen(defer(this::notifyUndeploy)).subscribe(
-                        () -> debug("Undeployed pipeline."),
-                        (throwable -> error("An error occured during undeployment", throwable))
-                );
+                this.notifyUndeploy().subscribe(() -> debug("Undeployed pipeline."));
         }
     }
 
@@ -160,15 +157,24 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineConfigurer> i
     @Override
     public Completable shutdown() {
         info("Shutting down...");
-        return controlChannelConsumer.rxUnregister();
+        return this.undeploy().andThen(defer(controlChannelConsumer::rxUnregister));
     }
 
     private Completable undeploy() {
-        return vertx.rxUndeploy(pumpDeployment.getValue())
+        return stopVerticle(pumpDeployment)
                 .doOnComplete(() -> info("Shutting down processors"))
                 .andThen(defer(this::undeployProcessors))
-                .onErrorComplete()
-                .andThen(vertx.rxUndeploy(sinkDeployment.getValue()));
+                .andThen(stopVerticle(sinkDeployment));
+    }
+
+    private Completable stopVerticle(Pair<String, String> deployment) {
+        if (vertx.deploymentIDs().contains(deployment.getRight())) {
+            info("Undeploying {}:{}", deployment.getLeft(), deployment.getRight());
+            return vertx.rxUndeploy(deployment.getRight());
+        } else {
+            error("{}:{} already undeployed", deployment.getLeft(), deployment.getRight());
+            return complete();
+        }
     }
 
     private Completable undeployProcessors() {
@@ -182,20 +188,8 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineConfigurer> i
 
     private Completable undeployGroup(List<Pair<String, String>> group) {
         return fromIterable(group)
-                .map(this::componentId)
-                .doOnError((throwable) -> error("An error occured during processors shutdown: ", throwable))
-                .flatMapCompletable(vertx::rxUndeploy);
-    }
-
-    /**
-     * Logs the name of the component and returns its ID.
-     *
-     * @param deployment the pair &lt;name, id&gt;
-     * @return the id
-     */
-    private String componentId(Pair<String, String> deployment) {
-        debug("Undeploying [{}]...", deployment.getKey());
-        return deployment.getValue();
+                .flatMapCompletable(this::stopVerticle)
+                .doOnError((throwable) -> error("An error occured during processors shutdown: ", throwable));
     }
 
     private void setPumpDeployment(Pair<String, String> pumpDeployment) {

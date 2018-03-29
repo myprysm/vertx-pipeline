@@ -79,8 +79,11 @@ class FileSinkTest implements VertxTest {
             vertx.setTimer(100, timer -> {
                 vertx.undeploy(id, ctx.succeeding(zoid ->
                         vertx.fileSystem().readFile("/tmp/output.json", ctx.succeeding(buffer -> {
-                            Arrays.stream(buffer.toString().split("\n"))
-                                    .forEach(line -> assertThat(line).isEqualTo(MESSAGE.toString()));
+                            ctx.verify(() -> {
+                                Arrays.stream(buffer.toString().split("\n"))
+                                        .forEach(line -> assertThat(line).isEqualTo(MESSAGE.toString()));
+                            });
+
                             cp.flag();
                         }))
                 ));

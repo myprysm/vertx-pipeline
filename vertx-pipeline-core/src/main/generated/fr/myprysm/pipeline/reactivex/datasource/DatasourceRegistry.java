@@ -118,6 +118,36 @@ public class DatasourceRegistry {
   }
 
   /**
+   * Removes a datasource configuration from its name.
+   * <p>
+   * Datasource configuration are identified with their name.
+   * <p>
+   * If you try to add an already existing datasource, the handler will receive a {@link fr.myprysm.pipeline.reactivex.datasource.DatasourceRegistryException}.
+   * @param name the name of the configuration to remove
+   * @param handler the result handler
+   * @return this
+   */
+  public DatasourceRegistry removeConfiguration(String name, Handler<AsyncResult<DatasourceConfiguration>> handler) { 
+    delegate.removeConfiguration(name, handler);
+    return this;
+  }
+
+  /**
+   * Removes a datasource configuration from its name.
+   * <p>
+   * Datasource configuration are identified with their name.
+   * <p>
+   * If you try to add an already existing datasource, the handler will receive a {@link fr.myprysm.pipeline.reactivex.datasource.DatasourceRegistryException}.
+   * @param name the name of the configuration to remove
+   * @return 
+   */
+  public Single<DatasourceConfiguration> rxRemoveConfiguration(String name) { 
+    return new io.vertx.reactivex.core.impl.AsyncResultSingle<DatasourceConfiguration>(handler -> {
+      removeConfiguration(name, handler);
+    });
+  }
+
+  /**
    * Registers a datasource on the service.
    * <p>
    * Note that a single component can be registered once on a deployment.

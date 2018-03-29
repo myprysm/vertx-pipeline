@@ -135,6 +135,20 @@ public class DatasourceRegistryVertxProxyHandler extends ProxyHandler {
           service.storeConfiguration(json.getJsonObject("configuration") == null ? null : new fr.myprysm.pipeline.datasource.DatasourceConfiguration(json.getJsonObject("configuration")), createHandler(msg));
           break;
         }
+        case "removeConfiguration": {
+          service.removeConfiguration((java.lang.String)json.getValue("name"), res -> {
+            if (res.failed()) {
+              if (res.cause() instanceof ServiceException) {
+                msg.reply(res.cause());
+              } else {
+                msg.reply(new ServiceException(-1, res.cause().getMessage()));
+              }
+            } else {
+              msg.reply(res.result() == null ? null : res.result().toJson());
+            }
+         });
+          break;
+        }
         case "registerComponent": {
           service.registerComponent(json.getJsonObject("registration") == null ? null : new fr.myprysm.pipeline.datasource.DatasourceRegistration(json.getJsonObject("registration")), createHandler(msg));
           break;

@@ -45,19 +45,48 @@ public class CronPumpOptions extends PumpOptions {
         CronPumpOptionsConverter.fromJson(json, this);
     }
 
+    /**
+     * Quartz cron expression
+     *
+     * @return quartz cron expression
+     */
     public String getCron() {
         return cron;
     }
 
+    /**
+     * Quartz cron expression
+     * <p>
+     * The official documentation to write your own epression is available at
+     * <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">this address</a>.
+     *
+     * @param cron quartz cron expression
+     * @return this
+     */
     public CronPumpOptions setCron(String cron) {
         this.cron = cron;
         return this;
     }
 
+    /**
+     * The custom data to add with the tick
+     *
+     * @return the custom data to add with the tick
+     */
     public JsonObject getData() {
         return data;
     }
 
+    /**
+     * The custom data to add with the tick
+     * <p>
+     * It can be any arbitrary json/yaml data.
+     * <p>
+     * No additional data is sent when it is null or empty
+     *
+     * @param data the additional data
+     * @return this
+     */
     public CronPumpOptions setData(JsonObject data) {
         this.data = data;
         return this;

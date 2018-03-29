@@ -19,8 +19,10 @@ package fr.myprysm.pipeline.pump;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.*;
 import io.vertx.core.json.JsonObject;
-import org.quartz.*;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
 import org.quartz.Scheduler;
+import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +34,10 @@ import static org.quartz.CronScheduleBuilder.cronSchedule;
 import static org.quartz.JobBuilder.newJob;
 import static org.quartz.TriggerBuilder.newTrigger;
 
+/**
+ * Quartz Cron pump that emits events according to the cron.
+ * It can embed additional data.
+ */
 public class CronPump extends BaseJsonPump<CronPumpOptions> implements FlowableOnSubscribe<JsonObject> {
     private static final Logger LOG = LoggerFactory.getLogger(CronPump.class);
     private Scheduler scheduler;
@@ -48,13 +54,17 @@ public class CronPump extends BaseJsonPump<CronPumpOptions> implements FlowableO
 
     @Override
     protected Completable startVerticle() {
-        try {
-            scheduler.start();
-            return Completable.complete();
-        } catch (SchedulerException exc) {
-            error("Unable to start quartz scheduler: ", exc);
-            return Completable.error(exc);
-        }
+        return Completable.fromAction(() -> {
+            if (!scheduler.isStarted()) {
+                scheduler.start();
+            }
+        });
+    }
+
+    @Override
+    public Completable shutdown() {
+        emitter.onComplete();
+        return Completable.complete();
     }
 
     @Override
@@ -64,23 +74,18 @@ public class CronPump extends BaseJsonPump<CronPumpOptions> implements FlowableO
 
     @Override
     public Completable configure(CronPumpOptions config) {
-        trigger = newTrigger()
-                .withSchedule(cronSchedule(config.getCron()))
-                .withIdentity(name() + ".trigger").build();
+        return Completable.fromAction(() -> {
+            trigger = newTrigger()
+                    .withSchedule(cronSchedule(config.getCron()))
+                    .withIdentity(name() + ".trigger").build();
 
-        job = newJob(CronEmitter.class)
-                .withIdentity(name() + ".job")
-                .build();
+            job = newJob(CronEmitter.class)
+                    .withIdentity(name() + ".job")
+                    .build();
 
-        data = config.getData();
-        try {
+            data = config.getData();
             scheduler = StdSchedulerFactory.getDefaultScheduler();
-        } catch (SchedulerException e) {
-            error("Unable to get default quartz scheduler: ", e);
-            return Completable.error(e);
-        }
-
-        return Completable.complete();
+        });
     }
 
     @Override

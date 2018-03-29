@@ -25,6 +25,9 @@ import org.quartz.JobExecutionException;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Quartz job that will emit a signal when the cron scheduler triggers
+ */
 public class CronEmitter implements Job {
     public CronEmitter() {
 

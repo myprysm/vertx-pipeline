@@ -52,7 +52,7 @@ class ElasticsearchSinkTest implements VertxTest {
 
     private static final String VERTICLE = "fr.myprysm.pipeline.elasticsearch.sink.ElasticsearchSink";
     public static final JsonObject CONFIG = obj()
-            .put("name", "jolt-processor")
+            .put("name", "elasticsearch-sink")
             .put("type", VERTICLE)
             .put("from", "from")
             .put("to", arr().add("to"))
@@ -103,7 +103,7 @@ class ElasticsearchSinkTest implements VertxTest {
     @Test
     @DisplayName("Elasticsearch sink should bulk index documents")
     void elasticsearchSinkShouldBulkIndexDocuments(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
-        long bulk = 50L;
+        long bulk = 5L;
         JsonObject config = CONFIG.copy()
                 .put("indexName", "bulk")
                 .put("indexType", "test")

@@ -256,6 +256,10 @@ to ensure a proper run and the pipeline stability.
 - [x] `JoltProcessor`                   - Perform complex `JSON` transformations using [JOLT](http://bazaarvoice.github.io/jolt/).
                                         Can be configured either from a file or directly in pipeline configuration. 
                                         ([options](https://github.com/myprysm/vertx-pipeline/blob/develop/vertx-pipeline-core/src/main/asciidoc/dataobjects.adoc#joltprocessoroptions))
+- [x] `CronPump`                        - Schedule events with cron expression using [Quartz Scheduler](http://www.quartz-scheduler.org/).
+                                        This is useful to schedule recurrent complex processes.
+                                        Can be configured either from a file or directly in pipeline configuration. 
+                                        ([options](https://github.com/myprysm/vertx-pipeline/blob/develop/vertx-pipeline-core/src/main/asciidoc/dataobjects.adoc#cronpumpoptions))
 ## Next to come
 
 - [ ] Pipeline pause/resume

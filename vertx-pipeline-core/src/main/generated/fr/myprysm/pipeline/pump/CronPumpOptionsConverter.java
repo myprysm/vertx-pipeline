@@ -33,6 +33,9 @@ public class CronPumpOptionsConverter {
     if (json.getValue("data") instanceof JsonObject) {
       obj.setData(((JsonObject)json.getValue("data")).copy());
     }
+    if (json.getValue("emitter") instanceof String) {
+      obj.setEmitter((String)json.getValue("emitter"));
+    }
   }
 
   public static void toJson(CronPumpOptions obj, JsonObject json) {
@@ -41,6 +44,9 @@ public class CronPumpOptionsConverter {
     }
     if (obj.getData() != null) {
       json.put("data", obj.getData());
+    }
+    if (obj.getEmitter() != null) {
+      json.put("emitter", obj.getEmitter());
     }
   }
 }

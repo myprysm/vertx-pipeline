@@ -19,6 +19,7 @@ package fr.myprysm.pipeline.pump;
 import fr.myprysm.pipeline.VertxTest;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +37,7 @@ class CronPumpTest implements VertxTest {
 
     private static final JsonObject CONFIG = obj()
             .put("to", arr().add(TEST_TO))
-            .put("name", "test")
+            .put("name", "cron-pump")
             .put("type", VERTICLE)
             .put("cron", TEST_CRON)
             .put("data", obj().put("field", "value"));
@@ -44,26 +45,54 @@ class CronPumpTest implements VertxTest {
             .setConfig(CONFIG);
 
     @Test
-    @DisplayName("CronPump should emit values each second")
+    @DisplayName("CronPump should emit values")
     void cronEmitsValues(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
-        vertx.deployVerticle(VERTICLE, OPTIONS, ctx.succeeding(id -> {
-            vertx.eventBus().<JsonObject>consumer(TEST_TO, message -> {
-                ctx.verify(() -> {
-                    JsonObject data = message.body();
-                    assertThat(data.getLong("counter")).isNotNull().isGreaterThanOrEqualTo(0);
-                    assertThat(data.getLong("timestamp")).isNotNull();
-                    assertThat(data.getString("field")).isEqualTo("value");
+        MessageConsumer<JsonObject> consumer = vertx.eventBus().consumer(TEST_TO);
+        consumer.handler(message -> consumer.unregister(z -> {
+            ctx.verify(() -> {
+                JsonObject data = message.body();
+                assertThat(data.getLong("counter")).isNotNull().isGreaterThanOrEqualTo(0);
+                assertThat(data.getLong("timestamp")).isNotNull();
+                assertThat(data.getString("field")).isEqualTo("value");
 
-                });
-                ctx.completeNow();
             });
+            ctx.completeNow();
         }));
+
+        vertx.deployVerticle(VERTICLE, OPTIONS, ctx.succeeding());
     }
 
     @Test
     @DisplayName("CronPump should not start without a valid cron expression")
     void cronCannotStartWithoutValidExpression(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
-        JsonObject invalidConfig = CONFIG.copy().put("cron", "some invalid cron");
+        JsonObject invalidConfig = CONFIG.copy().put("name", "invalid-cron-config").put("cron", "some invalid cron");
         vertx.deployVerticle(VERTICLE, new DeploymentOptions().setConfig(invalidConfig), ctx.failing(t -> ctx.completeNow()));
+    }
+
+
+    @Test
+    @DisplayName("CronPump should work with a custom CronEmitter")
+    void cronShouldWorkWithACustomCronEmitter(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        JsonObject customEmitter = CONFIG.copy().put("name", "cron-pump-custom-emitter").put("emitter", "fr.myprysm.pipeline.pump.CronPumpTest$TestCronEmitter");
+        MessageConsumer<JsonObject> consumer = vertx.eventBus().consumer(TEST_TO);
+        consumer.handler(message -> consumer.unregister(z -> {
+            ctx.verify(() -> {
+                JsonObject data = message.body();
+                assertThat(data).isEqualTo(obj().put("custom", "cron event"));
+            });
+            ctx.completeNow();
+        }));
+
+        vertx.deployVerticle(VERTICLE, new DeploymentOptions().setConfig(customEmitter), ctx.succeeding());
+    }
+
+    public static class TestCronEmitter extends CronEmitter {
+        public TestCronEmitter() {
+        }
+
+        @Override
+        public void execute() {
+            emitter().onNext(obj().put("custom", "cron event"));
+        }
     }
 }

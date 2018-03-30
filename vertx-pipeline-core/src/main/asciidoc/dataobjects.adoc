@@ -76,6 +76,15 @@ The custom data to add with the tick
  <p>
  No additional data is sent when it is null or empty
 +++
+|[[emitter]]`emitter`|`String`|
++++
+The emitter class
+ Provides the ability to execute custom job by providing a custom implementation of a <code>CronEmitter</code>
+ <p>
+ This can be useful to extract a dataset for batch process on a bunch of single items.
+ <p>
+ Defaults to <code>fr.myprysm.pipeline.pump.CronEmitter</code>
++++
 |[[name]]`name`|`String`|
 +++
 The name of the pump.

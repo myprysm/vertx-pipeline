@@ -24,8 +24,10 @@ import static fr.myprysm.pipeline.util.JsonHelpers.obj;
 @DataObject(generateConverter = true)
 public class CronPumpOptions extends PumpOptions {
     public static final JsonObject DEFAULT_DATA = obj();
+    private static final String DEFAULT_EMITTER = "fr.myprysm.pipeline.pump.CronEmitter";
     private String cron;
     private JsonObject data = DEFAULT_DATA;
+    private String emitter = DEFAULT_EMITTER;
 
     public CronPumpOptions() {
 
@@ -34,6 +36,8 @@ public class CronPumpOptions extends PumpOptions {
     public CronPumpOptions(CronPumpOptions other) {
         super(other);
         cron = other.cron;
+        data = other.data;
+        emitter = other.emitter;
     }
 
     public CronPumpOptions(PumpOptions other) {
@@ -89,6 +93,31 @@ public class CronPumpOptions extends PumpOptions {
      */
     public CronPumpOptions setData(JsonObject data) {
         this.data = data;
+        return this;
+    }
+
+    /**
+     * The emitter class
+     *
+     * @return the emitter class
+     */
+    public String getEmitter() {
+        return emitter;
+    }
+
+    /**
+     * The emitter class
+     * Provides the ability to execute custom job by providing a custom implementation of a <code>CronEmitter</code>
+     * <p>
+     * This can be useful to extract a dataset for batch process on a bunch of single items.
+     * <p>
+     * Defaults to <code>fr.myprysm.pipeline.pump.CronEmitter</code>
+     *
+     * @param emitter the emitter class
+     * @return this
+     */
+    public CronPumpOptions setEmitter(String emitter) {
+        this.emitter = emitter;
         return this;
     }
 

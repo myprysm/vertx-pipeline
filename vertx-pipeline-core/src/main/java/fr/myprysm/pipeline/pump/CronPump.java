@@ -19,10 +19,8 @@ package fr.myprysm.pipeline.pump;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.*;
 import io.vertx.core.json.JsonObject;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
+import org.quartz.*;
 import org.quartz.Scheduler;
-import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,14 +70,16 @@ public class CronPump extends BaseJsonPump<CronPumpOptions> implements FlowableO
         return new CronPumpOptions(config);
     }
 
+
     @Override
+    @SuppressWarnings("unchecked")
     public Completable configure(CronPumpOptions config) {
         return Completable.fromAction(() -> {
             trigger = newTrigger()
                     .withSchedule(cronSchedule(config.getCron()))
                     .withIdentity(name() + ".trigger").build();
 
-            job = newJob(CronEmitter.class)
+            job = newJob((Class<? extends Job>) Class.forName(config.getEmitter()))
                     .withIdentity(name() + ".job")
                     .build();
 
@@ -100,6 +100,7 @@ public class CronPump extends BaseJsonPump<CronPumpOptions> implements FlowableO
         jobData.put("emitter", emitter);
         jobData.put("tick", tick);
         jobData.put("data", data);
+        jobData.put("vertx", vertx);
         Date ft = scheduler.scheduleJob(job, trigger);
         info("Next cron will be executed at {}", ft);
     }

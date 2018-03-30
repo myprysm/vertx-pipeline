@@ -22,15 +22,21 @@ import io.vertx.core.json.JsonObject;
 
 import java.text.ParseException;
 
-import static fr.myprysm.pipeline.validation.JsonValidation.holds;
-import static fr.myprysm.pipeline.validation.JsonValidation.isString;
+import static fr.myprysm.pipeline.util.ClasspathHelpers.getCronEmitterClassNames;
+import static fr.myprysm.pipeline.validation.JsonValidation.*;
 import static org.quartz.CronScheduleBuilder.cronScheduleNonvalidatedExpression;
 
 public interface CronPumpOptionsValidation {
 
     static ValidationResult validate(JsonObject config) {
         return isString("cron").and(isCronValid())
+                .and(isNull("emitter").or(emitterExists()))
                 .apply(config);
+    }
+
+    static JsonValidation emitterExists() {
+        return isString("emitter")
+                .and(holds(json -> getCronEmitterClassNames().contains(json.getString("emitter")), "The class is not a kind of Sink"));
     }
 
     static JsonValidation isCronValid() {

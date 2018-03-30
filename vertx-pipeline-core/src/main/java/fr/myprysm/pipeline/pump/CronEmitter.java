@@ -18,6 +18,7 @@ package fr.myprysm.pipeline.pump;
 
 import io.reactivex.FlowableEmitter;
 import io.vertx.core.json.JsonObject;
+import io.vertx.reactivex.core.Vertx;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -29,6 +30,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * Quartz job that will emit a signal when the cron scheduler triggers
  */
 public class CronEmitter implements Job {
+    private FlowableEmitter<JsonObject> emitter;
+    private AtomicLong tick;
+    private JsonObject data;
+    private Vertx vertx;
+
     public CronEmitter() {
 
     }
@@ -37,9 +43,28 @@ public class CronEmitter implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         JobDataMap jobData = context.getMergedJobDataMap();
-        FlowableEmitter<JsonObject> emitter = (FlowableEmitter<JsonObject>) jobData.get("emitter");
-        AtomicLong tick = (AtomicLong) jobData.get("tick");
-        JsonObject data = (JsonObject) jobData.get("data");
+        emitter = (FlowableEmitter<JsonObject>) jobData.get("emitter");
+        tick = (AtomicLong) jobData.get("tick");
+        data = (JsonObject) jobData.get("data");
+        vertx = (Vertx) jobData.get("vertx");
+        initialize();
+        execute();
+    }
+
+    public Vertx vertx() {
+        return vertx;
+    }
+
+    public FlowableEmitter<JsonObject> emitter() {
+        return emitter;
+    }
+
+    public void initialize() {
+
+    }
+
+    public void execute() {
+
         if (emitter != null) {
             emitter.onNext(data.copy().put("counter", tick.incrementAndGet()).put("timestamp", System.currentTimeMillis()));
         }

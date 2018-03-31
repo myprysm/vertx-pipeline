@@ -30,7 +30,7 @@ class CronPumpOptionsTest {
         new CronPumpOptionsConverter();
 
         String badStr = "{\"name\": 10, \"type\": 20, \"address\": 1000}";
-        String optStr = "{\"name\":\"name\",\"type\":\"type\",\"cron\":\"cron\", \"data\": {}}";
+        String optStr = "{\"name\":\"name\",\"type\":\"type\",\"cron\":\"cron\", \"data\": {},\"emitter\":\"fr.myprysm.pipeline.pump.CronEmitter\"}";
 
         PumpOptions optPump = new PumpOptions(new JsonObject(optStr));
 
@@ -50,7 +50,7 @@ class CronPumpOptionsTest {
 
 
         assertThat(new CronPumpOptions(new JsonObject(badStr))).isEqualTo(new CronPumpOptions());
-        assertThat(optNull.toJson()).isEqualTo(obj());
+        assertThat(optNull.toJson()).isEqualTo(obj().put("emitter", "fr.myprysm.pipeline.pump.CronEmitter"));
         assertThat(optObj).isEqualTo(optObj);
         assertThat(optObj).isNotEqualTo(optNull);
         assertThat(optObj).isEqualTo(new CronPumpOptions(optJson));

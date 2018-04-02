@@ -17,6 +17,7 @@
 package fr.myprysm.pipeline.pump;
 
 import fr.myprysm.pipeline.VertxTest;
+import io.reactivex.Completable;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -91,8 +92,9 @@ class CronPumpTest implements VertxTest {
         }
 
         @Override
-        public void execute() {
+        public Completable execute() {
             emitter().onNext(obj().put("custom", "cron event"));
+            return Completable.complete();
         }
     }
 }

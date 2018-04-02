@@ -38,7 +38,16 @@ import static org.quartz.TriggerBuilder.newTrigger;
  */
 public class CronPump extends BaseJsonPump<CronPumpOptions> implements FlowableOnSubscribe<JsonObject> {
     private static final Logger LOG = LoggerFactory.getLogger(CronPump.class);
-    private Scheduler scheduler;
+    private static Scheduler SCHEDULER;
+
+    static {
+        try {
+            SCHEDULER = StdSchedulerFactory.getDefaultScheduler();
+        } catch (SchedulerException e) {
+            LOG.error("Unable to start scheduler", e);
+        }
+    }
+
     private FlowableEmitter<JsonObject> emitter;
     private JsonObject data;
     private AtomicLong tick = new AtomicLong();
@@ -53,8 +62,8 @@ public class CronPump extends BaseJsonPump<CronPumpOptions> implements FlowableO
     @Override
     protected Completable startVerticle() {
         return Completable.fromAction(() -> {
-            if (!scheduler.isStarted()) {
-                scheduler.start();
+            if (!SCHEDULER.isStarted()) {
+                SCHEDULER.start();
             }
         });
     }
@@ -84,7 +93,6 @@ public class CronPump extends BaseJsonPump<CronPumpOptions> implements FlowableO
                     .build();
 
             data = config.getData();
-            scheduler = StdSchedulerFactory.getDefaultScheduler();
         });
     }
 
@@ -101,7 +109,7 @@ public class CronPump extends BaseJsonPump<CronPumpOptions> implements FlowableO
         jobData.put("tick", tick);
         jobData.put("data", data);
         jobData.put("vertx", vertx);
-        Date ft = scheduler.scheduleJob(job, trigger);
+        Date ft = SCHEDULER.scheduleJob(job, trigger);
         info("Next cron will be executed at {}", ft);
     }
 

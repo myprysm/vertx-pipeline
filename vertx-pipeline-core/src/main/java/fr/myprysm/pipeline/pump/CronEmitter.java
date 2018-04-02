@@ -16,6 +16,7 @@
 
 package fr.myprysm.pipeline.pump;
 
+import io.reactivex.Completable;
 import io.reactivex.FlowableEmitter;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Vertx;
@@ -47,8 +48,8 @@ public class CronEmitter implements Job {
         tick = (AtomicLong) jobData.get("tick");
         data = (JsonObject) jobData.get("data");
         vertx = (Vertx) jobData.get("vertx");
-        initialize();
-        execute();
+        vertx.runOnContext((zoid) -> initialize().andThen(Completable.defer(this::execute)).subscribe());
+
     }
 
     public Vertx vertx() {
@@ -59,14 +60,15 @@ public class CronEmitter implements Job {
         return emitter;
     }
 
-    public void initialize() {
-
+    public Completable initialize() {
+        return Completable.complete();
     }
 
-    public void execute() {
-
+    public Completable execute() {
         if (emitter != null) {
             emitter.onNext(data.copy().put("counter", tick.incrementAndGet()).put("timestamp", System.currentTimeMillis()));
         }
+
+        return Completable.complete();
     }
 }

@@ -157,7 +157,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
 
     /**
      * Validates that <code>field</code> fields are of <code>clazz</code> type.
-     * <p>
+     *
      * <code>clazz</code> is one of the primitive types or {@link JsonObject} or {@link JsonArray}.
      *
      * @param field the name of the field
@@ -172,7 +172,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
 
     /**
      * Validates that <code>field</code> fields are of <code>clazz</code> type.
-     * <p>
+     *
      * <code>clazz</code> is one of the primitive types or {@link JsonObject} or {@link JsonArray}.
      *
      * @param field   the name of the field
@@ -192,7 +192,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
 
     /**
      * Validates that <code>field</code> fields are of <code>clazz</code> type.
-     * <p>
+     *
      * <code>clazz</code> is one of the primitive types or {@link JsonObject} or {@link JsonArray}.
      *
      * @param field the name of the field
@@ -207,7 +207,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
 
     /**
      * Validates that <code>field</code> fields are of <code>clazz</code> type.
-     * <p>
+     *
      * <code>clazz</code> is one of the primitive types or {@link JsonObject} or {@link JsonArray}.
      *
      * @param field   the name of the field
@@ -250,7 +250,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
 
     /**
      * Validates that <code>field</code> is an <code>array</code> of <code>maxSize</code> elements.
-     * <p>
+     *
      * <code>maxSize</code> must be a positive integer.
      * when <code>maxSize</code> is <code>0</code>, then <code>#isArray(String, int)</code> behaves like {@link #isArray(String)}.
      *
@@ -264,7 +264,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
 
     /**
      * Validates that <code>field</code> is an <code>array</code> of <code>maxSize</code> elements.
-     * <p>
+     *
      * <code>maxSize</code> must be a positive integer.
      * when <code>maxSize</code> is <code>0</code>, then <code>#isArray(String, int)</code> behaves like {@link #isArray(String)}.
      *

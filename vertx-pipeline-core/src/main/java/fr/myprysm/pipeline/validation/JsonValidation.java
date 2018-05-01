@@ -27,7 +27,6 @@ import java.util.regex.Pattern;
 import static fr.myprysm.pipeline.util.JsonHelpers.extractObject;
 import static fr.myprysm.pipeline.validation.ValidationResult.invalid;
 import static fr.myprysm.pipeline.validation.ValidationResult.valid;
-import static java.lang.Boolean.TRUE;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -132,7 +131,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
 
     /**
      * Validates that <code>field</code> fields are of <code>clazz</code> type.
-     * <p>
+     *
      * <code>clazz</code> is one of the primitive types or {@link JsonObject} or {@link JsonArray}.
      *
      * @param field the name of the field
@@ -147,7 +146,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
 
     /**
      * Validates that <code>field</code> fields are of <code>clazz</code> type.
-     * <p>
+     *
      * <code>clazz</code> is one of the primitive types or {@link JsonObject} or {@link JsonArray}.
      *
      * @param field   the name of the field
@@ -160,19 +159,14 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
         requireNonNull(clazz);
         return isArray(field).and(holds(json -> json.getJsonArray(field)
                         .stream()
-                        .reduce(TRUE,
-                                // Validating entry class against clazz will ensure that
-                                // clazz is a valid assignment from a JSON point of view...
-                                (valid, entry) -> valid && (entry != null && entry.getClass().isAssignableFrom(clazz)),
-                                (r1, r2) -> r1 && r2
-                        )
+                        .allMatch(entry -> entry != null && entry.getClass().isAssignableFrom(clazz))
                 ,
                 message));
     }
 
     /**
      * Validates that <code>field</code> fields are of <code>clazz</code> type.
-     * <p>
+     *
      * <code>clazz</code> is one of the primitive types or {@link JsonObject} or {@link JsonArray}.
      *
      * @param field the name of the field
@@ -187,7 +181,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
 
     /**
      * Validates that <code>field</code> fields are of <code>clazz</code> type.
-     * <p>
+     *
      * <code>clazz</code> is one of the primitive types or {@link JsonObject} or {@link JsonArray}.
      *
      * @param field   the name of the field
@@ -200,12 +194,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
         requireNonNull(clazz);
         return isObject(field).and(holds(json -> json.getJsonObject(field)
                         .stream()
-                        .reduce(TRUE,
-                                // Validating entry class against clazz will ensure that
-                                // clazz is a valid assignment from a JSON point of view...
-                                (valid, entry) -> valid && (entry.getValue() != null && entry.getValue().getClass().isAssignableFrom(clazz)),
-                                (r1, r2) -> r1 && r2
-                        )
+                        .allMatch(entry -> entry.getValue() != null && entry.getValue().getClass().isAssignableFrom(clazz))
                 ,
                 message));
     }
@@ -235,7 +224,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
 
     /**
      * Validates that <code>field</code> is an <code>array</code> of <code>maxSize</code> elements.
-     * <p>
+     *
      * <code>maxSize</code> must be a positive integer.
      * when <code>maxSize</code> is <code>0</code>, then <code>#isArray(String, int)</code> behaves like {@link #isArray(String)}.
      *
@@ -249,7 +238,7 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
 
     /**
      * Validates that <code>field</code> is an <code>array</code> of <code>maxSize</code> elements.
-     * <p>
+     *
      * <code>maxSize</code> must be a positive integer.
      * when <code>maxSize</code> is <code>0</code>, then <code>#isArray(String, int)</code> behaves like {@link #isArray(String)}.
      *
@@ -387,6 +376,39 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
                 .and(holds(json -> Arrays.stream(values)
                         .map(Enum::name)
                         .anyMatch(json.getValue(field)::equals), message));
+    }
+
+    /**
+     * Validates that <code>field</code> is a <code>string</code> and a valid java <code>class</code>.
+     *
+     * @param field the name of the field
+     * @param <T>   the type of the enumeration
+     * @return validation result combinator
+     */
+    static <T extends Enum<T>> JsonValidation isClass(String field) {
+        requireNonNull(field);
+        return isClass(field, message(field, "is not a valid java class"));
+    }
+
+    /**
+     * Validates that <code>field</code> is a <code>string</code> and a valid java <code>class</code>.
+     *
+     * @param field   the name of the field
+     * @param message the custom message for validation
+     * @param <T>     the type of the enumeration
+     * @return validation result combinator
+     */
+    static <T extends Enum<T>> JsonValidation isClass(String field, String message) {
+        requireNonNull(field);
+        return isString(field)
+                .and(holds(json -> {
+                    try {
+                        Class.forName(json.getString(field));
+                        return true;
+                    } catch (ClassNotFoundException e) {
+                        return false;
+                    }
+                }, message));
     }
 
     /**

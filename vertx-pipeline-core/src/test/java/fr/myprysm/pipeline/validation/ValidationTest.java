@@ -34,11 +34,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ValidationTest implements BaseJsonValidationTest {
     private static final JsonObject JSON = obj()
             .put("string", "string")
+            .put("class", "java.lang.String")
             .put("enum", "SECONDS")
             .put("true", true)
             .put("false", false)
             .put("long", 10L)
             .put("array", arr().add("item1").add("item2"))
+            .put("intArray", arr().add(1).add(2).add(3))
             .put("map", obj()
                     .put("field1", "value1")
                     .put("field2", "value2")
@@ -118,6 +120,13 @@ class ValidationTest implements BaseJsonValidationTest {
 
         isValid(JSON, isArray("array", 3));
         isInvalid(JSON, isArray("array", 1), message("array", "is longer than 1 elements"));
+
+        isValid(JSON, arrayOf("array", String.class));
+        isInvalid(JSON, arrayOf("intArray", String.class), message("intArray", "is not an array of String"));
+
+        isValid(JSON, arrayOf("intArray", Integer.class));
+        isInvalid(JSON, arrayOf("array", Integer.class), message("array", "is not an array of Integer"));
+
         assertThrows(IllegalArgumentException.class, () -> isValid(JSON, isArray("array", -1)));
     }
 
@@ -129,6 +138,13 @@ class ValidationTest implements BaseJsonValidationTest {
 
         isValid(JSON, isEnum("enum", TimeUnit.class));
         isInvalid(JSON, isEnum("string", TimeUnit.class), message("string", "is not part of enum " + TimeUnit.class.getSimpleName()));
+
+
+        isValid(JSON, isClass("class"));
+        isInvalid(JSON, isClass("string"), message("string", "is not a valid java class"));
+
+        isValid(JSON, matches("string", "string"));
+        isInvalid(JSON, matches("string", "toto"), message("string", "does not match pattern toto"));
     }
 
     @Test

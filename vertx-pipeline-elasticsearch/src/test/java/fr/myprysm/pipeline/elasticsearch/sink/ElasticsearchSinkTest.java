@@ -83,6 +83,7 @@ class ElasticsearchSinkTest implements VertxTest {
         vertx.deployVerticle(VERTICLE, new DeploymentOptions().setConfig(config), id -> {
             vertx.eventBus().send("from", obj().put("foo", "bar"));
             vertx.setTimer(3000, timer2 -> {
+                client.admin().indices().prepareRefresh("simple").execute().actionGet();
                 client.search(new SearchRequest().indices("simple").types("test"), new ActionListener<SearchResponse>() {
                     @Override
                     public void onResponse(SearchResponse searchResponse) {
@@ -115,6 +116,7 @@ class ElasticsearchSinkTest implements VertxTest {
                     .put("time", System.currentTimeMillis())));
 
             vertx.setTimer(3000, timer2 -> {
+                client.admin().indices().prepareRefresh("bulk").execute().actionGet();
                 client.search(new SearchRequest().indices("bulk").types("test"), new ActionListener<SearchResponse>() {
                     @Override
                     public void onResponse(SearchResponse searchResponse) {

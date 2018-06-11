@@ -36,6 +36,7 @@ class ValidationTest implements BaseJsonValidationTest {
             .put("string", "string")
             .put("class", "java.lang.String")
             .put("enum", "SECONDS")
+            .put("enumArray", arr().add("SECONDS").add("MINUTES").add("HOURS"))
             .put("true", true)
             .put("false", false)
             .put("long", 10L)
@@ -137,6 +138,7 @@ class ValidationTest implements BaseJsonValidationTest {
         isInvalid(JSON, isString("long"), message("long", "is not a string"));
 
         isValid(JSON, isEnum("enum", TimeUnit.class));
+        isValid(JSON, isEnum("enumArray", TimeUnit.class));
         isInvalid(JSON, isEnum("string", TimeUnit.class), message("string", "is not part of enum " + TimeUnit.class.getSimpleName()));
 
 

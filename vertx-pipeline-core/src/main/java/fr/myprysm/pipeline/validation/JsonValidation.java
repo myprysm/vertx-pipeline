@@ -20,9 +20,11 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static fr.myprysm.pipeline.util.JsonHelpers.extractObject;
 import static fr.myprysm.pipeline.validation.ValidationResult.invalid;
@@ -338,10 +340,20 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
     static <T extends Enum<T>> JsonValidation isEnum(String field, Class<T> clazz, String message) {
         requireNonNull(field);
         requireNonNull(clazz);
-        return isString(field)
-                .and(holds(json -> Arrays.stream(clazz.getEnumConstants())
-                        .map(Enum::name)
-                        .anyMatch(json.getValue(field)::equals), message));
+        return isString(field).or(arrayOf(field, String.class))
+                .and(holds(json -> {
+                    Object value = json.getValue(field);
+                    List<String> enumValues = Arrays.stream(clazz.getEnumConstants())
+                            .map(Enum::name)
+                            .collect(Collectors.toList());
+                    if (value instanceof String) {
+                        return enumValues.contains(value);
+                    } else if (value instanceof JsonArray) {
+                        return enumValues.containsAll(((JsonArray) value).getList());
+                    }
+                    return false;
+
+                }, message));
     }
 
     /**

@@ -36,7 +36,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <vertx.version>3.5.1</vertx.version>
+        <vertx.version>3.5.2</vertx.version>
         <logback.version>1.2.3</logback.version>
         <commons-lang.version>3.7</commons-lang.version>
         <classpath-scanner.version>2.18.1</classpath-scanner.version>
@@ -197,7 +197,8 @@
                         </resources>
 
                         <entryPoint>["sh", "-c"]</entryPoint>
-                        <cmd>["exec java -jar $JAR_NAME -cp ."]</cmd>
+                        <!-- Allows to provide memory settings through env with docker/kubernetes -->
+                        <cmd>["exec java -XX:+PrintFlagsFinal $JAVA_OPTIONS -jar $JAR_NAME -cp ."]</cmd>
                     </configuration>
                 </plugin>
 

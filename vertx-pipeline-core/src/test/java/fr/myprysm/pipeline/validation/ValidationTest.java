@@ -22,6 +22,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import static fr.myprysm.pipeline.util.JsonHelpers.arr;
 import static fr.myprysm.pipeline.util.JsonHelpers.obj;
@@ -88,6 +90,38 @@ class ValidationTest implements BaseJsonValidationTest {
         isValid(valid().or(() -> invalid("test")));
         isValid(invalid("test").or(ValidationResult::valid));
         isInvalid(invalid("left").or(() -> invalid("right")), "right");
+    }
+
+    @Test
+    @DisplayName("Test lazy 'and' validation operator")
+    void testLazyAndValidationOperator() {
+        AtomicInteger cntAnd = new AtomicInteger();
+        Supplier<JsonValidation> supplierAnd = () -> {
+            cntAnd.incrementAndGet();
+            return isNull("null");
+        };
+
+        isValid(JSON, isNull("null").and(supplierAnd));
+        assertThat(cntAnd.get()).isEqualTo(1);
+
+        isInvalid(JSON, isNull("string").and(supplierAnd), message("string", "is not null"));
+        assertThat(cntAnd.get()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Test lazy 'or' validation operator")
+    void testLazyOrValidationOperator() {
+        AtomicInteger cntOr = new AtomicInteger();
+        Supplier<JsonValidation> supplierOr = () -> {
+            cntOr.incrementAndGet();
+            return isNull("null");
+        };
+
+        isValid(JSON, isNull("null").or(supplierOr));
+        assertThat(cntOr.get()).isEqualTo(0);
+
+        isValid(JSON, isNull("string").or(supplierOr));
+        assertThat(cntOr.get()).isEqualTo(1);
     }
 
     @Test

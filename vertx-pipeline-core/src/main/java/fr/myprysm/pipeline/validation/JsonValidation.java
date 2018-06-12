@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -634,6 +635,22 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
 
     /**
      * Combines two validations.
+     * <p>
+     * Second validation is applied lazily.
+     * When the first validation is <code>KO</code> then the <code>other</code> validation is applied and its result is returned.
+     *
+     * @param other the other validation to apply
+     * @return validation result combinator
+     */
+    default JsonValidation or(Supplier<JsonValidation> other) {
+        return json -> {
+            final ValidationResult result = this.apply(json);
+            return result.isValid() ? result : other.get().apply(json);
+        };
+    }
+
+    /**
+     * Combines two validations.
      * When the first validation is <code>OK</code> then the <code>other</code> validation is applied and its result is returned.
      *
      * @param other the other validation to apply
@@ -643,6 +660,22 @@ public interface JsonValidation extends Function<JsonObject, ValidationResult> {
         return json -> {
             final ValidationResult result = this.apply(json);
             return result.isValid() ? other.apply(json) : result;
+        };
+    }
+
+    /**
+     * Combines two validations.
+     * <p>
+     * Second validation is applied lazily.
+     * When the first validation is <code>OK</code> then the <code>other</code> validation is applied and its result is returned.
+     *
+     * @param other the other validation to apply
+     * @return validation result combinator
+     */
+    default JsonValidation and(Supplier<JsonValidation> other) {
+        return json -> {
+            final ValidationResult result = this.apply(json);
+            return result.isValid() ? other.get().apply(json) : result;
         };
     }
 

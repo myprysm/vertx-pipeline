@@ -84,17 +84,19 @@ class ElasticsearchSinkTest implements VertxTest {
             vertx.eventBus().send("from", obj().put("foo", "bar"));
             vertx.setTimer(3000, timer2 -> {
                 client.admin().indices().prepareRefresh("simple").execute().actionGet();
-                client.search(new SearchRequest().indices("simple").types("test"), new ActionListener<SearchResponse>() {
-                    @Override
-                    public void onResponse(SearchResponse searchResponse) {
-                        ctx.verify(() -> assertThat(searchResponse.getHits().totalHits).isEqualTo(1));
-                        ctx.completeNow();
-                    }
+                vertx.setTimer(1000, timer3 -> {
+                    client.search(new SearchRequest().indices("simple").types("test"), new ActionListener<SearchResponse>() {
+                        @Override
+                        public void onResponse(SearchResponse searchResponse) {
+                            ctx.verify(() -> assertThat(searchResponse.getHits().totalHits).isEqualTo(1));
+                            ctx.completeNow();
+                        }
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        ctx.failNow(e);
-                    }
+                        @Override
+                        public void onFailure(Exception e) {
+                            ctx.failNow(e);
+                        }
+                    });
                 });
             });
         });
@@ -117,18 +119,20 @@ class ElasticsearchSinkTest implements VertxTest {
 
             vertx.setTimer(3000, timer2 -> {
                 client.admin().indices().prepareRefresh("bulk").execute().actionGet();
-                client.search(new SearchRequest().indices("bulk").types("test"), new ActionListener<SearchResponse>() {
-                    @Override
-                    public void onResponse(SearchResponse searchResponse) {
+                vertx.setTimer(1000, timer3 -> {
+                    client.search(new SearchRequest().indices("bulk").types("test"), new ActionListener<SearchResponse>() {
+                        @Override
+                        public void onResponse(SearchResponse searchResponse) {
 
-                        ctx.verify(() -> assertThat(searchResponse.getHits().totalHits).isEqualTo(bulk));
-                        ctx.completeNow();
-                    }
+                            ctx.verify(() -> assertThat(searchResponse.getHits().totalHits).isEqualTo(bulk));
+                            ctx.completeNow();
+                        }
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        ctx.failNow(e);
-                    }
+                        @Override
+                        public void onFailure(Exception e) {
+                            ctx.failNow(e);
+                        }
+                    });
                 });
             });
         });

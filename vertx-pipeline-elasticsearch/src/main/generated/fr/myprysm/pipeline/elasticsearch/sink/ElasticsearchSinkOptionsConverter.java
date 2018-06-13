@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,9 +33,6 @@ public class ElasticsearchSinkOptionsConverter {
     if (json.getValue("bulkSize") instanceof Number) {
       obj.setBulkSize(((Number)json.getValue("bulkSize")).intValue());
     }
-    if (json.getValue("cluster") instanceof String) {
-      obj.setCluster((String)json.getValue("cluster"));
-    }
     if (json.getValue("hosts") instanceof JsonArray) {
       obj.setHosts(((JsonArray)json.getValue("hosts")).copy());
     }
@@ -53,9 +50,6 @@ public class ElasticsearchSinkOptionsConverter {
     }
     if (obj.getBulkSize() != null) {
       json.put("bulkSize", obj.getBulkSize());
-    }
-    if (obj.getCluster() != null) {
-      json.put("cluster", obj.getCluster());
     }
     if (obj.getHosts() != null) {
       json.put("hosts", obj.getHosts());

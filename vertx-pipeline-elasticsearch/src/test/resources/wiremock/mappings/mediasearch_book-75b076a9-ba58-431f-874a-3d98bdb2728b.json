@@ -1,0 +1,23 @@
+{
+  "id" : "75b076a9-ba58-431f-874a-3d98bdb2728b",
+  "name" : "simple_test",
+  "request" : {
+    "url" : "/simple/test?timeout=1m",
+    "method" : "POST",
+    "bodyPatterns" : [ {
+      "equalToJson" : "{\"id\":\"xDaPfhQBRfQC\",\"term\":\"Bernard Werber\",\"author\":\"Bernard Werber\",\"category\":\"Fiction\",\"title\":\"Le Souffle des Dieux\",\"authors\":[\"Bernard Werber\"],\"publisher\":\"Albin Michel\",\"description\":\"« Et vous, à la place de Dieu, comment referiez-vous l'Histoire ? » Après le succès de Nous, les dieux (300 000 ex vendus), la saga continue !\",\"categories\":[\"Fiction\"],\"language\":\"fr\"}",
+      "ignoreArrayOrder" : true,
+      "ignoreExtraElements" : true
+    } ]
+  },
+  "response" : {
+    "status" : 201,
+    "body" : "{\"_index\":\"simple\",\"_type\":\"test\",\"_id\":\"l-fB-mMB8hhFmYzXpPHu\",\"_version\":1,\"result\":\"created\",\"_shards\":{\"total\":2,\"successful\":2,\"failed\":0},\"_seq_no\":29,\"_primary_term\":1}",
+    "headers" : {
+      "Location" : "/simple/test/l-fB-mMB8hhFmYzXpPHu",
+      "content-type" : "application/json; charset=UTF-8"
+    }
+  },
+  "uuid" : "75b076a9-ba58-431f-874a-3d98bdb2728b",
+  "persistent" : true
+}

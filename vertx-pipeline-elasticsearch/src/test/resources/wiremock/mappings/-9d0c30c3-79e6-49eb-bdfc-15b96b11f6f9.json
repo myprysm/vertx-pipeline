@@ -1,0 +1,16 @@
+{
+  "id" : "9d0c30c3-79e6-49eb-bdfc-15b96b11f6f9",
+  "name" : "",
+  "request" : {
+    "url" : "/",
+    "method" : "HEAD"
+  },
+  "response" : {
+    "status" : 200,
+    "headers" : {
+      "content-type" : "application/json; charset=UTF-8"
+    }
+  },
+  "uuid" : "9d0c30c3-79e6-49eb-bdfc-15b96b11f6f9",
+  "persistent" : true
+}

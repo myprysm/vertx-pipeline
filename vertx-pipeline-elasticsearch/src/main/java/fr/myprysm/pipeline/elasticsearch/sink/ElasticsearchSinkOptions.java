@@ -28,8 +28,7 @@ import static fr.myprysm.pipeline.util.JsonHelpers.obj;
 
 @DataObject(generateConverter = true)
 public class ElasticsearchSinkOptions extends SinkOptions {
-    private static final String DEFAULT_CLUSTER = "elasticsearch";
-    private static final JsonArray DEFAULT_HOSTS = arr().add(obj().put("hostname", "localhost").put("port", 9300));
+    private static final JsonArray DEFAULT_HOSTS = arr().add(obj().put("hostname", "localhost").put("port", 9200));
     private static final Boolean DEFAULT_BULK = false;
     private static final Integer DEFAULT_BULK_SIZE = 100;
 
@@ -38,7 +37,6 @@ public class ElasticsearchSinkOptions extends SinkOptions {
 
     private Boolean bulk = DEFAULT_BULK;
     private Integer bulkSize = DEFAULT_BULK_SIZE;
-    private String cluster = DEFAULT_CLUSTER;
     private JsonArray hosts = DEFAULT_HOSTS;
 
     public ElasticsearchSinkOptions() {
@@ -51,7 +49,6 @@ public class ElasticsearchSinkOptions extends SinkOptions {
         indexType = other.indexType;
         bulk = other.bulk;
         bulkSize = other.bulkSize;
-        cluster = other.cluster;
         hosts = other.hosts;
     }
 
@@ -149,26 +146,6 @@ public class ElasticsearchSinkOptions extends SinkOptions {
     }
 
     /**
-     * The cluster name
-     *
-     * @return the cluster name
-     */
-    public String getCluster() {
-        return cluster;
-    }
-
-    /**
-     * The name of the remote elasticsearch cluster
-     *
-     * @param cluster the cluster name
-     * @return this
-     */
-    public ElasticsearchSinkOptions setCluster(String cluster) {
-        this.cluster = cluster;
-        return this;
-    }
-
-    /**
      * The hosts
      *
      * @return the hosts
@@ -249,14 +226,13 @@ public class ElasticsearchSinkOptions extends SinkOptions {
                 Objects.equals(indexType, that.indexType) &&
                 Objects.equals(bulk, that.bulk) &&
                 Objects.equals(bulkSize, that.bulkSize) &&
-                Objects.equals(cluster, that.cluster) &&
                 Objects.equals(hosts, that.hosts);
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(super.hashCode(), indexName, indexType, bulk, bulkSize, cluster, hosts);
+        return Objects.hash(super.hashCode(), indexName, indexType, bulk, bulkSize, hosts);
     }
 
 
@@ -267,7 +243,6 @@ public class ElasticsearchSinkOptions extends SinkOptions {
                 ", indexType='" + indexType + '\'' +
                 ", bulk=" + bulk +
                 ", bulkSize=" + bulkSize +
-                ", cluster='" + cluster + '\'' +
                 ", hosts=" + hosts +
                 "} " + super.toString();
     }

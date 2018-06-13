@@ -33,7 +33,7 @@ class ElasticsearchSinkOptionsTest {
         new ElasticsearchSinkOptionsConverter();
 
         String badStr = "{\"name\": 10, \"type\": 20, \"extract\": false}";
-        String optStr = "{\"name\":\"name\",\"type\":\"type\",\"bulk\":false,\"bulkSize\":100,\"cluster\":\"elasticsearch\",\"hosts\":[{\"hostname\":\"localhost\",\"port\":9300}]}";
+        String optStr = "{\"name\":\"name\",\"type\":\"type\",\"bulk\":false,\"bulkSize\":100,\"indexName\": \"indexName\",\"indexType\": \"indexType\",\"hosts\":[{\"hostname\":\"localhost\",\"port\":9200}]}";
 
         SinkOptions optSink = new SinkOptions(new JsonObject(optStr));
 
@@ -42,7 +42,6 @@ class ElasticsearchSinkOptionsTest {
                 .setType(null)
                 .setBulk(null)
                 .setBulkSize(null)
-                .setCluster(null)
                 .setHosts(null)
                 .setIndexName(null)
                 .setIndexType(null);
@@ -52,10 +51,9 @@ class ElasticsearchSinkOptionsTest {
                 .setType("type")
                 .setBulk(false)
                 .setBulkSize(100)
-                .setCluster("elasticsearch")
-                .setHosts(arr().add(obj().put("hostname", "localhost").put("port", 9300)))
-                .setIndexName(null)
-                .setIndexType(null);
+                .setHosts(arr().add(obj().put("hostname", "localhost").put("port", 9200)))
+                .setIndexName("indexName")
+                .setIndexType("indexType");
 
         JsonObject optJson = new JsonObject(optStr);
 

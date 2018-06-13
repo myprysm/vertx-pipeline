@@ -16,37 +16,36 @@
 
 package fr.myprysm.pipeline.elasticsearch.sink;
 
-import com.hubrick.vertx.elasticsearch.impl.DefaultElasticSearchAdminService;
-import com.hubrick.vertx.elasticsearch.impl.DefaultElasticSearchService;
-import com.hubrick.vertx.elasticsearch.impl.DefaultTransportClientFactory;
-import com.hubrick.vertx.elasticsearch.impl.JsonElasticSearchConfigurator;
-import com.hubrick.vertx.elasticsearch.model.BulkIndexOptions;
-import com.hubrick.vertx.elasticsearch.model.BulkOptions;
+import com.fasterxml.jackson.core.type.TypeReference;
 import fr.myprysm.pipeline.sink.BaseJsonSink;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.*;
 import io.reactivex.disposables.Disposable;
-import io.vertx.core.AsyncResult;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.apache.http.HttpHost;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.UnknownHostException;
 import java.util.List;
-
-import static fr.myprysm.pipeline.util.JsonHelpers.obj;
-import static java.util.stream.Collectors.toList;
+import java.util.Map;
 
 public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> implements FlowableOnSubscribe<JsonObject> {
     private static final Logger LOG = LoggerFactory.getLogger(ElasticsearchSink.class);
-    private DefaultElasticSearchService es;
-    private DefaultElasticSearchAdminService esAdmin;
+
+    private RestHighLevelClient esClient;
 
     private Integer bulkSize;
-    private String cluster;
     private JsonArray hosts;
     private String type;
     private String index;
@@ -61,47 +60,61 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
     }
 
     private void index(JsonObject event) {
-        es.index(index, type, event, this::handleEsResponse);
+        esClient.indexAsync(new IndexRequest(index, type).source(toMap(event)), new ActionListener<IndexResponse>() {
+            @Override
+            public void onResponse(IndexResponse indexResponse) {
+
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                error("Error while indexing document.", e);
+            }
+        });
     }
 
     private void bulkIndex(List<JsonObject> events) {
-        es.bulkIndex(prepareBulk(events), new BulkOptions(), this::handleEsResponse);
+        esClient.bulkAsync(prepareBulk(events), new ActionListener<BulkResponse>() {
+            @Override
+            public void onResponse(BulkResponse bulkItemResponses) {
+
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                error("Error while bulk indexing document.", e);
+            }
+        });
     }
 
-    private List<BulkIndexOptions> prepareBulk(List<JsonObject> events) {
-        return events.stream().map(new BulkIndexOptions().setIndex(index).setType(type)::setSource).collect(toList());
+    private BulkRequest prepareBulk(List<JsonObject> events) {
+        BulkRequest request = new BulkRequest();
+        IndexRequest indexRequest = new IndexRequest(index, type);
+        for (JsonObject event : events) {
+            Map<String, Object> stringObjectMap = toMap(event);
+            IndexRequest source = indexRequest.source(stringObjectMap);
+            request.add(source);
+        }
+        return request;
     }
 
     @Override
     protected Completable startVerticle() {
         // workaround for problem between ES netty and vertx (both wanting to set the same value)
         System.setProperty("es.set.netty.runtime.available.processors", "false");
-
-        return Completable.create((emitter) -> {
-            es = new DefaultElasticSearchService(new DefaultTransportClientFactory(), new JsonElasticSearchConfigurator(obj()
-                    .put("cluster_name", cluster)
-                    .put("transportAddresses", hosts)
-            ));
-            es.start();
-            esAdmin = new DefaultElasticSearchAdminService(es);
-            esAdmin.getAdmin().cluster().health(new ClusterHealthRequest(), new ActionListener<ClusterHealthResponse>() {
-                @Override
-                public void onResponse(ClusterHealthResponse clusterHealthResponse) {
-                    info("Connected to elasticsearch: {}", clusterHealthResponse);
-                    if (bulkFlowable != null) {
-                        sub = bulkFlowable.subscribe(ElasticsearchSink.this::bulkIndex);
-                    } else {
-                        sub = flowable.subscribe(ElasticsearchSink.this::index);
-                    }
-
-                    emitter.onComplete();
+        return Completable.fromAction(() -> {
+            RestClientBuilder builder = RestClient.builder(hosts.stream().map(JsonObject.class::cast).map(this::mapHost).toArray(HttpHost[]::new));
+            esClient = new RestHighLevelClient(builder);
+            if (esClient.ping()) {
+                info("Connected to elasticsearch.");
+                if (bulkFlowable != null) {
+                    sub = bulkFlowable.subscribe(ElasticsearchSink.this::bulkIndex);
+                } else {
+                    sub = flowable.subscribe(ElasticsearchSink.this::index);
                 }
-
-                @Override
-                public void onFailure(Exception e) {
-                    emitter.onError(e);
-                }
-            });
+            } else {
+                throw new UnknownHostException("Unable to connect to elasticsearch...");
+            }
         });
     }
 
@@ -123,7 +136,6 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
         type = config.getIndexType();
         Boolean bulk = config.getBulk();
         bulkSize = config.getBulkSize();
-        cluster = config.getCluster();
         hosts = config.getHosts();
         flowable = Flowable.create(ElasticsearchSink.this, BackpressureStrategy.BUFFER);
 
@@ -134,16 +146,26 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
         return Completable.complete();
     }
 
+    private HttpHost mapHost(JsonObject host) {
+        HttpHost httpHost;
+        if (host.getValue("port") instanceof Number) {
+            if (host.getValue("protocol") instanceof String) {
+                httpHost = new HttpHost(host.getString("hostname"), host.getInteger("port"), host.getString("protocol"));
+            } else {
+                httpHost = new HttpHost(host.getString("hostname"), host.getInteger("port"));
+            }
+        } else {
+            httpHost = HttpHost.create(host.getString("hostname"));
+        }
+
+        return httpHost;
+    }
+
     @Override
     public ValidationResult validate(JsonObject config) {
         return ElasticsearchSinkOptionsValidation.validate(config);
     }
 
-    private void handleEsResponse(AsyncResult op) {
-        if (op.failed()) {
-            error("an error occured while indexing item: ", op.cause());
-        }
-    }
 
     @Override
     public void subscribe(FlowableEmitter<JsonObject> emitter) throws Exception {
@@ -153,5 +175,10 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
     @Override
     protected Logger delegate() {
         return LOG;
+    }
+
+    private Map<String, Object> toMap(JsonObject json) {
+        return Json.mapper.convertValue(json.copy(), new TypeReference<Map<String, Object>>() {
+        });
     }
 }

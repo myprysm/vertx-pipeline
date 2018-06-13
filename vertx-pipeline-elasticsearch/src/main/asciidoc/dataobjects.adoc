@@ -20,10 +20,6 @@ The bulk size for bulk index operations.
  <p>
  This option is ignored when <code>bulk</code> is <code>false</code>.
 +++
-|[[cluster]]`cluster`|`String`|
-+++
-The name of the remote elasticsearch cluster
-+++
 |[[hosts]]`hosts`|`Json array`|
 +++
 The remote elasticsearch cluster hosts

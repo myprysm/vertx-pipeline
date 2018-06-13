@@ -16,39 +16,26 @@
 
 package fr.myprysm.pipeline.elasticsearch.sink;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
 import fr.myprysm.pipeline.VertxTest;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxTestContext;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.node.InternalSettingsPreparer;
-import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeValidationException;
-import org.elasticsearch.plugins.Plugin;
-import org.elasticsearch.transport.Netty4Plugin;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.util.Collection;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static fr.myprysm.pipeline.util.JsonHelpers.arr;
 import static fr.myprysm.pipeline.util.JsonHelpers.obj;
-import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
 
 class ElasticsearchSinkTest implements VertxTest {
-    private static Node node;
-    private static Client client;
 
     private static final String VERTICLE = "fr.myprysm.pipeline.elasticsearch.sink.ElasticsearchSink";
     public static final JsonObject CONFIG = obj()
@@ -59,97 +46,75 @@ class ElasticsearchSinkTest implements VertxTest {
             .put("controlChannel", "channel")
             .put("indexName", "simple")
             .put("indexType", "test");
+    private static WireMockServer WIREMOCK;
 
     @BeforeAll
-    static void startElasticSearch() throws NodeValidationException {
+    static void startWiremock() {
         // workaround for problem between ES netty and vertx (both wanting to set the same value)
         System.setProperty("es.set.netty.runtime.available.processors", "false");
-
-        node = new MyNode(
-                Settings.builder()
-                        .put("transport.type", "netty4")
-                        .put("http.type", "netty4")
-                        .put("http.enabled", "true")
-                        .put("path.home", "elasticsearch-data")
-                        .build(),
-                asList(Netty4Plugin.class));
-        client = node.start().client();
+        WIREMOCK = new WireMockServer(options().dynamicPort().usingFilesUnderClasspath("wiremock"));
+        WIREMOCK.start();
+        CONFIG.put("hosts", arr().add(obj().put("hostname", "localhost").put("port", WIREMOCK.port())));
     }
 
     @Test
     @DisplayName("Elasticsearch sink should index documents")
-    void elasticsearchSinkShouldIndexDocuments(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+    void itShouldIndexDocuments(Vertx vertx, VertxTestContext ctx) {
         JsonObject config = CONFIG.copy();
-        vertx.deployVerticle(VERTICLE, new DeploymentOptions().setConfig(config), id -> {
-            vertx.eventBus().send("from", obj().put("foo", "bar"));
-            vertx.setTimer(3000, timer2 -> {
-                client.admin().indices().prepareRefresh("simple").execute().actionGet();
-                vertx.setTimer(1000, timer3 -> {
-                    client.search(new SearchRequest().indices("simple").types("test"), new ActionListener<SearchResponse>() {
-                        @Override
-                        public void onResponse(SearchResponse searchResponse) {
-                            ctx.verify(() -> assertThat(searchResponse.getHits().totalHits).isEqualTo(1));
-                            ctx.completeNow();
-                        }
-
-                        @Override
-                        public void onFailure(Exception e) {
-                            ctx.failNow(e);
-                        }
-                    });
-                });
+        vertx.deployVerticle(VERTICLE, new DeploymentOptions().setConfig(config), ctx.succeeding(id -> {
+            vertx.eventBus().send("from", objectFromFile("wiremock/__files/single.json"));
+            vertx.setTimer(500, timer2 -> {
+                ctx.verify(() -> WIREMOCK.verify(1, postRequestedFor(urlEqualTo("/simple/test?timeout=1m"))));
+                ctx.completeNow();
             });
-        });
-        ctx.awaitCompletion(1, TimeUnit.MINUTES);
+        }));
     }
 
     @Test
     @DisplayName("Elasticsearch sink should bulk index documents")
-    void elasticsearchSinkShouldBulkIndexDocuments(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+    void itShouldBulkIndexDocuments(Vertx vertx, VertxTestContext ctx) {
         long bulk = 5L;
         JsonObject config = CONFIG.copy()
                 .put("indexName", "bulk")
                 .put("indexType", "test")
                 .put("bulk", true)
                 .put("bulkSize", bulk);
-        vertx.deployVerticle(VERTICLE, new DeploymentOptions().setConfig(config), id -> {
+        vertx.deployVerticle(VERTICLE, new DeploymentOptions().setConfig(config), ctx.succeeding(id -> {
+            arrayFromFile("wiremock/__files/bulk.json").stream()
+                    .map(JsonObject.class::cast)
+                    .forEach(event -> vertx.eventBus().send("from", event));
 
-            IntStream.range(0, (int) bulk).forEach(i -> vertx.eventBus().send("from", obj().put("foo", "bar")
-                    .put("time", System.currentTimeMillis())));
-
-            vertx.setTimer(3000, timer2 -> {
-                client.admin().indices().prepareRefresh("bulk").execute().actionGet();
-                vertx.setTimer(1000, timer3 -> {
-                    client.search(new SearchRequest().indices("bulk").types("test"), new ActionListener<SearchResponse>() {
-                        @Override
-                        public void onResponse(SearchResponse searchResponse) {
-
-                            ctx.verify(() -> assertThat(searchResponse.getHits().totalHits).isEqualTo(bulk));
-                            ctx.completeNow();
-                        }
-
-                        @Override
-                        public void onFailure(Exception e) {
-                            ctx.failNow(e);
-                        }
-                    });
-                });
+            vertx.setTimer(500, timer2 -> {
+                ctx.verify(() -> WIREMOCK.verify(1, postRequestedFor(urlEqualTo("/_bulk?timeout=1m"))));
+                ctx.completeNow();
             });
-        });
-        ctx.awaitCompletion(1, TimeUnit.MINUTES);
+        }));
+    }
+
+    @Test
+    @DisplayName("Elasticsearch sink should start with multiple hosts")
+    void itShouldStartWithMultipleHosts(Vertx vertx, VertxTestContext ctx) {
+        JsonObject config = CONFIG.copy()
+                .put("hosts", arr()
+                        .add(obj().put("hostname", "localhost").put("port", WIREMOCK.port()))
+                        .add(obj().put("hostname", "http://127.0.0.1:9200"))
+                        .add(obj().put("hostname", "127.0.0.1").put("port", WIREMOCK.port()).put("protocol", "http"))
+                );
+
+        vertx.deployVerticle(VERTICLE, new DeploymentOptions().setConfig(config), ctx.succeeding(id -> ctx.completeNow()));
+    }
+
+    @Test
+    @DisplayName("Elasticsearch sink should not start with invalid host")
+    void itShouldNotStartWithInvalidHost(Vertx vertx, VertxTestContext ctx) {
+        JsonObject config = CONFIG.copy()
+                .put("hosts", arr().add(obj().put("hostname", "localhost").put("port", 65535)));
+
+        vertx.deployVerticle(VERTICLE, new DeploymentOptions().setConfig(config), ctx.failing(id -> ctx.completeNow()));
     }
 
     @AfterAll
-    static void stopElasticSearch(Vertx vertx, VertxTestContext ctx) throws IOException {
-        client.close();
-        node.close();
-
-        vertx.fileSystem().deleteRecursive("elasticsearch-data", true, ctx.succeeding(zoid -> ctx.completeNow()));
-    }
-
-    private static class MyNode extends Node {
-        MyNode(Settings preparedSettings, Collection<Class<? extends Plugin>> classpathPlugins) {
-            super(InternalSettingsPreparer.prepareEnvironment(preparedSettings, null), classpathPlugins);
-        }
+    static void stopWiremock() {
+        WIREMOCK.stop();
     }
 }

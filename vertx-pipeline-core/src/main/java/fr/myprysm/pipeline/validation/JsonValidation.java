@@ -40,6 +40,29 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  * object structure matches what is expected.
  */
 public interface JsonValidation extends Function<JsonObject, ValidationResult> {
+    String ENV_PREFIX = "ENV:";
+
+    /**
+     * Validates that <code>field</code> is defining some environment property reference.
+     *
+     * @param field the name of the field
+     * @return validation result combinator
+     */
+    static JsonValidation isEnv(String field) {
+        return isEnv(field, message(field, "is not an environment property reference"));
+    }
+
+    /**
+     * Validates that <code>field</code> is defining some environment property.
+     *
+     * @param field   the name of the field
+     * @param message the custom message for validation
+     * @return validation result combinator
+     */
+    static JsonValidation isEnv(String field, String message) {
+        requireNonNull(field);
+        return isString(field).and(holds(json -> json.getString(field).startsWith(ENV_PREFIX), message));
+    }
 
     /**
      * Validates that <code>field</code> is not <code>null</code>.

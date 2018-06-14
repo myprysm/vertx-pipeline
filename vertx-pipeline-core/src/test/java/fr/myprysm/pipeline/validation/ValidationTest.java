@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ValidationTest implements BaseJsonValidationTest {
     private static final JsonObject JSON = obj()
             .put("string", "string")
+            .put("env", "ENV:some.environment")
             .put("class", "java.lang.String")
             .put("enum", "SECONDS")
             .put("enumArray", arr().add("SECONDS").add("MINUTES").add("HOURS"))
@@ -122,6 +123,14 @@ class ValidationTest implements BaseJsonValidationTest {
 
         isValid(JSON, isNull("string").or(supplierOr));
         assertThat(cntOr.get()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Test env property")
+    void testEnvProperty() {
+        isValid(JSON, isEnv("env"));
+        isInvalid(JSON, isEnv("string"), message("string", "is not an environment property reference"));
+
     }
 
     @Test

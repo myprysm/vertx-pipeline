@@ -26,9 +26,16 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.CompletableHelper;
 import io.vertx.reactivex.core.AbstractVerticle;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
+import java.util.function.Function;
+
+import static fr.myprysm.pipeline.validation.JsonValidation.ENV_PREFIX;
 import static fr.myprysm.pipeline.validation.ValidationResult.valid;
 
 /**
@@ -194,6 +201,119 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
     protected abstract Logger delegate();
 
     /**
+     * Returns the environment property as a string.
+     *
+     * @param environment the environment property
+     * @return the value or null
+     * @see #getEnv(String, Function)
+     */
+    protected String getEnvAsString(String environment) {
+        return getEnv(environment, Function.identity());
+    }
+
+    /**
+     * Returns the environment property as a boolean.
+     *
+     * @param environment the environment property
+     * @return the value or null
+     * @see #getEnv(String, Function)
+     */
+    protected Boolean getEnvAsBoolean(String environment) {
+        return getEnv(environment, value -> {
+            Boolean bool = BooleanUtils.toBooleanObject(value);
+            return bool != null ? bool : false;
+        });
+    }
+
+    /**
+     * Returns the environment property as a integer.
+     *
+     * @param environment the environment property
+     * @return the value or null
+     * @see #getEnv(String, Function)
+     */
+    protected Integer getEnvAsInt(String environment) {
+        return getEnv(environment, value -> parseNumber(value).map(Number::intValue).orElse(null));
+    }
+
+    /**
+     * Returns the environment property as a long.
+     *
+     * @param environment the environment property
+     * @return the value or null
+     * @see #getEnv(String, Function)
+     */
+    protected Long getEnvAsLong(String environment) {
+        return getEnv(environment, value -> parseNumber(value).map(Number::longValue).orElse(null));
+    }
+
+    /**
+     * Returns the environment property as a float.
+     *
+     * @param environment the environment property
+     * @return the value or null
+     * @see #getEnv(String, Function)
+     */
+    protected Float getEnvAsFloat(String environment) {
+        return getEnv(environment, value -> parseNumber(value).map(Number::floatValue).orElse(null));
+    }
+
+    /**
+     * Returns the environment property as a double.
+     *
+     * @param environment the environment property
+     * @return the value or null
+     * @see #getEnv(String, Function)
+     */
+    protected Double getEnvAsDouble(String environment) {
+        return getEnv(environment, value -> parseNumber(value).map(Number::doubleValue).orElse(null));
+    }
+
+    /**
+     * Parses a number and returns a nullable optional.
+     *
+     * @param value the string to parse
+     * @return the number if parseable
+     */
+    protected Optional<Number> parseNumber(String value) {
+        return Optional.ofNullable(NumberUtils.createNumber(value));
+    }
+
+    /**
+     * Get the environment property as the expected type.
+     * <p>
+     * Environment property expects to be prefixed with the ENV_PREFIX ("ENV:") to be effectively extracted.
+     * Default value is extracted by suffixing the property name with "|" and adding that default.
+     *
+     * <code>ENV:some.environment.boolean|false</code>
+     * <code>ENV:some.environment.string|some text</code>
+     * <code>ENV:some.environment.integer|10</code>
+     * <code>ENV:some.environment.long|10</code>
+     * <code>ENV:some.environment.float|10.01</code>
+     * <code>ENV:some.environment.double|10.01</code>
+     * Please note that this method may return <code>null</code> values.
+     *
+     * @param environment the full environment property reference
+     * @param mapper      the mapper to transform the string
+     * @param <T>         the expected return type
+     * @return the value or null
+     */
+    protected <T> T getEnv(String environment, Function<String, T> mapper) {
+        Pair<String, String> parsed = parseEnvironment(environment);
+        String value = System.getProperty(parsed.getKey());
+        if (value == null) value = parsed.getValue();
+        return value == null ? null : mapper.apply(value);
+    }
+
+    private Pair<String, String> parseEnvironment(String environment) {
+        String start = environment.substring(ENV_PREFIX.length());
+        return start.contains("|")
+                ? Pair.of(start.substring(0, start.indexOf("|")), start.substring(start.indexOf("|") + 1))
+                : Pair.of(start, null);
+    }
+
+
+    /**
      * Get the logger for this verticle.
      * Allows delegating logging to another logger that the one configured on this {@link Verticle}.
      * <p>
@@ -349,3 +469,4 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
         return ArrayUtils.addAll(new Object[]{name}, args);
     }
 }
+

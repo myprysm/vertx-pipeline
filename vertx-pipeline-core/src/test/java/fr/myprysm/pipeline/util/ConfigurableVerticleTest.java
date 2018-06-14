@@ -20,14 +20,49 @@ import fr.myprysm.pipeline.ConsoleTest;
 import fr.myprysm.pipeline.VertxTest;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
+import static fr.myprysm.pipeline.util.JsonHelpers.obj;
+import static org.assertj.core.api.Assertions.assertThat;
+
 class ConfigurableVerticleTest extends ConsoleTest implements VertxTest {
+
+    private static JsonObject ENV_CONFIG;
+
+    @BeforeAll
+    static void setupSystemProperties() {
+        System.setProperty("pipeline.int", "123");
+        System.setProperty("pipeline.long", "123456789123");
+        System.setProperty("pipeline.float", "123.123");
+        System.setProperty("pipeline.double", "123456789123.123456");
+        System.setProperty("pipeline.bool.y", "y");
+        System.setProperty("pipeline.bool.n", "n");
+
+        ENV_CONFIG = obj()
+                .put("int", "ENV:pipeline.int")
+                .put("long", "ENV:pipeline.long")
+                .put("float", "ENV:pipeline.float")
+                .put("double", "ENV:pipeline.double")
+                .put("bool.y", "ENV:pipeline.bool.y")
+                .put("bool.n", "ENV:pipeline.bool.n")
+                .put("default", "ENV:pipeline.default|foo bar")
+        ;
+    }
+
+    @Test
+    @DisplayName("Configurable verticle should load environment properties")
+    void itShouldLoadEnvironmentProperties(Vertx vertx, VertxTestContext ctx) {
+        vertx.deployVerticle(new LoadEnvTestVerticle(),
+                new DeploymentOptions().setConfig(ENV_CONFIG),
+                ctx.succeeding(id -> ctx.completeNow()));
+    }
 
     @Test
     @DisplayName("Configurable verticle should log started and shutdown")
@@ -76,7 +111,23 @@ class ConfigurableVerticleTest extends ConsoleTest implements VertxTest {
         ctx.completeNow();
     }
 
-    final class EmptyConfigurableVerticle extends ConfigurableVerticle<Options> {
+    class LoadEnvTestVerticle extends EmptyConfigurableVerticle {
+        @Override
+        protected JsonObject preConfiguration(JsonObject config) {
+            JsonObject configCopy = super.preConfiguration(config);
+            assertThat(getEnvAsString(config.getString("default"))).isEqualTo("foo bar");
+            assertThat(getEnvAsString(config.getString("int"))).isEqualTo("123");
+            assertThat(getEnvAsInt(config.getString("int"))).isEqualTo(123);
+            assertThat(getEnvAsLong(config.getString("long"))).isEqualTo(123456789123L);
+            assertThat(getEnvAsFloat(config.getString("float"))).isEqualTo(123.123F);
+            assertThat(getEnvAsDouble(config.getString("double"))).isEqualTo(123456789123.123456D);
+            assertThat(getEnvAsBoolean(config.getString("bool.n"))).isEqualTo(false);
+            assertThat(getEnvAsBoolean(config.getString("bool.y"))).isEqualTo(true);
+            return configCopy;
+        }
+    }
+
+    class EmptyConfigurableVerticle extends ConfigurableVerticle<Options> {
 
         @Override
         protected Completable startVerticle() {

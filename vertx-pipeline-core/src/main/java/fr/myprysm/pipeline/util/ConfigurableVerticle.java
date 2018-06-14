@@ -301,6 +301,7 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
     protected <T> T getEnv(String environment, Function<String, T> mapper) {
         Pair<String, String> parsed = parseEnvironment(environment);
         String value = System.getProperty(parsed.getKey());
+        if (value == null) value = System.getenv(parsed.getKey());
         if (value == null) value = parsed.getValue();
         return value == null ? null : mapper.apply(value);
     }

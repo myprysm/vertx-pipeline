@@ -27,8 +27,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.TimeUnit;
-
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
@@ -52,9 +50,13 @@ class ElasticsearchSinkTest implements VertxTest {
     static void startWiremock() {
         // workaround for problem between ES netty and vertx (both wanting to set the same value)
         System.setProperty("es.set.netty.runtime.available.processors", "false");
+
         WIREMOCK = new WireMockServer(options().dynamicPort().usingFilesUnderClasspath("wiremock"));
         WIREMOCK.start();
         CONFIG.put("hosts", arr().add(obj().put("hostname", "localhost").put("port", WIREMOCK.port())));
+
+        System.setProperty("es-sink-test-host", "127.0.0.1");
+        System.setProperty("es-sink-test-port", String.valueOf(WIREMOCK.port()));
     }
 
     @Test
@@ -100,6 +102,15 @@ class ElasticsearchSinkTest implements VertxTest {
                         .add(obj().put("hostname", "http://127.0.0.1:9200"))
                         .add(obj().put("hostname", "127.0.0.1").put("port", WIREMOCK.port()).put("protocol", "http"))
                 );
+
+        vertx.deployVerticle(VERTICLE, new DeploymentOptions().setConfig(config), ctx.succeeding(id -> ctx.completeNow()));
+    }
+
+    @Test
+    @DisplayName("Elasticsearch sink should start with host from environmment")
+    void itShouldStartWithHostFromEnv(Vertx vertx, VertxTestContext ctx) {
+        JsonObject config = CONFIG.copy()
+                .put("hosts", arr().add(obj().put("hostname", "ENV:es-sink-test-host").put("port", "ENV:es-sink-test-port")));
 
         vertx.deployVerticle(VERTICLE, new DeploymentOptions().setConfig(config), ctx.succeeding(id -> ctx.completeNow()));
     }

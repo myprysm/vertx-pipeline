@@ -39,6 +39,9 @@ import org.slf4j.LoggerFactory;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static fr.myprysm.pipeline.validation.JsonValidation.ENV_PREFIX;
 
 public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> implements FlowableOnSubscribe<JsonObject> {
     private static final Logger LOG = LoggerFactory.getLogger(ElasticsearchSink.class);
@@ -103,7 +106,13 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
         // workaround for problem between ES netty and vertx (both wanting to set the same value)
         System.setProperty("es.set.netty.runtime.available.processors", "false");
         return Completable.fromAction(() -> {
-            RestClientBuilder builder = RestClient.builder(hosts.stream().map(JsonObject.class::cast).map(this::mapHost).toArray(HttpHost[]::new));
+            HttpHost[] httpHosts = hosts.stream()
+                    .map(JsonObject.class::cast)
+                    .map(this::mapHost)
+                    .toArray(HttpHost[]::new);
+
+
+            RestClientBuilder builder = RestClient.builder(httpHosts);
             esClient = new RestHighLevelClient(builder);
             if (esClient.ping()) {
                 info("Connected to elasticsearch.");
@@ -116,6 +125,44 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
                 throw new UnknownHostException("Unable to connect to elasticsearch...");
             }
         });
+    }
+
+    /**
+     * Overrides the ES hosts with environment when provided.
+     *
+     * @param config the sink raw configuration
+     * @return the configuration updated with values from env.
+     */
+    @Override
+    protected JsonObject preConfiguration(JsonObject config) {
+        JsonObject copy = super.preConfiguration(config).copy();
+
+        if (copy.getJsonArray("hosts") != null) {
+            List<JsonObject> hosts = copy.getJsonArray("hosts")
+                    .stream()
+                    .map(JsonObject.class::cast)
+                    .map(this::extractEnvHost)
+                    .collect(Collectors.toList());
+
+            copy.put("hosts", hosts);
+        }
+        return copy;
+    }
+
+    private JsonObject extractEnvHost(JsonObject host) {
+        JsonObject copy = host.copy();
+        if (copy.getValue("hostname") instanceof String) {
+            if (copy.getString("hostname").startsWith(ENV_PREFIX)) {
+                copy.put("hostname", getEnvAsString(copy.getString("hostname")));
+            }
+        }
+
+        if (copy.getValue("port") instanceof String) {
+            Integer port = getEnvAsInt(copy.getString("port"));
+            copy.put("port", port != null ? port : 9200);
+        }
+
+        return copy;
     }
 
     @Override

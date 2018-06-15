@@ -33,7 +33,7 @@ class ElasticsearchSinkOptionsTest {
         new ElasticsearchSinkOptionsConverter();
 
         String badStr = "{\"name\": 10, \"type\": 20, \"extract\": false}";
-        String optStr = "{\"name\":\"name\",\"type\":\"type\",\"bulk\":false,\"bulkSize\":100,\"indexName\": \"indexName\",\"indexType\": \"indexType\",\"hosts\":[{\"hostname\":\"localhost\",\"port\":9200}]}";
+        String optStr = "{\"name\":\"name\",\"type\":\"type\",\"bulk\":false,\"bulkSize\":100,\"generateId\":\"none\",\"indexName\": \"indexName\",\"indexType\": \"indexType\",\"hosts\":[{\"hostname\":\"localhost\",\"port\":9200}]}";
 
         SinkOptions optSink = new SinkOptions(new JsonObject(optStr));
 

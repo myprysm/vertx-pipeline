@@ -16,6 +16,8 @@
 
 package fr.myprysm.pipeline.elasticsearch.sink;
 
+import fr.myprysm.pipeline.elasticsearch.sink.ElasticsearchSinkOptions.Strategy;
+import fr.myprysm.pipeline.validation.JsonValidation;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.vertx.core.json.JsonObject;
 
@@ -24,10 +26,27 @@ import static fr.myprysm.pipeline.validation.JsonValidation.*;
 public interface ElasticsearchSinkOptionsValidation {
     static ValidationResult validate(JsonObject config) {
         return isString("indexName").and(isString("indexType"))
+                .and(validateGenerateId())
                 .and(isNull("cluster").or(isString("cluster")))
                 .and(isNull("hosts").or(arrayOf("hosts", JsonObject.class)))
                 .and(isNull("bulk").or(isBoolean("bulk")))
                 .and(isNull("bulkSize").or(gt("bulkSize", 0L)))
                 .apply(config);
+    }
+
+    /**
+     * Validates generateId property.
+     * When generateId is set to field, it requires the "field" option to be a string.
+     *
+     * @return the chain
+     */
+    static JsonValidation validateGenerateId() {
+
+        return isNull("generateId").or(
+                isEnum("generateId", Strategy.class)
+                        // Need a string in field when strategy is field
+                        .and(isEnum("generateId", Strategy.field).and(isString("field")))
+                        .or(isEnum("generateId", Strategy.none, Strategy.uuid))
+        );
     }
 }

@@ -20,6 +20,21 @@ The bulk size for bulk index operations.
  <p>
  This option is ignored when <code>bulk</code> is <code>false</code>.
 +++
+|[[field]]`field`|`String`|
++++
+The field to extract as ID in case <code>generateId</code> is set to <code>field</code>.
++++
+|[[generateId]]`generateId`|`link:enums.html#Strategy[Strategy]`|
++++
+The ID generation strategy.
+
+ <code>none</code> is the default. It will let elasticsearch generate an ID automatically.
+
+ <code>uuid</code> will generate a new uuid for every document.
+
+ <code>field</code> used in combination with the <code>field</code> option
+ will extract the ID as a string from the provided path in the tree.
++++
 |[[hosts]]`hosts`|`Json array`|
 +++
 The remote elasticsearch cluster hosts

@@ -37,10 +37,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static fr.myprysm.pipeline.util.JsonHelpers.extractString;
 import static fr.myprysm.pipeline.validation.JsonValidation.ENV_PREFIX;
 
 public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> implements FlowableOnSubscribe<JsonObject> {
@@ -56,6 +59,8 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
     private Flowable<JsonObject> flowable;
     private Flowable<List<JsonObject>> bulkFlowable;
     private Disposable sub;
+    private ElasticsearchSinkOptions.Strategy strategy;
+    private String field;
 
     @Override
     public void drain(JsonObject item) {
@@ -63,7 +68,7 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
     }
 
     private void index(JsonObject event) {
-        esClient.indexAsync(new IndexRequest(index, type).source(toMap(event)), new ActionListener<IndexResponse>() {
+        esClient.indexAsync(prepareRequest(event).source(toMap(event)), new ActionListener<IndexResponse>() {
             @Override
             public void onResponse(IndexResponse indexResponse) {
 
@@ -74,6 +79,28 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
                 error("Error while indexing document.", e);
             }
         });
+    }
+
+    /**
+     * Prepares the request according to the defined strategy.
+     * <p>
+     * Try to extract the id from the configured field. When not able, just acts as <code>none</code>
+     *
+     * @param event the event
+     * @return the request
+     */
+    private IndexRequest prepareRequest(JsonObject event) {
+        String id = null;
+        if (strategy == ElasticsearchSinkOptions.Strategy.uuid) {
+            id = UUID.randomUUID().toString();
+        } else if (strategy == ElasticsearchSinkOptions.Strategy.field) {
+            id = extractString(event, field).orElse(null);
+            if (id == null) {
+                info("Id could not be extracted [{}]", field, event);
+            }
+        }
+
+        return id != null ? new IndexRequest(index, type, id) : new IndexRequest(index, type);
     }
 
     private void bulkIndex(List<JsonObject> events) {
@@ -92,11 +119,11 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
 
     private BulkRequest prepareBulk(List<JsonObject> events) {
         BulkRequest request = new BulkRequest();
-        IndexRequest indexRequest = new IndexRequest(index, type);
+
         for (JsonObject event : events) {
+            IndexRequest indexRequest = prepareRequest(event);
             Map<String, Object> stringObjectMap = toMap(event);
-            IndexRequest source = indexRequest.source(stringObjectMap);
-            request.add(source);
+            request.add(indexRequest.source(stringObjectMap));
         }
         return request;
     }
@@ -112,6 +139,7 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
                     .toArray(HttpHost[]::new);
 
 
+            info("connecting to {}...", Arrays.toString(httpHosts));
             RestClientBuilder builder = RestClient.builder(httpHosts);
             esClient = new RestHighLevelClient(builder);
             if (esClient.ping()) {
@@ -122,6 +150,7 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
                     sub = flowable.subscribe(ElasticsearchSink.this::index);
                 }
             } else {
+                error("unable to connect to {}...", Arrays.toString(httpHosts));
                 throw new UnknownHostException("Unable to connect to elasticsearch...");
             }
         });
@@ -153,13 +182,16 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
         JsonObject copy = host.copy();
         if (copy.getValue("hostname") instanceof String) {
             if (copy.getString("hostname").startsWith(ENV_PREFIX)) {
-                copy.put("hostname", getEnvAsString(copy.getString("hostname")));
+                String hostname = getEnvAsString(copy.getString("hostname"));
+                copy.put("hostname", hostname);
+                info("added hostname {} from env", hostname);
             }
         }
 
         if (copy.getValue("port") instanceof String) {
             Integer port = getEnvAsInt(copy.getString("port"));
             copy.put("port", port != null ? port : 9200);
+            info("added port {} from env", port);
         }
 
         return copy;
@@ -179,6 +211,10 @@ public class ElasticsearchSink extends BaseJsonSink<ElasticsearchSinkOptions> im
 
     @Override
     public Completable configure(ElasticsearchSinkOptions config) {
+        strategy = config.getGenerateId();
+        if (strategy == ElasticsearchSinkOptions.Strategy.field) {
+            field = config.getField();
+        }
         index = config.getIndexName();
         type = config.getIndexType();
         Boolean bulk = config.getBulk();

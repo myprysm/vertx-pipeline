@@ -31,6 +31,19 @@ public class ElasticsearchSinkOptions extends SinkOptions {
     private static final JsonArray DEFAULT_HOSTS = arr().add(obj().put("hostname", "localhost").put("port", 9200));
     private static final Boolean DEFAULT_BULK = false;
     private static final Integer DEFAULT_BULK_SIZE = 100;
+    private static final Strategy DEFAULT_STRATEGY = Strategy.none;
+    private Strategy generateId = DEFAULT_STRATEGY;
+    private String field;
+    public ElasticsearchSinkOptions(ElasticsearchSinkOptions other) {
+        super(other);
+        generateId = other.generateId;
+        field = other.field;
+        indexName = other.indexName;
+        indexType = other.indexType;
+        bulk = other.bulk;
+        bulkSize = other.bulkSize;
+        hosts = other.hosts;
+    }
 
     private String indexName;
     private String indexType;
@@ -43,13 +56,13 @@ public class ElasticsearchSinkOptions extends SinkOptions {
         super();
     }
 
-    public ElasticsearchSinkOptions(ElasticsearchSinkOptions other) {
-        super(other);
-        indexName = other.indexName;
-        indexType = other.indexType;
-        bulk = other.bulk;
-        bulkSize = other.bulkSize;
-        hosts = other.hosts;
+    /**
+     * The index name
+     *
+     * @return the index name
+     */
+    public Strategy getGenerateId() {
+        return generateId;
     }
 
     public ElasticsearchSinkOptions(SinkOptions other) {
@@ -60,6 +73,46 @@ public class ElasticsearchSinkOptions extends SinkOptions {
         super(json);
         ElasticsearchSinkOptionsConverter.fromJson(json, this);
     }
+
+    /**
+     * The ID generation strategy.
+     *
+     * <code>none</code> is the default. It will let elasticsearch generate an ID automatically.
+     *
+     * <code>uuid</code> will generate a new uuid for every document.
+     *
+     * <code>field</code> used in combination with the <code>field</code> option
+     * will extract the ID as a string from the provided path in the tree.
+     *
+     * @param strategy the strategy
+     * @return this
+     */
+    public ElasticsearchSinkOptions setGenerateId(Strategy strategy) {
+        generateId = strategy;
+        return this;
+    }
+
+    /**
+     * The field
+     *
+     * @return the field
+     */
+    public String getField() {
+        return field;
+    }
+
+    /**
+     * The field to extract as ID in case <code>generateId</code> is set to <code>field</code>.
+     *
+     * @param field the field to extract
+     * @return this
+     */
+    public ElasticsearchSinkOptions setField(String field) {
+        this.field = field;
+        return this;
+    }
+
+    public enum Strategy {none, uuid, field}
 
     /**
      * The index name

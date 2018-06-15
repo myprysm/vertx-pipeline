@@ -33,6 +33,12 @@ public class ElasticsearchSinkOptionsConverter {
     if (json.getValue("bulkSize") instanceof Number) {
       obj.setBulkSize(((Number)json.getValue("bulkSize")).intValue());
     }
+    if (json.getValue("field") instanceof String) {
+      obj.setField((String)json.getValue("field"));
+    }
+    if (json.getValue("generateId") instanceof String) {
+      obj.setGenerateId(fr.myprysm.pipeline.elasticsearch.sink.ElasticsearchSinkOptions.Strategy.valueOf((String)json.getValue("generateId")));
+    }
     if (json.getValue("hosts") instanceof JsonArray) {
       obj.setHosts(((JsonArray)json.getValue("hosts")).copy());
     }
@@ -50,6 +56,12 @@ public class ElasticsearchSinkOptionsConverter {
     }
     if (obj.getBulkSize() != null) {
       json.put("bulkSize", obj.getBulkSize());
+    }
+    if (obj.getField() != null) {
+      json.put("field", obj.getField());
+    }
+    if (obj.getGenerateId() != null) {
+      json.put("generateId", obj.getGenerateId().name());
     }
     if (obj.getHosts() != null) {
       json.put("hosts", obj.getHosts());

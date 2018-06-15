@@ -27,8 +27,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static fr.myprysm.pipeline.util.JsonHelpers.arr;
 import static fr.myprysm.pipeline.util.JsonHelpers.obj;
@@ -57,6 +56,19 @@ class ElasticsearchSinkTest implements VertxTest {
 
         System.setProperty("es-sink-test-host", "127.0.0.1");
         System.setProperty("es-sink-test-port", String.valueOf(WIREMOCK.port()));
+    }
+
+    @Test
+    @DisplayName("Elasticsearch sink should extract id from field")
+    void itShouldExtractIdFromField(Vertx vertx, VertxTestContext ctx) {
+        JsonObject config = CONFIG.copy().put("generateId", "field").put("field", "some.nested.field");
+        vertx.deployVerticle(VERTICLE, new DeploymentOptions().setConfig(config), ctx.succeeding(id -> {
+            vertx.eventBus().send("from", objectFromFile("wiremock/__files/extract-id.json"));
+            vertx.setTimer(500, timer2 -> {
+                ctx.verify(() -> WIREMOCK.verify(1, putRequestedFor(urlEqualTo("/simple/test/extracted-id?timeout=1m"))));
+                ctx.completeNow();
+            });
+        }));
     }
 
     @Test

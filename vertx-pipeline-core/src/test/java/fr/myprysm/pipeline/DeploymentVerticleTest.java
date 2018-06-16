@@ -46,7 +46,7 @@ class DeploymentVerticleTest implements VertxTest {
                 .put("on.terminate.shutdown", false)
         );
         vertx.deployVerticle("fr.myprysm.pipeline.DeploymentVerticle", options, ctx.succeeding(id -> {
-            vertx.setTimer(100, timer -> {
+            vertx.setTimer(300, timer -> {
                 ctx.verify(() -> {
                     assertThat(vertx.deploymentIDs()).doesNotContain(id);
                     ctx.completeNow();

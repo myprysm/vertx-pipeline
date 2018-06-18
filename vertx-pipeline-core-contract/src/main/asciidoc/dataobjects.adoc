@@ -1,0 +1,79 @@
+= Cheatsheets
+
+[[PipelineDeployment]]
+== PipelineDeployment
+
+++++
+ Response provided when a pipeline is successfully deployed.
+++++
+'''
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[controlChannel]]`controlChannel`|`String`|
++++
+The pipeline control channel address.
+ <p>
+ This address allows to communicate signals to this particular pipeline.
+ <p>
+ See vertx-pipeline-core about supported <code>Signal</code>s.
++++
+|[[name]]`name`|`String`|
++++
+The pipeline name.
+ <p>
+ This is a normalized name (kebab-cased).
++++
+|===
+
+[[PipelineOptions]]
+== PipelineOptions
+
+
+[cols=">25%,^25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[deployChannel]]`deployChannel`|`String`|
++++
+The deploy channel.
+ <p>
+ This address is automatically generated when starting the pipeline
++++
+|[[name]]`name`|`String`|
++++
+The name of the pipeline.
+ <p>
+ This is used to build the pipeline components names.
+ Expected to be camel-case ("my-awesome-pipeline").
++++
+|[[processors]]`processors`|`Json array`|
++++
+The processor set.
+ Mandatory field for each processor is <code>type</code>.
+ Name is automatically generated, you can provide your own one though.
+ <p>
+ See vertx-pipeline-core and other modules for more information about specific ProcessorOptions.
++++
+|[[pump]]`pump`|`Json object`|
++++
+The pump.
+ <p>
+ Mandatory field is <code>type</code>.
+ Name is automatically generated, you can provide your own one though.
+ <p>
+ See vertx-pipeline-core and other modules for more information about specific PumpOptions.
++++
+|[[sink]]`sink`|`Json object`|
++++
+The sink.
+ <p>
+ Mandatory field is <code>type</code>.
+ Name is automatically generated, you can provide your own one though.
+ <p>
+ See vertx-pipeline-core and other modules for more information about specific SinkOptions.
++++
+|===
+

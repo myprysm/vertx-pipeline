@@ -1,0 +1,168 @@
+/*
+ * Copyright 2014 Red Hat, Inc.
+ *
+ * Red Hat licenses this file to you under the Apache License, version 2.0
+ * (the "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at:
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+
+package fr.myprysm.pipeline.reactivex.pipeline;
+
+import java.util.Map;
+import io.reactivex.Observable;
+import io.reactivex.Flowable;
+import io.reactivex.Single;
+import io.reactivex.Completable;
+import io.reactivex.Maybe;
+import fr.myprysm.pipeline.pipeline.PipelineDeployment;
+import java.util.List;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import fr.myprysm.pipeline.pipeline.PipelineOptions;
+
+/**
+ * The Pipeline Service is the centric service.
+ * <p>
+ * It provides the capability
+ *
+ * <p/>
+ * NOTE: This class has been automatically generated from the {@link fr.myprysm.pipeline.pipeline.PipelineService original} non RX-ified interface using Vert.x codegen.
+ */
+
+@io.vertx.lang.reactivex.RxGen(fr.myprysm.pipeline.pipeline.PipelineService.class)
+public class PipelineService {
+
+  @Override
+  public String toString() {
+    return delegate.toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    PipelineService that = (PipelineService) o;
+    return delegate.equals(that.delegate);
+  }
+  
+  @Override
+  public int hashCode() {
+    return delegate.hashCode();
+  }
+
+  public static final io.vertx.lang.reactivex.TypeArg<PipelineService> __TYPE_ARG = new io.vertx.lang.reactivex.TypeArg<>(
+    obj -> new PipelineService((fr.myprysm.pipeline.pipeline.PipelineService) obj),
+    PipelineService::getDelegate
+  );
+
+  private final fr.myprysm.pipeline.pipeline.PipelineService delegate;
+  
+  public PipelineService(fr.myprysm.pipeline.pipeline.PipelineService delegate) {
+    this.delegate = delegate;
+  }
+
+  public fr.myprysm.pipeline.pipeline.PipelineService getDelegate() {
+    return delegate;
+  }
+
+  /**
+   * Get the running pipelines across all the instances.
+   * <p>
+   * This is a complete description of all the pipeline with their options.
+   * Please take care when using this as when to many pipelines are deployed
+   * this can lead either to an {@link java.lang.OutOfMemoryError} or to a communication failure
+   * as the description is too large to be emitted through the event bus.
+   * @param handler the handler
+   */
+  public void getRunningPipelines(Handler<AsyncResult<List<PipelineOptions>>> handler) { 
+    delegate.getRunningPipelines(handler);
+  }
+
+  /**
+   * Get the running pipelines across all the instances.
+   * <p>
+   * This is a complete description of all the pipeline with their options.
+   * Please take care when using this as when to many pipelines are deployed
+   * this can lead either to an {@link java.lang.OutOfMemoryError} or to a communication failure
+   * as the description is too large to be emitted through the event bus.
+   * @return 
+   */
+  public Single<List<PipelineOptions>> rxGetRunningPipelines() { 
+    return new io.vertx.reactivex.core.impl.AsyncResultSingle<List<PipelineOptions>>(handler -> {
+      getRunningPipelines(handler);
+    });
+  }
+
+  /**
+   * Starts a pipeline with the provided configuration.
+   * <p>
+   * Please note that the pipeline name must be unique across all the instances.
+   * <p>
+   * When running in cluster mode, the service will try to find an appropriate node to start the pipeline.
+   * This allows to run now data flows from nodes that are not currently hosting the components.
+   * <p>
+   * Response contains the normalized name with the control channel to communicate through signals
+   * with the deployed pipeline.
+   * @param options the pipeline configuration
+   * @param handler the handler
+   */
+  public void startPipeline(PipelineOptions options, Handler<AsyncResult<PipelineDeployment>> handler) { 
+    delegate.startPipeline(options, handler);
+  }
+
+  /**
+   * Starts a pipeline with the provided configuration.
+   * <p>
+   * Please note that the pipeline name must be unique across all the instances.
+   * <p>
+   * When running in cluster mode, the service will try to find an appropriate node to start the pipeline.
+   * This allows to run now data flows from nodes that are not currently hosting the components.
+   * <p>
+   * Response contains the normalized name with the control channel to communicate through signals
+   * with the deployed pipeline.
+   * @param options the pipeline configuration
+   * @return 
+   */
+  public Single<PipelineDeployment> rxStartPipeline(PipelineOptions options) { 
+    return new io.vertx.reactivex.core.impl.AsyncResultSingle<PipelineDeployment>(handler -> {
+      startPipeline(options, handler);
+    });
+  }
+
+  /**
+   * Stops the pipeline identified by the provided name.
+   * <p>
+   * Emits a signal when operation is complete.
+   * @param name the name of the pipeline to stop.
+   * @param handler the handler
+   */
+  public void stopPipeline(String name, Handler<AsyncResult<Void>> handler) { 
+    delegate.stopPipeline(name, handler);
+  }
+
+  /**
+   * Stops the pipeline identified by the provided name.
+   * <p>
+   * Emits a signal when operation is complete.
+   * @param name the name of the pipeline to stop.
+   * @return 
+   */
+  public Completable rxStopPipeline(String name) { 
+    return new io.vertx.reactivex.core.impl.AsyncResultCompletable(handler -> {
+      stopPipeline(name, handler);
+    });
+  }
+
+
+  public static  PipelineService newInstance(fr.myprysm.pipeline.pipeline.PipelineService arg) {
+    return arg != null ? new PipelineService(arg) : null;
+  }
+}

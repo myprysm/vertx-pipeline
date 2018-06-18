@@ -30,6 +30,7 @@
 
         <module>vertx-pipeline-dropwizard-metrics</module>
         <module>vertx-pipeline-tests</module>
+        <module>vertx-pipeline-core-contract</module>
         <!--<module>vertx-pipeline-twitter</module>-->
     </modules>
 
@@ -41,6 +42,7 @@
         <commons-lang.version>3.7</commons-lang.version>
         <classpath-scanner.version>2.18.1</classpath-scanner.version>
         <strman.version>0.4.0</strman.version>
+        <lombok.version>1.16.20</lombok.version>
 
         <assertj.version>3.9.0</assertj.version>
         <junit-jupiter.version>5.1.0</junit-jupiter.version>
@@ -57,6 +59,15 @@
         <site-plugin.version>3.7</site-plugin.version>
         <exec-plugin.version>1.5.0</exec-plugin.version>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
 
     <dependencyManagement>
         <dependencies>
@@ -126,6 +137,14 @@
                 <version>${junit-platform.version}</version>
                 <scope>test</scope>
             </dependency>
+
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-dependencies</artifactId>
+                <version>${vertx.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -142,6 +161,8 @@
                         <useIncrementalCompilation>false</useIncrementalCompilation>
 
                         <annotationProcessors>
+                            <annotationProcessor>lombok.launch.AnnotationProcessorHider$AnnotationProcessor
+                            </annotationProcessor>
                             <annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
                         </annotationProcessors>
                         <generatedSourcesDirectory>${project.basedir}/src/main/generated</generatedSourcesDirectory>
@@ -198,7 +219,10 @@
 
                         <entryPoint>["sh", "-c"]</entryPoint>
                         <!-- Allows to provide memory settings through env with docker/kubernetes -->
-                        <cmd>["exec java -XX:+PrintFlagsFinal $JAVA_OPTIONS -jar $JAR_NAME -cp ."]</cmd>
+
+                        <cmd><![CDATA[
+                        ["exec java -XX:+PrintFlagsFinal $JAVA_OPTIONS -jar $JAR_NAME -cp ."]
+                        ]]></cmd>
                     </configuration>
                 </plugin>
 

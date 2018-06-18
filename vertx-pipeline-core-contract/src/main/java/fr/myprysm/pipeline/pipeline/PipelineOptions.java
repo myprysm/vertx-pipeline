@@ -16,30 +16,26 @@
 
 package fr.myprysm.pipeline.pipeline;
 
-import fr.myprysm.pipeline.util.Options;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.Objects;
-
-import static fr.myprysm.pipeline.util.JsonHelpers.arr;
-import static fr.myprysm.pipeline.util.JsonHelpers.obj;
-
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @DataObject(generateConverter = true)
-public class PipelineOptions implements Options {
+public class PipelineOptions {
     public static final String DEFAULT_NAME = "default-pipeline";
     private static final String DEFAULT_DEPLOY_CHANNEL = "default-deploy-channel";
 
     private String name;
-    private JsonObject pump = obj();
-    private JsonArray processors = arr();
-    private JsonObject sink = obj();
+    private JsonObject pump = new JsonObject();
+    private JsonArray processors = new JsonArray();
+    private JsonObject sink = new JsonObject();
     private String deployChannel = DEFAULT_DEPLOY_CHANNEL;
-
-    public PipelineOptions() {
-        super();
-    }
 
     public PipelineOptions(PipelineOptions other) {
         name = other.name;
@@ -53,82 +49,83 @@ public class PipelineOptions implements Options {
         PipelineOptionsConverter.fromJson(json, this);
     }
 
-    @Override
     public JsonObject toJson() {
-        JsonObject json = obj();
+        JsonObject json = new JsonObject();
         PipelineOptionsConverter.toJson(this, json);
         return json;
     }
 
-    public String getName() {
-        return name;
-    }
-
+    /**
+     * The name of the pipeline.
+     * <p>
+     * This is used to build the pipeline components names.
+     * Expected to be camel-case ("my-awesome-pipeline").
+     *
+     * @param name the name of the pipeline
+     * @return this
+     */
     public PipelineOptions setName(String name) {
         this.name = name;
         return this;
     }
 
-    public JsonObject getPump() {
-        return pump;
-    }
-
+    /**
+     * The pump.
+     * <p>
+     * Mandatory field is <code>type</code>.
+     * Name is automatically generated, you can provide your own one though.
+     * <p>
+     * See vertx-pipeline-core and other modules for more information about specific PumpOptions.
+     *
+     * @param pump pump options
+     * @return this
+     */
     public PipelineOptions setPump(JsonObject pump) {
         this.pump = pump;
         return this;
     }
 
-    public JsonArray getProcessors() {
-        return processors;
-    }
-
+    /**
+     * The processor set.
+     * Mandatory field for each processor is <code>type</code>.
+     * Name is automatically generated, you can provide your own one though.
+     * <p>
+     * See vertx-pipeline-core and other modules for more information about specific ProcessorOptions.
+     *
+     * @param processors processor set with options
+     * @return this
+     */
     public PipelineOptions setProcessors(JsonArray processors) {
         this.processors = processors;
         return this;
     }
 
-    public JsonObject getSink() {
-        return sink;
-    }
-
+    /**
+     * The sink.
+     * <p>
+     * Mandatory field is <code>type</code>.
+     * Name is automatically generated, you can provide your own one though.
+     * <p>
+     * See vertx-pipeline-core and other modules for more information about specific SinkOptions.
+     *
+     * @param sink sink options
+     * @return this
+     */
     public PipelineOptions setSink(JsonObject sink) {
         this.sink = sink;
         return this;
     }
 
-    public String getDeployChannel() {
-        return deployChannel;
-    }
-
+    /**
+     * The deploy channel.
+     * <p>
+     * This address is automatically generated when starting the pipeline
+     *
+     * @param deployChannel the deploy channel address
+     * @return this
+     */
     public PipelineOptions setDeployChannel(String deployChannel) {
         this.deployChannel = deployChannel;
         return this;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof PipelineOptions)) return false;
-        PipelineOptions that = (PipelineOptions) o;
-        return Objects.equals(name, that.name) &&
-                Objects.equals(pump, that.pump) &&
-                Objects.equals(processors, that.processors) &&
-                Objects.equals(sink, that.sink);
-    }
-
-    @Override
-    public int hashCode() {
-
-        return Objects.hash(name, pump, processors, sink);
-    }
-
-    @Override
-    public String toString() {
-        return "PipelineOptions{" +
-                "name='" + name + '\'' +
-                ", pump=" + pump +
-                ", processors=" + processors +
-                ", sink=" + sink +
-                '}';
     }
 }

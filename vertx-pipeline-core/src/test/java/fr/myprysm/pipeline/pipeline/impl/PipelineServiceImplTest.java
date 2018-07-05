@@ -349,7 +349,7 @@ class PipelineServiceImplTest implements VertxTest {
 
         @Test
         @DisplayName("It should stop a pipeline when terminated")
-        void itShouldStopAPipelineWhenTerminated() {
+        void itShouldStopAPipelineWhenTerminated(VertxTestContext ctx) {
             JsonObject config = objectFromFile("pipeline-service/event-bus-pipeline.json")
                     .put("deployChannel", "service-1");
 
@@ -363,16 +363,20 @@ class PipelineServiceImplTest implements VertxTest {
                         assertThat(values.size()).isEqualTo(1);
                         Message<String> message = values.get(0);
                         assertThat(message.body()).isEqualTo("acknowledged");
-                        rxService2.rxGetRunningPipelines()
-                                .test()
-                                .awaitDone(5, TimeUnit.SECONDS)
-                                .assertOf(test2 -> {
-                                    List<Set<PipelineDeployment>> values2 = test2.values();
-                                    assertThat(values2).isNotNull();
-                                    assertThat(values2.size()).isEqualTo(1);
-                                    Set<PipelineDeployment> deployments = values2.get(0);
-                                    assertThat(deployments.size()).isEqualTo(0);
-                                });
+                        rxVertx.setTimer(100, timer -> {
+                            rxService2.rxGetRunningPipelines()
+                                    .test()
+                                    .awaitDone(5, TimeUnit.SECONDS)
+                                    .assertOf(test2 -> {
+                                        List<Set<PipelineDeployment>> values2 = test2.values();
+                                        assertThat(values2).isNotNull();
+                                        assertThat(values2.size()).isEqualTo(1);
+                                        Set<PipelineDeployment> deployments = values2.get(0);
+                                        assertThat(deployments.size()).isEqualTo(0);
+                                        ctx.completeNow();
+                                    });
+                        });
+
                     });
         }
 

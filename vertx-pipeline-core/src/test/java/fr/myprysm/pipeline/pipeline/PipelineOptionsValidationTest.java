@@ -60,22 +60,22 @@ class PipelineOptionsValidationTest implements BaseJsonValidationTest {
         // Processors validation
         o.put("processors", a);
         a.add(obj());
-        isInvalid(o, PipelineOptionsValidation::validate, "Field 'type' is null");
+        isInvalid(o, PipelineOptionsValidation::validate, "Invalid options for Processor 'null': Field 'type' is null");
 
         a.getJsonObject(0).put("type", "toto");
-        isInvalid(o, PipelineOptionsValidation::validate, "The class is not a kind of Processor");
+        isInvalid(o, PipelineOptionsValidation::validate, "Invalid options for Processor 'toto': The class is not a kind of Processor");
 
         a.getJsonObject(0).put("type", "fr.myprysm.pipeline.processor.NoOpProcessor");
         isValid(o, PipelineOptionsValidation::validate);
 
         a.add(obj());
-        isInvalid(o, PipelineOptionsValidation::validate, "Field 'type' is null");
+        isInvalid(o, PipelineOptionsValidation::validate, "Invalid options for Processor 'null': Field 'type' is null");
 
         a.getJsonObject(1).put("type", "fr.myprysm.pipeline.processor.NoOpProcessor").put("instances", "test");
-        isInvalid(o, PipelineOptionsValidation::validate, "Field 'instances' is not a long");
+        isInvalid(o, PipelineOptionsValidation::validate, "Invalid options for Processor 'fr.myprysm.pipeline.processor.NoOpProcessor': Field 'instances' is not a long");
 
         a.getJsonObject(1).put("instances", 0);
-        isInvalid(o, PipelineOptionsValidation::validate, "Field 'instances' is not greater than 0");
+        isInvalid(o, PipelineOptionsValidation::validate, "Invalid options for Processor 'fr.myprysm.pipeline.processor.NoOpProcessor': Field 'instances' is not greater than 0");
 
         a.getJsonObject(1).put("instances", 1);
         isValid(o, PipelineOptionsValidation::validate);

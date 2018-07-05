@@ -16,9 +16,11 @@
 
 package fr.myprysm.pipeline;
 
+import fr.myprysm.pipeline.pipeline.PipelineService;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxTestContext;
+import io.vertx.serviceproxy.ServiceProxyBuilder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +33,7 @@ class DeploymentVerticleTest implements VertxTest {
 
     @Test
     @DisplayName("Deployment verticle starts successfully")
-    void testDeploymentVerticle(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+    void itShouldStartSuccessfully(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
         vertx.deployVerticle("fr.myprysm.pipeline.DeploymentVerticle", ctx.succeeding(id -> {
             ctx.completeNow();
         }));
@@ -39,21 +41,55 @@ class DeploymentVerticleTest implements VertxTest {
     }
 
     @Test
-    @DisplayName("Deployment verticle shuts down itself when no remaining pipeline")
-    void testDeploymentVerticleShutsDownVertxWhenRequested(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
-        DeploymentOptions options = new DeploymentOptions().setConfig(obj()
-                .put("path", "deployment-should-shutdown.yml")
-                .put("on.terminate.shutdown", false)
-        );
-        vertx.deployVerticle("fr.myprysm.pipeline.DeploymentVerticle", options, ctx.succeeding(id -> {
-            vertx.setTimer(300, timer -> {
-                ctx.verify(() -> {
-                    assertThat(vertx.deploymentIDs()).doesNotContain(id);
-                    ctx.completeNow();
-                });
-
-            });
+    @DisplayName("Deployment verticle stops successfully")
+    void itShouldStopSuccessfully(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        vertx.deployVerticle("fr.myprysm.pipeline.DeploymentVerticle", ctx.succeeding(id -> {
+            vertx.undeploy(id, ctx.succeeding(zoid -> ctx.completeNow()));
         }));
+        ctx.awaitCompletion(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    @DisplayName("Deployment verticle starts pipeline with aliased components")
+    void itShouldStartPipelineWithAliasedComponents(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        DeploymentOptions options = new DeploymentOptions().setConfig(obj()
+                .put("path", "config-with-aliases.yml")
+        );
+        DeploymentVerticle verticle = new DeploymentVerticle();
+        vertx.deployVerticle(verticle, options, ctx.succeeding(id -> ctx.completeNow()));
+        ctx.awaitCompletion(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    @DisplayName("Deployment verticle stays up when no pipeline is running")
+    void itShouldStayUpWhenNoPipelineIsRunning(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        DeploymentOptions options = new DeploymentOptions().setConfig(obj()
+                .put("path", "pipeline-should-shutdown.yml")
+        );
+        DeploymentVerticle verticle = new DeploymentVerticle();
+        vertx.deployVerticle(verticle, options, ctx.succeeding(id -> {
+            PipelineService proxy = new ServiceProxyBuilder(vertx).setAddress(PipelineService.ADDRESS).build(PipelineService.class);
+            vertx.setTimer(100, timer -> {
+                proxy.getRunningPipelines(ctx.succeeding(pipelines -> {
+                    ctx.verify(() -> {
+                        assertThat(pipelines.size()).isEqualTo(0);
+                    });
+                    ctx.completeNow();
+                }));
+            });
+
+
+        }));
+        ctx.awaitCompletion(10, TimeUnit.SECONDS);
+    }
+
+    @Test
+    @DisplayName("Deployment verticle cannot start pipeline with bad aliases")
+    void itShouldNotStartPipelineWithBadAliases(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+        DeploymentOptions options = new DeploymentOptions().setConfig(obj()
+                .put("path", "config-with-wrong-aliases.yml")
+        );
+        vertx.deployVerticle("fr.myprysm.pipeline.DeploymentVerticle", options, ctx.failing(t -> ctx.completeNow()));
         ctx.awaitCompletion(10, TimeUnit.SECONDS);
     }
 }

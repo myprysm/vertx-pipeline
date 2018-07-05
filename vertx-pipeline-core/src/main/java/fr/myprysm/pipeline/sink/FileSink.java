@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import fr.myprysm.pipeline.sink.FileSinkOptions.Format;
 import fr.myprysm.pipeline.sink.FileSinkOptions.Mode;
+import fr.myprysm.pipeline.util.Alias;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.*;
 import io.reactivex.disposables.Disposable;
@@ -48,6 +49,7 @@ import static strman.Strman.ensureRight;
  * Whenever the sink cannot write into the destination file
  * an <code>UNRECOVERABLE</code> signal is sent to shutdown the pipeline.
  */
+@Alias(prefix = "pipeline-core", name = "file-sink")
 public class FileSink extends FlushableJsonSink<FileSinkOptions> implements FlowableOnSubscribe<JsonObject> {
 
     private FileSystem fs;

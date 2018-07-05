@@ -752,21 +752,6 @@ The type of the processor.
 +++
 |===
 
-[[PipelineOptions]]
-== PipelineOptions
-
-
-[cols=">25%,^25%,50%"]
-[frame="topbot"]
-|===
-^|Name | Type ^| Description
-|[[deployChannel]]`deployChannel`|`String`|-
-|[[name]]`name`|`String`|-
-|[[processors]]`processors`|`Json array`|-
-|[[pump]]`pump`|`Json object`|-
-|[[sink]]`sink`|`Json object`|-
-|===
-
 [[ProcessorOptions]]
 == ProcessorOptions
 

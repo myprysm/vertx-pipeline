@@ -18,13 +18,12 @@ package fr.myprysm.pipeline.pipeline;
 
 import fr.myprysm.pipeline.validation.JsonValidation;
 import fr.myprysm.pipeline.validation.ValidationResult;
-import io.reactivex.Observable;
 import io.vertx.core.json.JsonObject;
-import org.apache.commons.lang3.tuple.Pair;
 
 import static fr.myprysm.pipeline.util.ClasspathHelpers.*;
 import static fr.myprysm.pipeline.util.JsonHelpers.extractString;
 import static fr.myprysm.pipeline.validation.JsonValidation.*;
+import static fr.myprysm.pipeline.validation.ValidationResult.invalid;
 
 public interface PipelineOptionsValidation {
 
@@ -44,14 +43,28 @@ public interface PipelineOptionsValidation {
 
     static JsonValidation pumpExists() {
         return hasPath("pump.type")
-                .and(holds(json -> getPumpClassNames().contains(extractString(json, "pump.type").orElse("")),
-                        "The class is not a kind of Pump"));
+                .and(pumpFromAlias().or(pumpFromClass()));
+    }
+
+    static JsonValidation pumpFromAlias() {
+        return holds(json -> getPumpForAlias(extractString(json, "pump.type").orElse("")) != null, "Unable to locate pump from alias");
+    }
+
+    static JsonValidation pumpFromClass() {
+        return holds(json -> getPumpClassNames().contains(extractString(json, "pump.type").orElse("")), "The class is not a kind of Pump");
     }
 
     static JsonValidation sinkExists() {
         return hasPath("sink.type")
-                .and(holds(json -> getSinkClassNames().contains(extractString(json, "sink.type").orElse("")),
-                        "The class is not a kind of Sink"));
+                .and(sinkFromAlias().or(sinkFromClass()));
+    }
+
+    static JsonValidation sinkFromAlias() {
+        return holds(json -> getSinkForAlias(extractString(json, "sink.type").orElse("")) != null, "Unable to locate sink from alias");
+    }
+
+    static JsonValidation sinkFromClass() {
+        return holds(json -> getSinkClassNames().contains(extractString(json, "sink.type").orElse("")), "The class is not a kind of Sink");
     }
 
     /**
@@ -60,14 +73,27 @@ public interface PipelineOptionsValidation {
      * @return validation result
      */
     static JsonValidation processorsExist() {
-        return (json) -> Observable.fromIterable(json.getJsonArray("processors"))
+        return (json) -> json.getJsonArray("processors").stream()
                 .map(JsonObject.class::cast)
-                .map(opt -> Pair.of(opt,
-                        isString("type").and(holds(o -> getProcessorClassNames().contains(o.getString("type")), "The class is not a kind of Processor")).apply(opt)))
-                .map(p -> Pair.of(p.getLeft(), p.getRight().and(() -> isNull("instances").or(gt("instances", 0L)).apply(p.getLeft()))))
-                .map(Pair::getRight)
-                .reduce((v1, v2) -> v1.and(() -> v2))
-                .blockingGet();
+                .map(opt -> {
+                    ValidationResult result = isString("type")
+                            .and(processorFromAlias().or(processorFromClass()))
+                            .and(isNull("instances").or(gt("instances", 0L)))
+                            .apply(opt);
+                    return result.isValid() ? result
+                            : invalid("Invalid options for Processor '" + opt.getValue("type") + "': " + result.getReason().get());
+                })
+                .filter(r -> !r.isValid())
+                .findFirst()
+                .orElse(ValidationResult.valid());
+    }
+
+    static JsonValidation processorFromAlias() {
+        return holds(o -> getProcessorForAlias(o.getString("type")) != null, "Unable to locate processor from alias");
+    }
+
+    static JsonValidation processorFromClass() {
+        return holds(o -> getProcessorClassNames().contains(o.getString("type")), "The class is not a kind of Processor");
     }
 
 

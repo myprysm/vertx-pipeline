@@ -31,6 +31,15 @@ module VertxPipelineCore
     def self.j_class
       Java::FrMyprysmPipelinePipeline::PipelineService.java_class
     end
+    #  Get the nodes available
+    # @yield 
+    # @return [void]
+    def get_nodes
+      if block_given?
+        return @j_del.java_method(:getNodes, [Java::IoVertxCore::Handler.java_class]).call((Proc.new { |ar| yield(ar.failed ? ar.cause : nil, ar.succeeded ? ::Vertx::Util::Utils.to_set(ar.result).map! { |elt| elt } : nil) }))
+      end
+      raise ArgumentError, "Invalid arguments when calling get_nodes()"
+    end
     #  Get the running pipelines across all the instances.
     # @yield the handler
     # @return [void]
@@ -60,13 +69,14 @@ module VertxPipelineCore
     #  Response contains the normalized name with the control channel to communicate through signals
     #  with the deployed pipeline.
     # @param [Hash] options the pipeline configuration
+    # @param [String] node the node to start the pipeline. can be null.
     # @yield the handler
     # @return [void]
-    def start_pipeline(options=nil)
-      if options.class == Hash && block_given?
-        return @j_del.java_method(:startPipeline, [Java::FrMyprysmPipelinePipeline::PipelineOptions.java_class,Java::IoVertxCore::Handler.java_class]).call(Java::FrMyprysmPipelinePipeline::PipelineOptions.new(::Vertx::Util::Utils.to_json_object(options)),(Proc.new { |ar| yield(ar.failed ? ar.cause : nil, ar.succeeded ? ar.result != nil ? JSON.parse(ar.result.toJson.encode) : nil : nil) }))
+    def start_pipeline(options=nil,node=nil)
+      if options.class == Hash && node.class == String && block_given?
+        return @j_del.java_method(:startPipeline, [Java::FrMyprysmPipelinePipeline::PipelineOptions.java_class,Java::java.lang.String.java_class,Java::IoVertxCore::Handler.java_class]).call(Java::FrMyprysmPipelinePipeline::PipelineOptions.new(::Vertx::Util::Utils.to_json_object(options)),node,(Proc.new { |ar| yield(ar.failed ? ar.cause : nil, ar.succeeded ? ar.result != nil ? JSON.parse(ar.result.toJson.encode) : nil : nil) }))
       end
-      raise ArgumentError, "Invalid arguments when calling start_pipeline(#{options})"
+      raise ArgumentError, "Invalid arguments when calling start_pipeline(#{options},#{node})"
     end
     #  Stops the pipeline from the provided deployment.
     #  <p>

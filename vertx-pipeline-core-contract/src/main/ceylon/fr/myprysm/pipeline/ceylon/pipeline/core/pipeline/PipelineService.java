@@ -54,6 +54,18 @@ public class PipelineService implements ReifiedType {
     return delegate;
   }
 
+  @DocAnnotation$annotation$(description = " Get the nodes available\n")
+  @TypeInfo("ceylon.language::Anything")
+  public void getNodes(
+    final @TypeInfo("ceylon.language::Anything(ceylon.language::Throwable|ceylon.language::Set<ceylon.language::String>)") @Name("handler") Callable<?> handler) {
+    io.vertx.core.Handler<io.vertx.core.AsyncResult<java.util.Set<java.lang.String>>> arg_0 = handler == null ? null : new io.vertx.lang.ceylon.CallableAsyncResultHandler<java.util.Set<java.lang.String>>(handler) {
+      public Object toCeylon(java.util.Set<java.lang.String> event) {
+        return io.vertx.lang.ceylon.ToCeylon.convertSet(ceylon.language.String.$TypeDescriptor$, event, io.vertx.lang.ceylon.ToCeylon.String);
+      }
+    };
+    delegate.getNodes(arg_0);
+  }
+
   @DocAnnotation$annotation$(description = " Get the running pipelines across all the instances.\n")
   @TypeInfo("ceylon.language::Anything")
   public void getRunningPipelines(
@@ -84,14 +96,16 @@ public class PipelineService implements ReifiedType {
   @TypeInfo("ceylon.language::Anything")
   public void startPipeline(
     final @TypeInfo("fr.myprysm.pipeline.ceylon.pipeline.core.pipeline::PipelineOptions") @Name("options")@DocAnnotation$annotation$(description = "the pipeline configuration\n") fr.myprysm.pipeline.ceylon.pipeline.core.pipeline.PipelineOptions options, 
+    final @TypeInfo("ceylon.language::String") @Name("node")@DocAnnotation$annotation$(description = "the node to start the pipeline. can be null.\n") ceylon.language.String node, 
     final @TypeInfo("ceylon.language::Anything(ceylon.language::Throwable|fr.myprysm.pipeline.ceylon.pipeline.core.pipeline::PipelineDeployment)") @Name("handler")@DocAnnotation$annotation$(description = "the handler\n") Callable<?> handler) {
     fr.myprysm.pipeline.pipeline.PipelineOptions arg_0 = options == null ? null : new fr.myprysm.pipeline.pipeline.PipelineOptions(io.vertx.lang.ceylon.ToJava.JsonObject.convert(options.toJson()));
-    io.vertx.core.Handler<io.vertx.core.AsyncResult<fr.myprysm.pipeline.pipeline.PipelineDeployment>> arg_1 = handler == null ? null : new io.vertx.lang.ceylon.CallableAsyncResultHandler<fr.myprysm.pipeline.pipeline.PipelineDeployment>(handler) {
+    java.lang.String arg_1 = io.vertx.lang.ceylon.ToJava.String.safeConvert(node);
+    io.vertx.core.Handler<io.vertx.core.AsyncResult<fr.myprysm.pipeline.pipeline.PipelineDeployment>> arg_2 = handler == null ? null : new io.vertx.lang.ceylon.CallableAsyncResultHandler<fr.myprysm.pipeline.pipeline.PipelineDeployment>(handler) {
       public Object toCeylon(fr.myprysm.pipeline.pipeline.PipelineDeployment event) {
         return fr.myprysm.pipeline.ceylon.pipeline.core.pipeline.pipelineDeployment_.get_().getToCeylon().safeConvert(event);
       }
     };
-    delegate.startPipeline(arg_0, arg_1);
+    delegate.startPipeline(arg_0, arg_1, arg_2);
   }
 
   @DocAnnotation$annotation$(description = " Stops the pipeline from the provided deployment.\n <p>\n Emits a signal when operation is complete.\n")

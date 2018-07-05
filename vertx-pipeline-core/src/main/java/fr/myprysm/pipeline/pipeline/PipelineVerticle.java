@@ -87,7 +87,13 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineConfigurer> i
         Signal signal = Signal.valueOf(signalString.body());
         switch (signal) {
             case TERMINATE:
-                this.notifyUndeploy().subscribe(() -> debug("Undeployed pipeline."));
+                undeploy()
+                        .doOnComplete(() -> {
+                            if (signalString.replyAddress() != null) {
+                                signalString.reply("acknowledged");
+                            }
+                        })
+                        .andThen(defer(this::notifyUndeploy)).subscribe(() -> debug("Undeployed pipeline."));
         }
     }
 
@@ -157,14 +163,15 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineConfigurer> i
     @Override
     public Completable shutdown() {
         info("Shutting down...");
-        return this.undeploy().andThen(defer(controlChannelConsumer::rxUnregister));
+        return controlChannelConsumer.rxUnregister();
     }
 
     private Completable undeploy() {
         return stopVerticle(pumpDeployment)
                 .doOnComplete(() -> info("Shutting down processors"))
                 .andThen(defer(this::undeployProcessors))
-                .andThen(stopVerticle(sinkDeployment));
+                .andThen(stopVerticle(sinkDeployment))
+                .onErrorComplete();
     }
 
     private Completable stopVerticle(Pair<String, String> deployment) {

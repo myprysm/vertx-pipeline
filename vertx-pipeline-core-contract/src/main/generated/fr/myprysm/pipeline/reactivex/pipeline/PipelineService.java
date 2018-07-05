@@ -74,6 +74,24 @@ public class PipelineService {
   }
 
   /**
+   * Get the nodes available
+   * @param handler 
+   */
+  public void getNodes(Handler<AsyncResult<Set<String>>> handler) { 
+    delegate.getNodes(handler);
+  }
+
+  /**
+   * Get the nodes available
+   * @return 
+   */
+  public Single<Set<String>> rxGetNodes() { 
+    return new io.vertx.reactivex.core.impl.AsyncResultSingle<Set<String>>(handler -> {
+      getNodes(handler);
+    });
+  }
+
+  /**
    * Get the running pipelines across all the instances.
    * @param handler the handler
    */
@@ -122,10 +140,11 @@ public class PipelineService {
    * Response contains the normalized name with the control channel to communicate through signals
    * with the deployed pipeline.
    * @param options the pipeline configuration
+   * @param node the node to start the pipeline. can be null.
    * @param handler the handler
    */
-  public void startPipeline(PipelineOptions options, Handler<AsyncResult<PipelineDeployment>> handler) { 
-    delegate.startPipeline(options, handler);
+  public void startPipeline(PipelineOptions options, String node, Handler<AsyncResult<PipelineDeployment>> handler) { 
+    delegate.startPipeline(options, node, handler);
   }
 
   /**
@@ -139,11 +158,12 @@ public class PipelineService {
    * Response contains the normalized name with the control channel to communicate through signals
    * with the deployed pipeline.
    * @param options the pipeline configuration
+   * @param node the node to start the pipeline. can be null.
    * @return 
    */
-  public Single<PipelineDeployment> rxStartPipeline(PipelineOptions options) { 
+  public Single<PipelineDeployment> rxStartPipeline(PipelineOptions options, String node) { 
     return new io.vertx.reactivex.core.impl.AsyncResultSingle<PipelineDeployment>(handler -> {
-      startPipeline(options, handler);
+      startPipeline(options, node, handler);
     });
   }
 

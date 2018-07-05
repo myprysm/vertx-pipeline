@@ -99,7 +99,7 @@ public class DeploymentVerticle extends AbstractVerticle {
     public void stop(Future<Void> stopped) {
         MetricsProvider.close();
         serviceConsumer.unregister();
-        pipelineService.close()
+        pipelineService.close(false) // all the verticles will be stopped when this one will be stopped.
                 .doOnComplete(() -> log.info("{} stopped.", name))
                 .subscribe(CompletableHelper.toObserver(stopped));
     }
@@ -136,7 +136,7 @@ public class DeploymentVerticle extends AbstractVerticle {
      * @return a single containing a pair with the name of the pipeline and its deployment ID if any.
      */
     private Completable startPipeline(JsonObject config) {
-        return rxService.rxStartPipeline(new PipelineOptions(config)).toCompletable();
+        return rxService.rxStartPipeline(new PipelineOptions(config), deployChannel).toCompletable();
     }
 
 

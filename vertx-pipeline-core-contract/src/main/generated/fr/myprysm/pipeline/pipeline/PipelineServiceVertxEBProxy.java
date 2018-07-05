@@ -65,6 +65,24 @@ public class PipelineServiceVertxEBProxy implements PipelineService {
   }
 
   @Override
+  public void getNodes(Handler<AsyncResult<Set<String>>> handler) {
+    if (closed) {
+    handler.handle(Future.failedFuture(new IllegalStateException("Proxy is closed")));
+      return;
+    }
+    JsonObject _json = new JsonObject();
+    DeliveryOptions _deliveryOptions = (_options != null) ? new DeliveryOptions(_options) : new DeliveryOptions();
+    _deliveryOptions.addHeader("action", "getNodes");
+    _vertx.eventBus().<JsonArray>send(_address, _json, _deliveryOptions, res -> {
+      if (res.failed()) {
+        handler.handle(Future.failedFuture(res.cause()));
+      } else {
+        handler.handle(Future.succeededFuture(convertSet(res.result().body().getList())));
+      }
+    });
+  }
+
+  @Override
   public void getRunningPipelines(Handler<AsyncResult<Set<PipelineDeployment>>> handler) {
     if (closed) {
     handler.handle(Future.failedFuture(new IllegalStateException("Proxy is closed")));
@@ -106,13 +124,14 @@ public class PipelineServiceVertxEBProxy implements PipelineService {
   }
 
   @Override
-  public void startPipeline(PipelineOptions options, Handler<AsyncResult<PipelineDeployment>> handler) {
+  public void startPipeline(PipelineOptions options, String node, Handler<AsyncResult<PipelineDeployment>> handler) {
     if (closed) {
     handler.handle(Future.failedFuture(new IllegalStateException("Proxy is closed")));
       return;
     }
     JsonObject _json = new JsonObject();
     _json.put("options", options == null ? null : options.toJson());
+    _json.put("node", node);
     DeliveryOptions _deliveryOptions = (_options != null) ? new DeliveryOptions(_options) : new DeliveryOptions();
     _deliveryOptions.addHeader("action", "startPipeline");
     _vertx.eventBus().<JsonObject>send(_address, _json, _deliveryOptions, res -> {

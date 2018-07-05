@@ -86,7 +86,7 @@ public class PipelineDeployment implements ClusterSerializable {
      * <p>
      * See vertx-pipeline-core about supported <code>Signal</code>s.
      *
-     * @param controlChannel the pipeline name.
+     * @param controlChannel the control channel
      * @return this
      */
     public PipelineDeployment setControlChannel(String controlChannel) {

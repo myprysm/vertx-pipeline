@@ -116,6 +116,10 @@ public class PipelineServiceVertxProxyHandler extends ProxyHandler {
       }
       accessed();
       switch (action) {
+        case "getNodes": {
+          service.getNodes(createSetHandler(msg));
+          break;
+        }
         case "getRunningPipelines": {
           service.getRunningPipelines(res -> {
             if (res.failed()) {
@@ -145,7 +149,7 @@ public class PipelineServiceVertxProxyHandler extends ProxyHandler {
           break;
         }
         case "startPipeline": {
-          service.startPipeline(json.getJsonObject("options") == null ? null : new fr.myprysm.pipeline.pipeline.PipelineOptions(json.getJsonObject("options")), res -> {
+          service.startPipeline(json.getJsonObject("options") == null ? null : new fr.myprysm.pipeline.pipeline.PipelineOptions(json.getJsonObject("options")), (java.lang.String)json.getValue("node"), res -> {
             if (res.failed()) {
               if (res.cause() instanceof ServiceException) {
                 msg.reply(res.cause());

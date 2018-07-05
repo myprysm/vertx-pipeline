@@ -53,7 +53,6 @@ class PipelineDeployment(private val _asJava: JPipelineDeployment) {
     asJava.setId(value)
     this
   }
-
   def getId: String = {
     asJava.getId().asInstanceOf[String]
   }
@@ -80,7 +79,6 @@ class PipelineDeployment(private val _asJava: JPipelineDeployment) {
     asJava.setNode(value)
     this
   }
-
   def getNode: String = {
     asJava.getNode().asInstanceOf[String]
   }

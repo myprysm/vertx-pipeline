@@ -18,6 +18,13 @@ public interface PipelineService {
     String ADDRESS = "fr.myprysm.pipeline:pipeline-service";
 
     /**
+     * Get the nodes available
+     *
+     * @param handler
+     */
+    void getNodes(Handler<AsyncResult<Set<String>>> handler);
+
+    /**
      * Get the running pipelines across all the instances.
      *
      * @param handler the handler
@@ -45,9 +52,10 @@ public interface PipelineService {
      * with the deployed pipeline.
      *
      * @param options the pipeline configuration
+     * @param node    the node to start the pipeline. can be null.
      * @param handler the handler
      */
-    void startPipeline(PipelineOptions options, Handler<AsyncResult<PipelineDeployment>> handler);
+    void startPipeline(PipelineOptions options, String node, Handler<AsyncResult<PipelineDeployment>> handler);
 
     /**
      * Stops the pipeline from the provided deployment.

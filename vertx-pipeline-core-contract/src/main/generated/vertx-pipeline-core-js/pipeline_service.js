@@ -36,6 +36,25 @@ var PipelineService = function(j_val) {
   var that = this;
 
   /**
+   Get the nodes available
+
+   @public
+   @param handler {function} 
+   */
+  this.getNodes = function(handler) {
+    var __args = arguments;
+    if (__args.length === 1 && typeof __args[0] === 'function') {
+      j_pipelineService["getNodes(io.vertx.core.Handler)"](function(ar) {
+      if (ar.succeeded()) {
+        handler(utils.convReturnSet(ar.result()), null);
+      } else {
+        handler(null, ar.cause());
+      }
+    });
+    } else throw new TypeError('function invoked with invalid arguments');
+  };
+
+  /**
    Get the running pipelines across all the instances.
 
    @public
@@ -87,12 +106,13 @@ var PipelineService = function(j_val) {
 
    @public
    @param options {Object} the pipeline configuration 
+   @param node {string} the node to start the pipeline. can be null. 
    @param handler {function} the handler 
    */
-  this.startPipeline = function(options, handler) {
+  this.startPipeline = function(options, node, handler) {
     var __args = arguments;
-    if (__args.length === 2 && (typeof __args[0] === 'object' && __args[0] != null) && typeof __args[1] === 'function') {
-      j_pipelineService["startPipeline(fr.myprysm.pipeline.pipeline.PipelineOptions,io.vertx.core.Handler)"](options != null ? new PipelineOptions(new JsonObject(Java.asJSONCompatible(options))) : null, function(ar) {
+    if (__args.length === 3 && (typeof __args[0] === 'object' && __args[0] != null) && typeof __args[1] === 'string' && typeof __args[2] === 'function') {
+      j_pipelineService["startPipeline(fr.myprysm.pipeline.pipeline.PipelineOptions,java.lang.String,io.vertx.core.Handler)"](options != null ? new PipelineOptions(new JsonObject(Java.asJSONCompatible(options))) : null, node, function(ar) {
       if (ar.succeeded()) {
         handler(utils.convReturnDataObject(ar.result()), null);
       } else {

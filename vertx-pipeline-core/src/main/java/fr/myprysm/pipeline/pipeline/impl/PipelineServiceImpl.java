@@ -1,24 +1,24 @@
 package fr.myprysm.pipeline.pipeline.impl;
 
+import com.google.common.collect.ImmutableSet;
 import fr.myprysm.pipeline.pipeline.*;
 import fr.myprysm.pipeline.util.EnumUtils;
+import fr.myprysm.pipeline.util.Signal;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
-import io.reactivex.schedulers.Schedulers;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.CompletableHelper;
 import io.vertx.reactivex.SingleHelper;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.eventbus.Message;
 import io.vertx.reactivex.core.eventbus.MessageConsumer;
+import io.vertx.reactivex.core.impl.AsyncResultSingle;
 import io.vertx.reactivex.core.shareddata.AsyncMap;
 import io.vertx.serviceproxy.ServiceException;
 import lombok.extern.slf4j.Slf4j;
@@ -32,19 +32,20 @@ import java.util.UUID;
 /**
  * Pipeline Service is the service dedicated to pipeline management.
  */
+@SuppressWarnings({"ResultOfMethodCallIgnored", "FieldCanBeLocal"})
 @Slf4j
 public class PipelineServiceImpl implements PipelineService {
 
 
-    private static int PIPELINE_NOT_FOUND = 404;
-    private static int DUPLICATE_NAME = 405;
-    private static int NO_CLUSTER_MATCH = 409;
-    private static int INVALID_OPTIONS = 416;
-    private static int INVALID_DEPLOYMENT = 417;
-    private static int REMOTE_SERVICE_ERROR = 418;
+    public static int PIPELINE_NOT_FOUND = 404;
+    public static int DUPLICATE_NAME = 405;
+    public static int NO_CLUSTER_MATCH = 409;
+    public static int INVALID_OPTIONS = 416;
+    public static int INVALID_DEPLOYMENT = 417;
+    public static int DEPLOYMENT_ERROR = 418;
 
     private static final String PIPELINES_MAP = "fr.myprysm.pipeline:pipelines";
-    private static final String SERVICE_CHANNEL_ADDRESS = "fr.myprysm.pipeline:pipeline-service-channel";
+    private static final String REGISTRATIONS_MAP = "fr.myprysm.pipeline:service-registrations";
 
     public static final String PIPELINE_VERTICLE = "fr.myprysm.pipeline.pipeline.PipelineVerticle";
 
@@ -53,12 +54,11 @@ public class PipelineServiceImpl implements PipelineService {
     private final String deployChannel;
     private final boolean clustered;
     private MessageConsumer<String> deployChannelConsumer;
-    private MessageConsumer<JsonObject> serviceChannelConsumer;
     /**
      * The deployments across the nodes.
      */
     private AsyncMap<PipelineDeployment, PipelineOptions> pipelines;
-    private Set<String> registrations = new ConcurrentHashSet<>();
+    private AsyncMap<String, String> registrations;
 
     public PipelineServiceImpl(Vertx vertx, String deployChannel) {
         this.vertx = vertx;
@@ -70,10 +70,25 @@ public class PipelineServiceImpl implements PipelineService {
     public Completable configure() {
         return Completable.concatArray(
                 preparePipelinesMap(),
-                prepareDeployChannelConsumer(),
-                prepareServiceChannelConsumer()
+                prepareRegistrationsMap(),
+                prepareDeployChannelConsumer()
         )
                 .andThen(Completable.defer(this::registerService));
+    }
+
+    private Completable registerService() {
+        return registrations.rxPut(deployChannel, deployChannel);
+    }
+
+    private Completable prepareRegistrationsMap() {
+        return vertx.sharedData()
+                .<String, String>rxGetAsyncMap(REGISTRATIONS_MAP)
+                .doOnSuccess(this::setRegistrations)
+                .toCompletable();
+    }
+
+    private void setRegistrations(AsyncMap<String, String> registrations) {
+        this.registrations = registrations;
     }
 
 
@@ -88,69 +103,9 @@ public class PipelineServiceImpl implements PipelineService {
         this.pipelines = pipelines;
     }
 
-    private Completable registerService() {
-        JsonObject data = new JsonObject().put("service", deployChannel);
-        DeliveryOptions options = new DeliveryOptions().addHeader("action", ServiceChannelActions.REGISTER_SERVICE.name());
-        vertx.eventBus().publish(SERVICE_CHANNEL_ADDRESS, data, options);
-        return Completable.complete();
-    }
-
     private Completable prepareDeployChannelConsumer() {
         deployChannelConsumer = vertx.eventBus().consumer(deployChannel, this::deployChannelActionDispatcher);
         return Completable.complete();
-    }
-
-    private Completable prepareServiceChannelConsumer() {
-        serviceChannelConsumer = vertx.eventBus().consumer(SERVICE_CHANNEL_ADDRESS, this::serviceChannelActionDispatcher);
-        return Completable.complete();
-    }
-    //endregion
-
-    private void addRegistration(String registration) {
-        if (!deployChannel.equals(registration)) {
-            if (registrations.add(registration)) {
-                log.info("[{}] registered [{}]", deployChannel, registration);
-            } else {
-                log.error("[{}] already registered [{}]", deployChannel, registration);
-            }
-        }
-    }
-
-    private void removeRegistration(String registration) {
-        if (!deployChannel.equals(registration)) {
-            if (registrations.remove(registration)) {
-                log.info("[{}] unregistered [{}]", deployChannel, registration);
-            } else {
-                log.error("[{}] already unregistered [{}]", deployChannel, registration);
-            }
-        }
-    }
-
-    //region Service Channel
-    private void serviceChannelActionDispatcher(Message<JsonObject> message) {
-        ServiceChannelActions action = EnumUtils.fromString(message.headers().get("action"), ServiceChannelActions.class);
-        if (action != null) {
-            switch (action) {
-                case REGISTER_SERVICE:
-                    handleRegisterService(message.body().getString("service"));
-                    break;
-                case UNREGISTER_SERVICE:
-                    removeRegistration(message.body().getString("service"));
-            }
-        }
-    }
-
-
-    /**
-     * Responds to the registration by emitting the ACK. (so that the other service knows this one)
-     *
-     * @param service the pipeline service id
-     */
-    private void handleRegisterService(String service) {
-        addRegistration(service);
-
-        DeliveryOptions options = new DeliveryOptions().addHeader("action", DeployChannelActions.REGISTRATION_ACK.name());
-        vertx.eventBus().send(service, deployChannel, options);
     }
 
     //endregion
@@ -167,9 +122,6 @@ public class PipelineServiceImpl implements PipelineService {
                 case DEPLOY:
                     handleDeploy(message);
                     break;
-                case REGISTRATION_ACK:
-                    addRegistration(body);
-                    break;
             }
         }
 
@@ -177,16 +129,23 @@ public class PipelineServiceImpl implements PipelineService {
 
     private void handleDeploy(Message<String> message) {
         if (message.headers().get("from") != null) {
-            log.info("Service [{}] requests to start a pipeline", message.headers().get("from"));
+            log.info("[{}] Service [{}] requests to start a pipeline", deployChannel, message.headers().get("from"));
         }
         PipelineOptions options = new PipelineOptions(new JsonObject(message.body()));
-        startPipelineInternal(options, false, ar -> {
-            if (ar.succeeded()) {
-                message.reply(ar.result().toJson().toString());
-            } else {
-                message.reply(ar.cause());
-            }
-        });
+        startPipelineInternal(options, false)
+                .map(PipelineDeployment::toJson)
+                .subscribe(
+                        deployment -> {
+                            if (message.replyAddress() != null) {
+                                message.reply(deployment.toString());
+                            }
+                        },
+                        error -> {
+                            if (message.replyAddress() != null) {
+                                message.reply(error);
+                            }
+                        }
+                );
     }
 
     private void handleUndeploy(Message<String> pipeline) {
@@ -194,26 +153,25 @@ public class PipelineServiceImpl implements PipelineService {
                 .flatMapObservable(Observable::fromIterable)
                 .filter(deployment -> deployment.getNode().equals(deployChannel) && deployment.getName().equals(pipeline.body()))
                 .firstOrError()
-                .flatMapCompletable(this::undeployLocalPipeline)
-                .subscribeOn(Schedulers.io())
+                .flatMapCompletable(deployment -> undeployLocalPipeline(deployment, true))
                 .subscribe(() -> {
-                            log.info("Undeployed [{}].", pipeline);
-                            if (pipeline.replyAddress() != null) {
-                                pipeline.reply("acknowledged");
-                            }
-                        },
-                        throwable -> {
-                            log.error("Error while undeploying pipeline.", throwable);
-                            if (pipeline.replyAddress() != null) {
-                                pipeline.reply(throwable instanceof ServiceException ? throwable : new ServiceException(-1, throwable.getMessage()));
-                            }
-                        }
-                );
+                    log.info("Undeployed [{}].", pipeline.body());
+                    if (pipeline.replyAddress() != null) {
+                        pipeline.reply("acknowledged");
+                    }
+                });
     }
     //endregion
 
 
     //region Service implementation
+
+
+    @Override
+    public void getNodes(Handler<AsyncResult<Set<String>>> handler) {
+        registrationsDelegate().keys(handler);
+    }
+
     @Override
     public void getRunningPipelines(Handler<AsyncResult<Set<PipelineDeployment>>> handler) {
         pipelinesDelegate().keys(handler);
@@ -221,12 +179,32 @@ public class PipelineServiceImpl implements PipelineService {
 
     @Override
     public void getPipelineDescription(PipelineDeployment deployment, Handler<AsyncResult<PipelineOptions>> handler) {
-        getOptions(deployment).subscribe(SingleHelper.toObserver(handler));
+        Single<PipelineOptions> options;
+        if (isValid(deployment)) {
+            options = getOptions(deployment);
+        } else if (hasName(deployment)) {
+            options = getDeployment(deployment.getName()).flatMap(this::getOptions);
+        } else {
+            options = Single.error(new ServiceException(INVALID_DEPLOYMENT, "No name found in deployment.", deployment.toJson()));
+        }
+        options.subscribe(SingleHelper.toObserver(handler));
     }
 
     @Override
-    public void startPipeline(PipelineOptions options, Handler<AsyncResult<PipelineDeployment>> handler) {
-        startPipelineInternal(options, true, handler);
+    public void startPipeline(PipelineOptions options, String node, Handler<AsyncResult<PipelineDeployment>> handler) {
+        Single<PipelineDeployment> deployment;
+        if (StringUtils.isBlank(node)) {
+            deployment = startPipelineInternal(options, true);
+        } else if (deployChannel.equals(node)) {
+            deployment = startPipelineInternal(options, false);
+
+        } else {
+            deployment = getRegistration(node)
+                    .map(ImmutableSet::of)
+                    .flatMap(set -> tryStartOnCluster(options, set.iterator()));
+        }
+
+        deployment.subscribe(SingleHelper.toObserver(handler));
     }
 
     /**
@@ -237,50 +215,43 @@ public class PipelineServiceImpl implements PipelineService {
      *
      * @param options    the pipeline options
      * @param tryCluster indicates whether the deployment should be tried on the cluster
-     * @param handler    the result handler
      */
-    private void startPipelineInternal(PipelineOptions options, boolean tryCluster, Handler<AsyncResult<PipelineDeployment>> handler) {
+    private Single<PipelineDeployment> startPipelineInternal(PipelineOptions options, boolean tryCluster) {
         ValidationResult validation = PipelineOptionsValidation.validate(options.toJson());
+        Single<PipelineDeployment> deployment;
         if (validation.isValid()) {
-            validateName(options.getName())
-                    .andThen(startLocalPipeline(options))
-                    .subscribe(SingleHelper.toObserver(handler));
+            deployment = validateName(options.getName())
+                    .andThen(startLocalPipeline(options));
         } else if (clustered && tryCluster) {
-            tryStartOnCluster(options, registrations.iterator(), handler);
+            deployment = getRegistrations()
+                    .map(registrations -> {
+                        registrations.remove(deployChannel);
+                        return registrations;
+                    })
+                    .flatMap(registrations -> tryStartOnCluster(options, registrations.iterator()));
         } else {
-            handler.handle(ServiceException.fail(INVALID_OPTIONS, "Options for pipeline " + options.getName() + " are invalid: " + validation.getReason().get(), options.toJson()));
+            deployment = Single.error(new ServiceException(INVALID_OPTIONS, "Options for pipeline " + options.getName() + " are invalid: " + validation.getReason().get(), options.toJson()));
         }
+
+        return deployment;
     }
 
-    private void tryStartOnCluster(PipelineOptions options, Iterator<String> registrations, Handler<AsyncResult<PipelineDeployment>> handler) {
+    private Single<PipelineDeployment> tryStartOnCluster(PipelineOptions options, Iterator<String> registrations) {
         if (!registrations.hasNext()) {
-            handler.handle(ServiceException.fail(NO_CLUSTER_MATCH, "Unable to find a matching node to deploy the pipeline...", options.toJson()));
+            return Single.error(new ServiceException(NO_CLUSTER_MATCH, "Unable to find a matching node to deploy the pipeline...", options.toJson()));
         }
         String next = registrations.next();
-        actionDeploy(options, next, ar -> {
-            if (ar.succeeded()) {
-                handler.handle(ar);
-            } else {
-                log.error("Unable to start pipeline on node {}.", next);
-                log.error("Reason: ", ar.cause());
-                tryStartOnCluster(options, registrations, handler);
-            }
-        });
+        return actionDeploy(options, next).onErrorResumeNext(tryStartOnCluster(options, registrations));
     }
 
-    private void actionDeploy(PipelineOptions options, String remote, Handler<AsyncResult<PipelineDeployment>> handler) {
+    private Single<PipelineDeployment> actionDeploy(PipelineOptions options, String remote) {
         DeliveryOptions deliveryOptions = new DeliveryOptions()
                 .addHeader("action", DeployChannelActions.DEPLOY.name())
                 .addHeader("from", deployChannel);
 
-        vertx.eventBus().<String>rxSend(remote, options.toJson().toString(), deliveryOptions).subscribe(ar -> {
-            try {
-                JsonObject json = new JsonObject(ar.body());
-                handler.handle(Future.succeededFuture(new PipelineDeployment(json)));
-            } catch (Exception exc) {
-                handler.handle(Future.failedFuture(exc));
-            }
-        });
+        return vertx.eventBus()
+                .<String>rxSend(remote, options.toJson().toString(), deliveryOptions)
+                .map(message -> new PipelineDeployment(new JsonObject(message.body())));
     }
 
     /**
@@ -293,18 +264,25 @@ public class PipelineServiceImpl implements PipelineService {
      */
     private Single<PipelineDeployment> startLocalPipeline(PipelineOptions options) {
         String controlChannel = UUID.randomUUID().toString();
-        return vertx.rxDeployVerticle(PIPELINE_VERTICLE, new DeploymentOptions().setConfig(options.toJson().put("controlChannel", controlChannel)))
-                .doOnError(err -> {
+        DeploymentOptions deploymentOptions = new DeploymentOptions()
+                .setConfig(options.setDeployChannel(deployChannel).toJson().put("controlChannel", controlChannel));
+
+        return vertx.rxDeployVerticle(PIPELINE_VERTICLE, deploymentOptions)
+                .onErrorResumeNext(err -> {
                     log.error("An error occured while deploying pipeline {}", options);
                     log.error("Reason: ", err);
+                    if (!(err instanceof ServiceException)) {
+                        err = new ServiceException(DEPLOYMENT_ERROR, "An error occured while deploying pipeline '" + options.getName() + "': " + err.getMessage(), options.toJson());
+                    }
+
+                    return Single.error(err);
                 })
                 .map(deploymentId -> new PipelineDeployment()
                         .setId(deploymentId)
                         .setName(options.getName())
                         .setNode(deployChannel)
                         .setControlChannel(controlChannel))
-                .doOnSuccess(deployment -> addDeployment(deployment, options))
-                ;
+                .flatMap(deployment -> addDeployment(deployment, options));
     }
 
     /**
@@ -313,9 +291,10 @@ public class PipelineServiceImpl implements PipelineService {
      * @param deployment the deployment description
      * @param options    the pipeline options
      */
-    private void addDeployment(PipelineDeployment deployment, PipelineOptions options) {
-        pipelines.rxPut(deployment, options)
-                .subscribe(() -> log.info("Pipeline {} started.", deployment));
+    private Single<PipelineDeployment> addDeployment(PipelineDeployment deployment, PipelineOptions options) {
+        return pipelines.rxPut(deployment, options)
+                .doOnComplete(() -> log.debug("Successfully added pipeline {} with config {}", deployment, options))
+                .andThen(Single.just(deployment));
     }
 
     private Completable validateName(String name) {
@@ -324,51 +303,19 @@ public class PipelineServiceImpl implements PipelineService {
                     if (deployments.stream().noneMatch(deployment -> deployment.getName().equals(name))) {
                         return Completable.complete();
                     } else {
-                        return Completable.error(new ServiceException(DUPLICATE_NAME, "A pipeline with the name " + name + " is already deployed."));
+                        return Completable.error(new ServiceException(DUPLICATE_NAME, "A pipeline with the name '" + name + "' is already deployed."));
                     }
                 });
     }
 
-    private Single<Set<PipelineDeployment>> getDeployments() {
-        return Single.create(emitter -> pipelinesDelegate().keys(deploymentsAr -> {
-            if (deploymentsAr.succeeded()) {
-                emitter.onSuccess(deploymentsAr.result());
-            } else {
-                log.error("Unable to retrieve deployments...");
-                emitter.onError(deploymentsAr.cause());
-            }
-        }));
-    }
-
-    private Single<PipelineDeployment> getDeployment(String pipeline) {
-        return getDeployments().flatMap(deployments -> {
-            Optional<PipelineDeployment> deploymentOptional = deployments.stream()
-                    .filter(deployment -> deployment.getName().equals(pipeline))
-                    .findFirst();
-
-            return deploymentOptional.isPresent()
-                    ? Single.just(deploymentOptional.get())
-                    : Single.error(new ServiceException(PIPELINE_NOT_FOUND, "Unable to find pipeline " + pipeline));
-        });
-
-    }
-
-
-    private Single<PipelineOptions> getOptions(PipelineDeployment deployment) {
-        return pipelines.rxGet(deployment)
-                .flatMap(options -> options != null ? Single.just(options) : Single.error(new ServiceException(PIPELINE_NOT_FOUND, "Unable to find pipeline " + deployment)));
-    }
-
     @Override
     public void stopPipeline(PipelineDeployment deployment, Handler<AsyncResult<Void>> handler) {
-        Single<PipelineDeployment> deploymentSingle = Single.just(deployment);
-        if (!isValid(deployment)) {
-            if (!hasName(deployment)) {
-                handler.handle(ServiceException.fail(INVALID_DEPLOYMENT, "No name found in deployment.", deployment.toJson()));
-                return;
-            }
-            deploymentSingle = getDeployment(deployment.getName());
+        if (deployment == null || !hasName(deployment)) {
+            handler.handle(ServiceException.fail(INVALID_DEPLOYMENT, "No name found in deployment."));
+            return;
         }
+
+        Single<PipelineDeployment> deploymentSingle = isValid(deployment) ? Single.just(deployment) : getDeployment(deployment.getName());
 
         deploymentSingle
                 .flatMapCompletable(this::stopPipelineInternal)
@@ -396,24 +343,22 @@ public class PipelineServiceImpl implements PipelineService {
     }
 
     /**
-     * Check whether the deployment is running on local node or a remote,
-     * then invokes the subsequent event.
+     * Requests the pipeline to stop.
      *
      * @param deployment the deployment description
      * @return a completable that finishes when the pipeline has been stopped
      */
     private Completable stopPipelineInternal(PipelineDeployment deployment) {
-        if (deployChannel.equals(deployment.getNode())) {
-            return undeployLocalPipeline(deployment);
-        } else {
-            return undeployRemotePipeline(deployment);
-        }
+        DeliveryOptions options = new DeliveryOptions().setSendTimeout(1000L);
+        return vertx.eventBus()
+                .rxSend(deployment.getControlChannel(), Signal.TERMINATE.name(), options)
+                .toCompletable();
     }
 
-    private Completable undeployLocalPipeline(PipelineDeployment deployment) {
+    private Completable undeployLocalPipeline(PipelineDeployment deployment, boolean undeploy) {
         return pipelines.rxRemove(deployment)
                 .flatMapCompletable(options -> {
-                    if (vertx.deploymentIDs().contains(deployment.getId())) {
+                    if (undeploy && vertx.deploymentIDs().contains(deployment.getId())) {
                         return vertx.rxUndeploy(deployment.getId()).onErrorComplete();
                     }
                     return Completable.complete();
@@ -421,38 +366,26 @@ public class PipelineServiceImpl implements PipelineService {
                 .doOnComplete(() -> log.info("undeployed pipeline [{}]", deployment));
     }
 
-    private Completable undeployRemotePipeline(PipelineDeployment deployment) {
-        if (!registrations.contains(deployment.getNode())) {
-            return Completable.error(new ServiceException(NO_CLUSTER_MATCH, "Unable to find a matching node.", deployment.toJson()));
-        }
-        DeliveryOptions options = new DeliveryOptions().addHeader("action", DeployChannelActions.UNDEPLOY.name());
-        return vertx.eventBus().rxSend(deployment.getNode(), deployment.getName(), options)
-                .doOnSuccess(message -> log.info("undeployed pipeline [{}]", deployment))
-                .toCompletable();
-    }
-
 
     //endregion
 
     //region Service shutdown
     public Completable close() {
+        return close(true);
+    }
+
+    public Completable close(boolean undeploy) {
         return getDeployments()
                 .flatMapObservable(Observable::fromIterable)
                 .filter(deployment -> deployment.getNode().equals(deployChannel))
-                .flatMapCompletable(this::undeployLocalPipeline, true)
+                .flatMapCompletable(deployment -> undeployLocalPipeline(deployment, undeploy), true)
                 .onErrorComplete()
-                .andThen(Completable.concatArray(unregisterServiceChannelConsumer(), unregisterDeployChannel()))
+                .andThen(Completable.concatArray(unregisterService(), unregisterDeployChannel()))
                 .doOnComplete(() -> log.info("Pipeline service [{}] closed.", deployChannel));
     }
 
-    private Completable unregisterServiceChannelConsumer() {
-        return serviceChannelConsumer
-                .rxUnregister()
-                .andThen(Completable.fromAction(() -> {
-                    JsonObject data = new JsonObject().put("service", deployChannel);
-                    DeliveryOptions options = new DeliveryOptions().addHeader("action", ServiceChannelActions.UNREGISTER_SERVICE.name());
-                    vertx.eventBus().publish(SERVICE_CHANNEL_ADDRESS, data, options);
-                }));
+    private Completable unregisterService() {
+        return registrations.rxRemove(deployChannel).toCompletable();
     }
 
     private Completable unregisterDeployChannel() {
@@ -460,9 +393,61 @@ public class PipelineServiceImpl implements PipelineService {
     }
     //endregion
 
+    //region utils
+    private Single<Set<String>> getRegistrations() {
+        return new AsyncResultSingle<>(handler -> registrationsDelegate().keys(handler));
+    }
+
+    private Single<String> getRegistration(String registration) {
+        return getRegistrations().flatMap(registrations -> {
+            if (registrations.contains(registration)) {
+                return Single.just(registration);
+            }
+            return Single.error(new ServiceException(NO_CLUSTER_MATCH, "Registration '" + registration + "' not found."));
+        });
+    }
+
+    private Single<Set<PipelineDeployment>> getDeployments() {
+        return new AsyncResultSingle<>(handler -> pipelinesDelegate().keys(handler));
+    }
+
+    /**
+     * Get the deployment associated with the pipeline name when it can be found.
+     *
+     * @param pipeline the pipeline name
+     * @return a single that completes with the deployment description
+     */
+    private Single<PipelineDeployment> getDeployment(String pipeline) {
+        return getDeployments().flatMap(deployments -> {
+            Optional<PipelineDeployment> deploymentOptional = deployments.stream()
+                    .filter(deployment -> deployment.getName().equals(pipeline))
+                    .findFirst();
+
+            return deploymentOptional.isPresent()
+                    ? Single.just(deploymentOptional.get())
+                    : Single.error(new ServiceException(PIPELINE_NOT_FOUND, "Unable to find pipeline " + pipeline));
+        });
+    }
+
+    /**
+     * Get the options associated with the deployment when it can be found
+     *
+     * @param deployment the deployment
+     * @return a single that completes with the options
+     */
+    private Single<PipelineOptions> getOptions(PipelineDeployment deployment) {
+        return pipelines.rxGet(deployment)
+                .flatMap(options -> options != null ? Single.just(options) : Single.error(new ServiceException(PIPELINE_NOT_FOUND, "Unable to find pipeline " + deployment)));
+    }
+
     @SuppressWarnings("unchecked")
     private io.vertx.core.shareddata.AsyncMap<PipelineDeployment, PipelineOptions> pipelinesDelegate() {
         return (io.vertx.core.shareddata.AsyncMap<PipelineDeployment, PipelineOptions>) pipelines.getDelegate();
     }
 
+    @SuppressWarnings("unchecked")
+    private io.vertx.core.shareddata.AsyncMap<String, String> registrationsDelegate() {
+        return (io.vertx.core.shareddata.AsyncMap<String, String>) registrations.getDelegate();
+    }
+    //endregion
 }

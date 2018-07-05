@@ -1,0 +1,18 @@
+{
+  "name": "event-bus-pipeline",
+  "pump": {
+    "type": "fr.myprysm.pipeline.pump.EventBusPump",
+    "address": "event-bus-pipeline-in"
+  },
+  "processors": [
+    {
+      "type": "fr.myprysm.pipeline.processor.JoltProcessor"
+    }
+  ],
+  "sink": {
+    "type": "fr.myprysm.pipeline.sink.EventBusSink",
+    "send": [
+      "event-bus-pipeline-out"
+    ]
+  }
+}

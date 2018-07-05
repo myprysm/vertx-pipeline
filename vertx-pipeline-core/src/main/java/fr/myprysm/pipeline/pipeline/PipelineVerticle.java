@@ -92,7 +92,7 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineConfigurer> i
     }
 
     private Completable notifyUndeploy() {
-        eventBus().publish(deployChannel, name(), new DeliveryOptions().addHeader("action", "undeploy"));
+        eventBus().publish(deployChannel, name(), new DeliveryOptions().addHeader("action", DeployChannelActions.UNDEPLOY.name()));
         return complete();
     }
 
@@ -170,11 +170,9 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineConfigurer> i
     private Completable stopVerticle(Pair<String, String> deployment) {
         if (vertx.deploymentIDs().contains(deployment.getRight())) {
             info("Undeploying {}:{}", deployment.getLeft(), deployment.getRight());
-            return vertx.rxUndeploy(deployment.getRight());
-        } else {
-            error("{}:{} already undeployed", deployment.getLeft(), deployment.getRight());
-            return complete();
+            return vertx.rxUndeploy(deployment.getRight()).onErrorComplete();
         }
+        return complete();
     }
 
     private Completable undeployProcessors() {
@@ -188,8 +186,7 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineConfigurer> i
 
     private Completable undeployGroup(List<Pair<String, String>> group) {
         return fromIterable(group)
-                .flatMapCompletable(this::stopVerticle)
-                .doOnError((throwable) -> error("An error occured during processors shutdown: ", throwable));
+                .flatMapCompletable(this::stopVerticle);
     }
 
     private void setPumpDeployment(Pair<String, String> pumpDeployment) {

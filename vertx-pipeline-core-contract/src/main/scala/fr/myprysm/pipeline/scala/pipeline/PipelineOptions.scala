@@ -22,6 +22,8 @@ import io.vertx.lang.scala.json.Json._
 
 class PipelineOptions(private val _asJava: JPipelineOptions) {
 
+  def asJava = _asJava
+
   /**
     * The deploy channel.
     *
@@ -31,12 +33,9 @@ class PipelineOptions(private val _asJava: JPipelineOptions) {
     asJava.setDeployChannel(value)
     this
   }
-
   def getDeployChannel: String = {
     asJava.getDeployChannel().asInstanceOf[String]
   }
-
-  def asJava = _asJava
 
   /**
     * The name of the pipeline.
@@ -48,7 +47,6 @@ class PipelineOptions(private val _asJava: JPipelineOptions) {
     asJava.setName(value)
     this
   }
-
   def getName: String = {
     asJava.getName().asInstanceOf[String]
   }
@@ -64,7 +62,6 @@ class PipelineOptions(private val _asJava: JPipelineOptions) {
     asJava.setProcessors(value)
     this
   }
-
   def getProcessors: io.vertx.core.json.JsonArray = {
     asJava.getProcessors()
   }
@@ -81,7 +78,6 @@ class PipelineOptions(private val _asJava: JPipelineOptions) {
     asJava.setPump(value)
     this
   }
-
   def getPump: io.vertx.core.json.JsonObject = {
     asJava.getPump()
   }
@@ -98,7 +94,6 @@ class PipelineOptions(private val _asJava: JPipelineOptions) {
     asJava.setSink(value)
     this
   }
-
   def getSink: io.vertx.core.json.JsonObject = {
     asJava.getSink()
   }

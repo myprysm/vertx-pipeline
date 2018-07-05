@@ -30,8 +30,14 @@ public class PipelineDeploymentConverter {
     if (json.getValue("controlChannel") instanceof String) {
       obj.setControlChannel((String)json.getValue("controlChannel"));
     }
+    if (json.getValue("id") instanceof String) {
+      obj.setId((String)json.getValue("id"));
+    }
     if (json.getValue("name") instanceof String) {
       obj.setName((String)json.getValue("name"));
+    }
+    if (json.getValue("node") instanceof String) {
+      obj.setNode((String)json.getValue("node"));
     }
   }
 
@@ -39,8 +45,14 @@ public class PipelineDeploymentConverter {
     if (obj.getControlChannel() != null) {
       json.put("controlChannel", obj.getControlChannel());
     }
+    if (obj.getId() != null) {
+      json.put("id", obj.getId());
+    }
     if (obj.getName() != null) {
       json.put("name", obj.getName());
+    }
+    if (obj.getNode() != null) {
+      json.put("node", obj.getNode());
     }
   }
 }

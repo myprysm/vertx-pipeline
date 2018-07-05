@@ -17,17 +17,21 @@
 package fr.myprysm.pipeline.pipeline;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.impl.ClusterSerializable;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.nio.charset.StandardCharsets;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @DataObject(generateConverter = true)
-public class PipelineOptions {
+public class PipelineOptions implements ClusterSerializable {
     public static final String DEFAULT_NAME = "default-pipeline";
     private static final String DEFAULT_DEPLOY_CHANNEL = "default-deploy-channel";
 
@@ -127,5 +131,22 @@ public class PipelineOptions {
     public PipelineOptions setDeployChannel(String deployChannel) {
         this.deployChannel = deployChannel;
         return this;
+    }
+
+    @Override
+    public void writeToBuffer(Buffer buffer) {
+        String encoded = toJson().toString();
+        byte[] bytes = encoded.getBytes(StandardCharsets.UTF_8);
+        buffer.appendInt(bytes.length);
+        buffer.appendBytes(bytes);
+    }
+
+    @Override
+    public int readFromBuffer(int pos, Buffer buffer) {
+        int length = buffer.getInt(pos);
+        int start = pos + 4;
+        String encoded = buffer.getString(start, start + length);
+        PipelineOptionsConverter.fromJson(new JsonObject(encoded), this);
+        return pos + length + 4;
     }
 }

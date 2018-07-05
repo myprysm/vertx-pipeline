@@ -135,16 +135,17 @@ accumulator-single-instance-test:
         timestamp:  counter.timestamp
         type:       type
     - type:         fr.myprysm.pipeline.processor.ObjectToArrayProcessor
-      fields:       counter
+      fields:       [counter]
     - type:         fr.myprysm.pipeline.processor.MergeBasicProcessor
       instances:    10
       loadFactor:   3
-      keyToObj:     type
-      mergeArrays: counter
-      sortArrays:
-        path:   counter
-        field:  tick
-        order:  DESC
+      operations:
+        objToKey:     type
+        mergeArrays: counter
+        sortArrays:
+          path:   counter
+          field:  tick
+          order:  DESC
   sink:
     type:     fr.myprysm.pipeline.sink.BlackholeSink
 

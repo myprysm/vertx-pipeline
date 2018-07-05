@@ -37,11 +37,6 @@ var PipelineService = function(j_val) {
 
   /**
    Get the running pipelines across all the instances.
-   <p>
-   This is a complete description of all the pipeline with their options.
-   Please take care when using this as when to many pipelines are deployed
-   this can lead either to an OutOfMemoryError or to a communication failure
-   as the description is too large to be emitted through the event bus.
 
    @public
    @param handler {function} the handler 
@@ -52,6 +47,26 @@ var PipelineService = function(j_val) {
       j_pipelineService["getRunningPipelines(io.vertx.core.Handler)"](function(ar) {
       if (ar.succeeded()) {
         handler(utils.convReturnListSetDataObject(ar.result()), null);
+      } else {
+        handler(null, ar.cause());
+      }
+    });
+    } else throw new TypeError('function invoked with invalid arguments');
+  };
+
+  /**
+   Get the description of the pipeline identified by the provided deployment information.
+
+   @public
+   @param deployment {Object} the deployment information 
+   @param handler {function} the handler 
+   */
+  this.getPipelineDescription = function(deployment, handler) {
+    var __args = arguments;
+    if (__args.length === 2 && (typeof __args[0] === 'object' && __args[0] != null) && typeof __args[1] === 'function') {
+      j_pipelineService["getPipelineDescription(fr.myprysm.pipeline.pipeline.PipelineDeployment,io.vertx.core.Handler)"](deployment != null ? new PipelineDeployment(new JsonObject(Java.asJSONCompatible(deployment))) : null, function(ar) {
+      if (ar.succeeded()) {
+        handler(utils.convReturnDataObject(ar.result()), null);
       } else {
         handler(null, ar.cause());
       }
@@ -88,18 +103,18 @@ var PipelineService = function(j_val) {
   };
 
   /**
-   Stops the pipeline identified by the provided name.
+   Stops the pipeline from the provided deployment.
    <p>
    Emits a signal when operation is complete.
 
    @public
-   @param name {string} the name of the pipeline to stop. 
+   @param deployment {Object} the deployment information of the pipeline to stop. 
    @param handler {function} the handler 
    */
-  this.stopPipeline = function(name, handler) {
+  this.stopPipeline = function(deployment, handler) {
     var __args = arguments;
-    if (__args.length === 2 && typeof __args[0] === 'string' && typeof __args[1] === 'function') {
-      j_pipelineService["stopPipeline(java.lang.String,io.vertx.core.Handler)"](name, function(ar) {
+    if (__args.length === 2 && (typeof __args[0] === 'object' && __args[0] != null) && typeof __args[1] === 'function') {
+      j_pipelineService["stopPipeline(fr.myprysm.pipeline.pipeline.PipelineDeployment,io.vertx.core.Handler)"](deployment != null ? new PipelineDeployment(new JsonObject(Java.asJSONCompatible(deployment))) : null, function(ar) {
       if (ar.succeeded()) {
         handler(null, null);
       } else {

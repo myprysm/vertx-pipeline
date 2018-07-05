@@ -23,7 +23,7 @@ import io.reactivex.Single;
 import io.reactivex.Completable;
 import io.reactivex.Maybe;
 import fr.myprysm.pipeline.pipeline.PipelineDeployment;
-import java.util.List;
+import java.util.Set;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import fr.myprysm.pipeline.pipeline.PipelineOptions;
@@ -75,29 +75,39 @@ public class PipelineService {
 
   /**
    * Get the running pipelines across all the instances.
-   * <p>
-   * This is a complete description of all the pipeline with their options.
-   * Please take care when using this as when to many pipelines are deployed
-   * this can lead either to an {@link java.lang.OutOfMemoryError} or to a communication failure
-   * as the description is too large to be emitted through the event bus.
    * @param handler the handler
    */
-  public void getRunningPipelines(Handler<AsyncResult<List<PipelineOptions>>> handler) { 
+  public void getRunningPipelines(Handler<AsyncResult<Set<PipelineDeployment>>> handler) { 
     delegate.getRunningPipelines(handler);
   }
 
   /**
    * Get the running pipelines across all the instances.
-   * <p>
-   * This is a complete description of all the pipeline with their options.
-   * Please take care when using this as when to many pipelines are deployed
-   * this can lead either to an {@link java.lang.OutOfMemoryError} or to a communication failure
-   * as the description is too large to be emitted through the event bus.
    * @return 
    */
-  public Single<List<PipelineOptions>> rxGetRunningPipelines() { 
-    return new io.vertx.reactivex.core.impl.AsyncResultSingle<List<PipelineOptions>>(handler -> {
+  public Single<Set<PipelineDeployment>> rxGetRunningPipelines() { 
+    return new io.vertx.reactivex.core.impl.AsyncResultSingle<Set<PipelineDeployment>>(handler -> {
       getRunningPipelines(handler);
+    });
+  }
+
+  /**
+   * Get the description of the pipeline identified by the provided deployment information.
+   * @param deployment the deployment information
+   * @param handler the handler
+   */
+  public void getPipelineDescription(PipelineDeployment deployment, Handler<AsyncResult<PipelineOptions>> handler) { 
+    delegate.getPipelineDescription(deployment, handler);
+  }
+
+  /**
+   * Get the description of the pipeline identified by the provided deployment information.
+   * @param deployment the deployment information
+   * @return 
+   */
+  public Single<PipelineOptions> rxGetPipelineDescription(PipelineDeployment deployment) { 
+    return new io.vertx.reactivex.core.impl.AsyncResultSingle<PipelineOptions>(handler -> {
+      getPipelineDescription(deployment, handler);
     });
   }
 
@@ -138,26 +148,26 @@ public class PipelineService {
   }
 
   /**
-   * Stops the pipeline identified by the provided name.
+   * Stops the pipeline from the provided deployment.
    * <p>
    * Emits a signal when operation is complete.
-   * @param name the name of the pipeline to stop.
+   * @param deployment the deployment information of the pipeline to stop.
    * @param handler the handler
    */
-  public void stopPipeline(String name, Handler<AsyncResult<Void>> handler) { 
-    delegate.stopPipeline(name, handler);
+  public void stopPipeline(PipelineDeployment deployment, Handler<AsyncResult<Void>> handler) { 
+    delegate.stopPipeline(deployment, handler);
   }
 
   /**
-   * Stops the pipeline identified by the provided name.
+   * Stops the pipeline from the provided deployment.
    * <p>
    * Emits a signal when operation is complete.
-   * @param name the name of the pipeline to stop.
+   * @param deployment the deployment information of the pipeline to stop.
    * @return 
    */
-  public Completable rxStopPipeline(String name) { 
+  public Completable rxStopPipeline(PipelineDeployment deployment) { 
     return new io.vertx.reactivex.core.impl.AsyncResultCompletable(handler -> {
-      stopPipeline(name, handler);
+      stopPipeline(deployment, handler);
     });
   }
 

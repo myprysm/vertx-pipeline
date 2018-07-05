@@ -24,6 +24,7 @@ import fr.myprysm.pipeline.sink.Sink;
 import fr.myprysm.pipeline.sink.SinkOptions;
 import fr.myprysm.pipeline.util.ClasspathHelpers;
 import fr.myprysm.pipeline.util.Holder;
+import fr.myprysm.pipeline.util.Options;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -44,11 +45,10 @@ import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static strman.Strman.*;
 
-class PipelineConfigurer extends PipelineOptions {
+class PipelineConfigurer extends PipelineOptions implements Options {
     private static final Logger LOG = LoggerFactory.getLogger(PipelineConfigurer.class);
-    public static final String CONTROL_CHANNEL = "control-channel";
 
-    private String controlChannel;
+    private String controlChannel = null;
     private Triple<String, String, DeploymentOptions> sink;
     private LinkedList<List<Triple<String, String, DeploymentOptions>>> processors;
     private Triple<String, String, DeploymentOptions> pump;
@@ -56,6 +56,9 @@ class PipelineConfigurer extends PipelineOptions {
 
     public PipelineConfigurer(JsonObject config) {
         super(config);
+        if (config.getValue("controlChannel") instanceof String) {
+            this.controlChannel = (String) config.getValue("controlChannel");
+        }
     }
 
 
@@ -120,11 +123,17 @@ class PipelineConfigurer extends PipelineOptions {
     }
 
     private void build() {
-        controlChannel = UUID.randomUUID().toString();
+        prepareControlChannel();
         prepareSink();
         prepareProcessors();
         preparePump();
         buildNetwork();
+    }
+
+    private void prepareControlChannel() {
+        if (controlChannel == null) {
+            controlChannel = UUID.randomUUID().toString();
+        }
     }
 
 

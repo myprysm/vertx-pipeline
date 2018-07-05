@@ -30,28 +30,36 @@ import scala.collection.JavaConverters._
   */
 class PipelineService(private val _asJava: Object) {
 
+  def asJava = _asJava
+
+
   /**
     * Get the running pipelines across all the instances.
     *
-    * This is a complete description of all the pipeline with their options.
-    * Please take care when using this as when to many pipelines are deployed
-    * this can lead either to an OutOfMemoryError or to a communication failure
-    * as the description is too large to be emitted through the event bus.
-    *
     * @param handler the handler
     */
-  def getRunningPipelines(handler: Handler[AsyncResult[scala.collection.mutable.Buffer[PipelineOptions]]]): Unit = {
-    asJava.asInstanceOf[JPipelineService].getRunningPipelines({ x: AsyncResult[java.util.List[JPipelineOptions]] => handler.handle(AsyncResultWrapper[java.util.List[JPipelineOptions], scala.collection.mutable.Buffer[PipelineOptions]](x, a => a.asScala.map(x => PipelineOptions(x)))) })
+  def getRunningPipelines(handler: Handler[AsyncResult[scala.collection.mutable.Set[PipelineDeployment]]]): Unit = {
+    asJava.asInstanceOf[JPipelineService].getRunningPipelines({ x: AsyncResult[java.util.Set[JPipelineDeployment]] => handler.handle(AsyncResultWrapper[java.util.Set[JPipelineDeployment], scala.collection.mutable.Set[PipelineDeployment]](x, a => a.asScala.map(x => PipelineDeployment(x)))) })
+  }
+
+  /**
+    * Get the description of the pipeline identified by the provided deployment information.
+    *
+    * @param deployment the deployment informationsee <a href="../../../../../../../cheatsheet/PipelineDeployment.html">PipelineDeployment</a>
+    * @param handler the handler
+    */
+  def getPipelineDescription(deployment: PipelineDeployment, handler: Handler[AsyncResult[PipelineOptions]]): Unit = {
+    asJava.asInstanceOf[JPipelineService].getPipelineDescription(deployment.asJava, { x: AsyncResult[JPipelineOptions] => handler.handle(AsyncResultWrapper[JPipelineOptions, PipelineOptions](x, a => PipelineOptions(a)))})
   }
 
   /**
     * Starts a pipeline with the provided configuration.
-    *
+    * 
     * Please note that the pipeline name must be unique across all the instances.
-    *
+    * 
     * When running in cluster mode, the service will try to find an appropriate node to start the pipeline.
     * This allows to run now data flows from nodes that are not currently hosting the components.
-    *
+    * 
     * Response contains the normalized name with the control channel to communicate through signals
     * with the deployed pipeline.
     *
@@ -59,33 +67,42 @@ class PipelineService(private val _asJava: Object) {
     * @param handler the handler
     */
   def startPipeline(options: PipelineOptions, handler: Handler[AsyncResult[PipelineDeployment]]): Unit = {
-    asJava.asInstanceOf[JPipelineService].startPipeline(options.asJava, { x: AsyncResult[JPipelineDeployment] => handler.handle(AsyncResultWrapper[JPipelineDeployment, PipelineDeployment](x, a => PipelineDeployment(a))) })
+    asJava.asInstanceOf[JPipelineService].startPipeline(options.asJava, { x: AsyncResult[JPipelineDeployment] => handler.handle(AsyncResultWrapper[JPipelineDeployment, PipelineDeployment](x, a => PipelineDeployment(a)))})
   }
 
   /**
-    * Stops the pipeline identified by the provided name.
-    *
+    * Stops the pipeline from the provided deployment.
+    * 
     * Emits a signal when operation is complete.
     *
-    * @param name    the name of the pipeline to stop.
+    * @param deployment the deployment information of the pipeline to stop.see <a href="../../../../../../../cheatsheet/PipelineDeployment.html">PipelineDeployment</a>
     * @param handler the handler
     */
-  def stopPipeline(name: String, handler: Handler[AsyncResult[Unit]]): Unit = {
-    asJava.asInstanceOf[JPipelineService].stopPipeline(name.asInstanceOf[java.lang.String], { x: AsyncResult[Void] => handler.handle(AsyncResultWrapper[Void, Unit](x, a => a)) })
+  def stopPipeline(deployment: PipelineDeployment, handler: Handler[AsyncResult[Unit]]): Unit = {
+    asJava.asInstanceOf[JPipelineService].stopPipeline(deployment.asJava, { x: AsyncResult[Void] => handler.handle(AsyncResultWrapper[Void, Unit](x, a => a)) })
   }
 
   /**
     * Like [[getRunningPipelines]] but returns a [[scala.concurrent.Future]] instead of taking an AsyncResultHandler.
     */
-  def getRunningPipelinesFuture(): scala.concurrent.Future[scala.collection.mutable.Buffer[PipelineOptions]] = {
-    val promiseAndHandler = handlerForAsyncResultWithConversion[java.util.List[JPipelineOptions], scala.collection.mutable.Buffer[PipelineOptions]](x => x.asScala.map(x => PipelineOptions(x)))
+  def getRunningPipelinesFuture(): scala.concurrent.Future[scala.collection.mutable.Set[PipelineDeployment]] = {
+    val promiseAndHandler = handlerForAsyncResultWithConversion[java.util.Set[JPipelineDeployment], scala.collection.mutable.Set[PipelineDeployment]](x => x.asScala.map(x => PipelineDeployment(x)))
     asJava.asInstanceOf[JPipelineService].getRunningPipelines(promiseAndHandler._1)
     promiseAndHandler._2.future
   }
 
   /**
-    * Like [[startPipeline]] but returns a [[scala.concurrent.Future]] instead of taking an AsyncResultHandler.
+    * Like [[getPipelineDescription]] but returns a [[scala.concurrent.Future]] instead of taking an AsyncResultHandler.
     */
+  def getPipelineDescriptionFuture(deployment: PipelineDeployment): scala.concurrent.Future[PipelineOptions] = {
+    val promiseAndHandler = handlerForAsyncResultWithConversion[JPipelineOptions, PipelineOptions](x => PipelineOptions(x))
+    asJava.asInstanceOf[JPipelineService].getPipelineDescription(deployment.asJava, promiseAndHandler._1)
+    promiseAndHandler._2.future
+  }
+
+  /**
+    * Like [[startPipeline]] but returns a [[scala.concurrent.Future]] instead of taking an AsyncResultHandler.
+   */
   def startPipelineFuture(options: PipelineOptions): scala.concurrent.Future[PipelineDeployment] = {
     val promiseAndHandler = handlerForAsyncResultWithConversion[JPipelineDeployment, PipelineDeployment](x => PipelineDeployment(x))
     asJava.asInstanceOf[JPipelineService].startPipeline(options.asJava, promiseAndHandler._1)
@@ -95,16 +112,14 @@ class PipelineService(private val _asJava: Object) {
   /**
     * Like [[stopPipeline]] but returns a [[scala.concurrent.Future]] instead of taking an AsyncResultHandler.
     */
-  def stopPipelineFuture(name: String): scala.concurrent.Future[Unit] = {
+  def stopPipelineFuture(deployment: PipelineDeployment): scala.concurrent.Future[Unit] = {
     val promiseAndHandler = handlerForAsyncResultWithConversion[Void, Unit](x => x)
-    asJava.asInstanceOf[JPipelineService].stopPipeline(name.asInstanceOf[java.lang.String], promiseAndHandler._1)
+    asJava.asInstanceOf[JPipelineService].stopPipeline(deployment.asJava, promiseAndHandler._1)
     promiseAndHandler._2.future
   }
-
-  def asJava = _asJava
 
 }
 
 object PipelineService {
-  def apply(asJava: JPipelineService) = new PipelineService(asJava)
+  def apply(asJava: JPipelineService) = new PipelineService(asJava)  
 }

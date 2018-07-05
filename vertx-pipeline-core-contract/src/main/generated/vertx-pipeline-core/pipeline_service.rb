@@ -32,18 +32,23 @@ module VertxPipelineCore
       Java::FrMyprysmPipelinePipeline::PipelineService.java_class
     end
     #  Get the running pipelines across all the instances.
-    #  <p>
-    #  This is a complete description of all the pipeline with their options.
-    #  Please take care when using this as when to many pipelines are deployed
-    #  this can lead either to an OutOfMemoryError or to a communication failure
-    #  as the description is too large to be emitted through the event bus.
     # @yield the handler
     # @return [void]
     def get_running_pipelines
       if block_given?
-        return @j_del.java_method(:getRunningPipelines, [Java::IoVertxCore::Handler.java_class]).call((Proc.new { |ar| yield(ar.failed ? ar.cause : nil, ar.succeeded ? ar.result.to_a.map { |elt| elt != nil ? JSON.parse(elt.toJson.encode) : nil } : nil) }))
+        return @j_del.java_method(:getRunningPipelines, [Java::IoVertxCore::Handler.java_class]).call((Proc.new { |ar| yield(ar.failed ? ar.cause : nil, ar.succeeded ? ::Vertx::Util::Utils.to_set(ar.result).map! { |elt| elt != nil ? JSON.parse(elt.toJson.encode) : nil } : nil) }))
       end
       raise ArgumentError, "Invalid arguments when calling get_running_pipelines()"
+    end
+    #  Get the description of the pipeline identified by the provided deployment information.
+    # @param [Hash] deployment the deployment information
+    # @yield the handler
+    # @return [void]
+    def get_pipeline_description(deployment=nil)
+      if deployment.class == Hash && block_given?
+        return @j_del.java_method(:getPipelineDescription, [Java::FrMyprysmPipelinePipeline::PipelineDeployment.java_class,Java::IoVertxCore::Handler.java_class]).call(Java::FrMyprysmPipelinePipeline::PipelineDeployment.new(::Vertx::Util::Utils.to_json_object(deployment)),(Proc.new { |ar| yield(ar.failed ? ar.cause : nil, ar.succeeded ? ar.result != nil ? JSON.parse(ar.result.toJson.encode) : nil : nil) }))
+      end
+      raise ArgumentError, "Invalid arguments when calling get_pipeline_description(#{deployment})"
     end
     #  Starts a pipeline with the provided configuration.
     #  <p>
@@ -63,17 +68,17 @@ module VertxPipelineCore
       end
       raise ArgumentError, "Invalid arguments when calling start_pipeline(#{options})"
     end
-    #  Stops the pipeline identified by the provided name.
+    #  Stops the pipeline from the provided deployment.
     #  <p>
     #  Emits a signal when operation is complete.
-    # @param [String] name the name of the pipeline to stop.
+    # @param [Hash] deployment the deployment information of the pipeline to stop.
     # @yield the handler
     # @return [void]
-    def stop_pipeline(name=nil)
-      if name.class == String && block_given?
-        return @j_del.java_method(:stopPipeline, [Java::java.lang.String.java_class,Java::IoVertxCore::Handler.java_class]).call(name,(Proc.new { |ar| yield(ar.failed ? ar.cause : nil) }))
+    def stop_pipeline(deployment=nil)
+      if deployment.class == Hash && block_given?
+        return @j_del.java_method(:stopPipeline, [Java::FrMyprysmPipelinePipeline::PipelineDeployment.java_class,Java::IoVertxCore::Handler.java_class]).call(Java::FrMyprysmPipelinePipeline::PipelineDeployment.new(::Vertx::Util::Utils.to_json_object(deployment)),(Proc.new { |ar| yield(ar.failed ? ar.cause : nil) }))
       end
-      raise ArgumentError, "Invalid arguments when calling stop_pipeline(#{name})"
+      raise ArgumentError, "Invalid arguments when calling stop_pipeline(#{deployment})"
     end
   end
 end

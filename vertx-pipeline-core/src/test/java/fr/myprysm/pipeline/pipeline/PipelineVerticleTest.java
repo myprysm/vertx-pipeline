@@ -69,12 +69,14 @@ class PipelineVerticleTest extends ConsoleTest implements VertxTest {
         DeploymentOptions options = getDeploymentOptions("multi-instance-multi-processor");
         PipelineVerticle verticle = new PipelineVerticle();
         vertx.deployVerticle(verticle, options, ctx.succeeding(id -> {
-            assertThat(verticle.controlChannel()).isNotBlank();
-            assertThat(verticle.exchange()).isNull();
-            verticle.emitSignal(Signal.UNRECOVERABLE); // Does nothing.
-            assertThat(verticle.onSignal(Signal.UNRECOVERABLE)).isEqualTo(complete());
+            ctx.verify(() -> {
+                assertThat(verticle.controlChannel()).isNotBlank();
+                assertThat(verticle.exchange()).isNull();
+                verticle.emitSignal(Signal.UNRECOVERABLE); // Does nothing.
+                assertThat(verticle.onSignal(Signal.UNRECOVERABLE)).isEqualTo(complete());
 
-            vertx.undeploy(id, ctx.succeeding(v -> ctx.completeNow()));
+                vertx.undeploy(id, ctx.succeeding(v -> ctx.completeNow()));
+            });
         }));
 
         ctx.awaitCompletion(5, TimeUnit.SECONDS);
@@ -86,10 +88,12 @@ class PipelineVerticleTest extends ConsoleTest implements VertxTest {
         DeploymentOptions options = getDeploymentOptions("logger-test");
 
         vertx.deployVerticle(PIPELINE_VERTICLE, options, ctx.succeeding(id -> vertx.setTimer(100, timer -> {
-            for (Level level : Level.values()) {
-                assertConsoleContainsPattern(level.toString() + ".*LogProcessor.*log-processor");
-            }
-            ctx.completeNow();
+            ctx.verify(() -> {
+                for (Level level : Level.values()) {
+                    assertConsoleContainsPattern(level.toString() + ".*LogProcessor.*log-processor");
+                }
+                ctx.completeNow();
+            });
         })));
 
         ctx.awaitCompletion(5, TimeUnit.SECONDS);
@@ -98,12 +102,14 @@ class PipelineVerticleTest extends ConsoleTest implements VertxTest {
 
     @Test
     @DisplayName("Test timer shutdown signal triggers pipeline verticle signal.")
-    void testTimerShutdown(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+    void testTimerShutdown(Vertx vertx, VertxTestContext ctx) {
         DeploymentOptions options = getDeploymentOptions("timer-shutdown-test");
         vertx.eventBus().<String>consumer("test-shutdown-timer", message -> {
-            assertThat(message.headers().get("action")).isEqualTo("undeploy");
-            assertThat(message.body()).isEqualTo("timer-shutdown-test");
-            ctx.completeNow();
+            ctx.verify(() -> {
+                assertThat(message.headers().get("action")).isEqualTo(DeployChannelActions.UNDEPLOY.name());
+                assertThat(message.body()).isEqualTo("timer-shutdown-test");
+                ctx.completeNow();
+            });
         });
 
         vertx.deployVerticle(PIPELINE_VERTICLE, options, ctx.succeeding());
@@ -112,12 +118,14 @@ class PipelineVerticleTest extends ConsoleTest implements VertxTest {
 
     @Test
     @DisplayName("Test counter shutdown signal triggers pipeline verticle signal.")
-    void testCounterShutdown(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+    void testCounterShutdown(Vertx vertx, VertxTestContext ctx) {
         DeploymentOptions options = getDeploymentOptions("counter-shutdown-test");
         vertx.eventBus().<String>consumer("test-shutdown-counter", message -> {
-            assertThat(message.headers().get("action")).isEqualTo("undeploy");
-            assertThat(message.body()).isEqualTo("counter-shutdown-test");
-            ctx.completeNow();
+            ctx.verify(() -> {
+                assertThat(message.headers().get("action")).isEqualTo(DeployChannelActions.UNDEPLOY.name());
+                assertThat(message.body()).isEqualTo("counter-shutdown-test");
+                ctx.completeNow();
+            });
         });
 
         vertx.deployVerticle(PIPELINE_VERTICLE, options, ctx.succeeding());
@@ -126,7 +134,7 @@ class PipelineVerticleTest extends ConsoleTest implements VertxTest {
 
     @Test
     @DisplayName("Pipeline verticle still stops when a component fails to undeploy.")
-    void pipelineShouldStopWhenComponentFailsToUndeploy(Vertx vertx, VertxTestContext ctx) throws InterruptedException {
+    void pipelineShouldStopWhenComponentFailsToUndeploy(Vertx vertx, VertxTestContext ctx) {
         DeploymentOptions options = getDeploymentOptions("undeploy-component-error");
 
         vertx.deployVerticle(PIPELINE_VERTICLE, options, ctx.succeeding((id) -> {

@@ -18,13 +18,12 @@ package fr.myprysm.pipeline.pipeline;
 
 import fr.myprysm.pipeline.validation.JsonValidation;
 import fr.myprysm.pipeline.validation.ValidationResult;
-import io.reactivex.Observable;
 import io.vertx.core.json.JsonObject;
-import org.apache.commons.lang3.tuple.Pair;
 
 import static fr.myprysm.pipeline.util.ClasspathHelpers.*;
 import static fr.myprysm.pipeline.util.JsonHelpers.extractString;
 import static fr.myprysm.pipeline.validation.JsonValidation.*;
+import static fr.myprysm.pipeline.validation.ValidationResult.invalid;
 
 public interface PipelineOptionsValidation {
 
@@ -74,14 +73,19 @@ public interface PipelineOptionsValidation {
      * @return validation result
      */
     static JsonValidation processorsExist() {
-        return (json) -> Observable.fromIterable(json.getJsonArray("processors"))
+        return (json) -> json.getJsonArray("processors").stream()
                 .map(JsonObject.class::cast)
-                .map(opt -> Pair.of(opt,
-                        isString("type").and(processorFromAlias().or(processorFromClass())).apply(opt)))
-                .map(p -> Pair.of(p.getLeft(), p.getRight().and(() -> isNull("instances").or(gt("instances", 0L)).apply(p.getLeft()))))
-                .map(Pair::getRight)
-                .reduce((v1, v2) -> v1.and(() -> v2))
-                .blockingGet();
+                .map(opt -> {
+                    ValidationResult result = isString("type")
+                            .and(processorFromAlias().or(processorFromClass()))
+                            .and(isNull("instances").or(gt("instances", 0L)))
+                            .apply(opt);
+                    return result.isValid() ? result
+                            : invalid("Invalid options for Processor '" + opt.getValue("type") + "': " + result.getReason().get());
+                })
+                .filter(r -> !r.isValid())
+                .findFirst()
+                .orElse(ValidationResult.valid());
     }
 
     static JsonValidation processorFromAlias() {

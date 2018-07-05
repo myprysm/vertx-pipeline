@@ -5,7 +5,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * The Pipeline Service is the centric service.
@@ -15,19 +15,22 @@ import java.util.List;
 @VertxGen
 @ProxyGen
 public interface PipelineService {
-
+    String ADDRESS = "fr.myprysm.pipeline:pipeline-service";
 
     /**
      * Get the running pipelines across all the instances.
-     * <p>
-     * This is a complete description of all the pipeline with their options.
-     * Please take care when using this as when to many pipelines are deployed
-     * this can lead either to an {@link OutOfMemoryError} or to a communication failure
-     * as the description is too large to be emitted through the event bus.
      *
      * @param handler the handler
      */
-    void getRunningPipelines(Handler<AsyncResult<List<PipelineOptions>>> handler);
+    void getRunningPipelines(Handler<AsyncResult<Set<PipelineDeployment>>> handler);
+
+    /**
+     * Get the description of the pipeline identified by the provided deployment information.
+     *
+     * @param deployment the deployment information
+     * @param handler    the handler
+     */
+    void getPipelineDescription(PipelineDeployment deployment, Handler<AsyncResult<PipelineOptions>> handler);
 
 
     /**
@@ -47,12 +50,12 @@ public interface PipelineService {
     void startPipeline(PipelineOptions options, Handler<AsyncResult<PipelineDeployment>> handler);
 
     /**
-     * Stops the pipeline identified by the provided name.
+     * Stops the pipeline from the provided deployment.
      * <p>
      * Emits a signal when operation is complete.
      *
-     * @param name    the name of the pipeline to stop.
-     * @param handler the handler
+     * @param deployment the deployment information of the pipeline to stop.
+     * @param handler    the handler
      */
-    void stopPipeline(String name, Handler<AsyncResult<Void>> handler);
+    void stopPipeline(PipelineDeployment deployment, Handler<AsyncResult<Void>> handler);
 }

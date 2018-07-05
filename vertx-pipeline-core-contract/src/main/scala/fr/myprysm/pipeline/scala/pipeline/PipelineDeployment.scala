@@ -25,10 +25,12 @@ import io.vertx.lang.scala.json.Json._
   */
 class PipelineDeployment(private val _asJava: JPipelineDeployment) {
 
+  def asJava = _asJava
+
   /**
     * The pipeline control channel address.
     *
-    * This address allows to communicate signals to this particular pipeline.
+    * This address allows to communicate signals to this particular pipeline and its components.
     *
     * See vertx-pipeline-core about supported <code>Signal</code>s.
     */
@@ -36,9 +38,24 @@ class PipelineDeployment(private val _asJava: JPipelineDeployment) {
     asJava.setControlChannel(value)
     this
   }
-
   def getControlChannel: String = {
     asJava.getControlChannel().asInstanceOf[String]
+  }
+
+  /**
+    * The pipeline identifier.
+    *
+    * This is basically the deployment ID for the <code>PipelineVerticle</code>.
+    *
+    * This is a read-only property
+    */
+  def setId(value: String) = {
+    asJava.setId(value)
+    this
+  }
+
+  def getId: String = {
+    asJava.getId().asInstanceOf[String]
   }
 
   /**
@@ -50,12 +67,23 @@ class PipelineDeployment(private val _asJava: JPipelineDeployment) {
     asJava.setName(value)
     this
   }
-
   def getName: String = {
     asJava.getName().asInstanceOf[String]
   }
 
-  def asJava = _asJava
+  /**
+    * The pipeline node identifier.
+    *
+    * This is the node that hosts the pipeline in cluster mode.
+    */
+  def setNode(value: String) = {
+    asJava.setNode(value)
+    this
+  }
+
+  def getNode: String = {
+    asJava.getNode().asInstanceOf[String]
+  }
 }
 
 object PipelineDeployment {

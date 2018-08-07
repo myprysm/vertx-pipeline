@@ -27,7 +27,24 @@ import java.util.function.Supplier;
 
 import static fr.myprysm.pipeline.util.JsonHelpers.arr;
 import static fr.myprysm.pipeline.util.JsonHelpers.obj;
-import static fr.myprysm.pipeline.validation.JsonValidation.*;
+import static fr.myprysm.pipeline.validation.JsonValidation.arrayOf;
+import static fr.myprysm.pipeline.validation.JsonValidation.gt;
+import static fr.myprysm.pipeline.validation.JsonValidation.gte;
+import static fr.myprysm.pipeline.validation.JsonValidation.isArray;
+import static fr.myprysm.pipeline.validation.JsonValidation.isBoolean;
+import static fr.myprysm.pipeline.validation.JsonValidation.isClass;
+import static fr.myprysm.pipeline.validation.JsonValidation.isEnum;
+import static fr.myprysm.pipeline.validation.JsonValidation.isEnv;
+import static fr.myprysm.pipeline.validation.JsonValidation.isLong;
+import static fr.myprysm.pipeline.validation.JsonValidation.isNotNull;
+import static fr.myprysm.pipeline.validation.JsonValidation.isNull;
+import static fr.myprysm.pipeline.validation.JsonValidation.isObject;
+import static fr.myprysm.pipeline.validation.JsonValidation.isString;
+import static fr.myprysm.pipeline.validation.JsonValidation.lt;
+import static fr.myprysm.pipeline.validation.JsonValidation.lte;
+import static fr.myprysm.pipeline.validation.JsonValidation.mapOf;
+import static fr.myprysm.pipeline.validation.JsonValidation.matches;
+import static fr.myprysm.pipeline.validation.JsonValidation.message;
 import static fr.myprysm.pipeline.validation.ValidationResult.invalid;
 import static fr.myprysm.pipeline.validation.ValidationResult.valid;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,7 +88,7 @@ class ValidationTest implements BaseJsonValidationTest {
         assertThat(invalid("test")).isNotEqualTo(invalid("other"));
         assertThat(invalid("test")).isEqualTo(invalid("test"));
 
-        assertThat(invalid("test").toString()).isEqualTo("Invalid[reason='test']");
+        assertThat(invalid("test").toString()).isEqualTo("ValidationResult.Invalid(reason=Optional[test])");
 
         assertThat(invalid("test").hashCode()).isNotEqualTo(invalid("other").hashCode());
         assertThat(invalid("test").hashCode()).isEqualTo(invalid("test").hashCode());

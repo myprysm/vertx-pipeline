@@ -28,16 +28,34 @@ import org.quartz.JobExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Quartz job that will emit a signal when the cron scheduler triggers
+ * Quartz job that will emit a signal when the cron scheduler triggers.
  */
 public class CronEmitter implements Job {
+    /**
+     * Emitter to send generated events.
+     */
     private FlowableEmitter<JsonObject> emitter;
+
+    /**
+     * Counter for the number of emitted items.
+     */
     private AtomicLong tick;
+
+    /**
+     * Additional data to add with each event.
+     */
     private JsonObject data;
+
+    /**
+     * Vert.x.
+     */
     private Vertx vertx;
 
+    /**
+     * Build a new cron emitter.
+     */
     public CronEmitter() {
-
+        //
     }
 
     @SuppressWarnings("unchecked")
@@ -52,18 +70,38 @@ public class CronEmitter implements Job {
 
     }
 
+    /**
+     * Get the vertx instance.
+     *
+     * @return the vertx instance.
+     */
     public Vertx vertx() {
         return vertx;
     }
 
+    /**
+     * Get the emitter.
+     *
+     * @return the emitter.
+     */
     public FlowableEmitter<JsonObject> emitter() {
         return emitter;
     }
 
+    /**
+     * Initialize the emitter before executing the job.
+     *
+     * @return a completable that finished when the emitter is initialized
+     */
     public Completable initialize() {
         return Completable.complete();
     }
 
+    /**
+     * Generate the event in the pipeline (if any).
+     *
+     * @return a completable that finishes when the emitter as executed the job.
+     */
     public Completable execute() {
         if (emitter != null) {
             emitter.onNext(data.copy().put("counter", tick.incrementAndGet()).put("timestamp", System.currentTimeMillis()));

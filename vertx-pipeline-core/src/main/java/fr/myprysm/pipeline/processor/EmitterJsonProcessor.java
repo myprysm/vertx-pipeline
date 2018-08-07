@@ -32,10 +32,10 @@ public abstract class EmitterJsonProcessor<T extends ProcessorOptions> extends B
     private String controlChannel;
 
     @Override
-    protected JsonObject preConfiguration(JsonObject config) {
-        super.preConfiguration(config);
+    protected JsonObject preConfiguration(JsonObject json) {
+        super.preConfiguration(json);
         controlChannel = exchange().getControlChannel();
-        return config;
+        return json;
     }
 
     @Override

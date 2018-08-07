@@ -16,9 +16,20 @@
 
 package fr.myprysm.pipeline.validation;
 
+/**
+ * Validation exception for {@link ValidationResult}.
+ */
 public class ValidationException extends Exception {
+    /**
+     * Default message whenever the provided result has none.
+     */
     private static final String DEFAULT_MESSAGE = "Generic validation exception";
 
+    /**
+     * Build a new exception from the result.
+     *
+     * @param validation the validation result.
+     */
     public ValidationException(ValidationResult validation) {
         super(validation.getReason().orElse(DEFAULT_MESSAGE));
     }

@@ -21,7 +21,6 @@ import fr.myprysm.pipeline.validation.ValidationResult;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.core.Future;
-import io.vertx.core.Verticle;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.CompletableHelper;
 import io.vertx.reactivex.core.AbstractVerticle;
@@ -39,17 +38,35 @@ import static fr.myprysm.pipeline.validation.JsonValidation.ENV_PREFIX;
 import static fr.myprysm.pipeline.validation.ValidationResult.valid;
 
 /**
- * Configurable {@link Verticle} that provides all the necessary tooling
- * to quickly build a new {@link Verticle} implementation.
+ * Configurable verticle that provides all the necessary tooling
+ * to quickly build a new {@link io.vertx.core.Verticle} implementation.
  *
  * @param <O> the type of options this {@link ConfigurableVerticle} holds
  */
 public abstract class ConfigurableVerticle<O extends Options> extends AbstractVerticle implements Configurable<O>, Validable, ShutdownHook, Named {
+
+    /**
+     * The default name.
+     */
     public static final String DEFAULT_NAME = "configurable-verticle";
+
+    /**
+     * Logger.
+     */
     private static final Logger LOG = LoggerFactory.getLogger(ConfigurableVerticle.class);
 
+    /**
+     * The verticle class.
+     */
     private final String clazz = getClass().getCanonicalName();
+
+    /**
+     * The verticle name.
+     */
     private String name = DEFAULT_NAME;
+    /**
+     * The configuration.
+     */
     private O config;
 
     @Override
@@ -69,18 +86,18 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
     }
 
     /**
-     * Sets the config internally
+     * Sets the config internally.
      *
-     * @param config the configuration
+     * @param newConfig the configuration
      * @return the configuration
      */
-    private O setConfiguration(O config) {
-        this.config = config;
-        return config;
+    private O setConfiguration(O newConfig) {
+        this.config = newConfig;
+        return this.config;
     }
 
     /**
-     * Get the configuration object of this verticle
+     * Get the configuration object of this verticle.
      * <p>
      * This will usually not be useful because of the {@link #configure(Options)} step
      * in the lifecycle but you still can access the configuration object through here.
@@ -121,58 +138,87 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
         return name;
     }
 
+    /**
+     * Logs the shutdown message.
+     */
     private void logShutdown() {
         info("[{}] Shutdown.", clazz);
     }
 
+    /**
+     * Logs the shutdown message when an error occurs.
+     *
+     * @param throwable the error.
+     */
     private void logErrorShutdown(Throwable throwable) {
         error("An error occurred while closing [{}]", clazz);
         error("Reason: ", throwable);
         error("Shutting down anyway...");
     }
 
+    /**
+     * Pre shutdown hook.
+     *
+     * @return a completable that finished when the hook is completed
+     */
     protected Completable preShutdown() {
         return Completable.complete();
     }
 
+    /**
+     * Logs when an error occured during startup.
+     *
+     * @param throwable the error
+     */
     private void logErrorStart(Throwable throwable) {
         error("An error occured during deployment of [{}]", clazz);
         error("Configuration is [{}]", config());
         error("Reason: ", throwable);
     }
 
+    /**
+     * Logs when the component is started.
+     */
     private void logStarted() {
         info("[{}] Started.", clazz);
     }
 
 
     /**
-     * Pre-validation hook to validate the {@link ConfigurableVerticle} configuration
+     * Pre-validation hook to validate the {@link ConfigurableVerticle} configuration.
      *
-     * @param config the configuration
-     * @return the result.
+     * @param json the configuration
+     * @return the result
      */
-    protected ValidationResult preValidate(JsonObject config) {
+    protected ValidationResult preValidate(JsonObject json) {
         return valid();
     }
 
-    private Single<JsonObject> doValidate(JsonObject config) {
-        ValidationResult result = preValidate(config).and(supplyValidate(config));
+    /**
+     * Performs the validation check by applying the pre-validate hook, then the validate hook.
+     * <p>
+     * If the validation result is invalid, then the result is failed.
+     *
+     * @param json the config to validate
+     * @return a single with the config when succeeded or the {@link fr.myprysm.pipeline.validation.ValidationException}.
+     */
+    private Single<JsonObject> doValidate(JsonObject json) {
+        ValidationResult result = preValidate(json).and(supplyValidate(json));
         if (!result.isValid()) {
-            delegate().error("Configuration invalid for component [{}]: {}", config.getValue("name", DEFAULT_NAME), result);
+            delegate().error("Configuration invalid for component [{}]: {}", json.getValue("name", DEFAULT_NAME), result);
         }
-        return result.isValid() ? Single.just(config) : Single.error(result.toException());
+        return result.isValid() ? Single.just(json) : Single.error(result.toException());
     }
 
     /**
      * Pre-configuration hook that can be implemented before the configuration
-     * is applied on the final {@link ConfigurableVerticle}
+     * is applied on the final {@link ConfigurableVerticle}.
      *
-     * @param config the configuration
+     * @param json the configuration
      * @return the configuration
      */
-    protected JsonObject preConfiguration(JsonObject config) {
-        return config;
+    protected JsonObject preConfiguration(JsonObject json) {
+        return json;
     }
 
     /**
@@ -301,11 +347,25 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
     protected <T> T getEnv(String environment, Function<String, T> mapper) {
         Pair<String, String> parsed = parseEnvironment(environment);
         String value = System.getProperty(parsed.getKey());
-        if (value == null) value = System.getenv(parsed.getKey());
-        if (value == null) value = parsed.getValue();
+
+        if (value == null) {
+            value = System.getenv(parsed.getKey());
+        }
+
+        if (value == null) {
+            value = parsed.getValue();
+        }
         return value == null ? null : mapper.apply(value);
     }
 
+    /**
+     * Parses an environment placeholder and returns a pair
+     * containing the property name as key
+     * and the default value as value, if any.
+     *
+     * @param environment the environment property name, prefixed with the <code>ENV_PREFIX</code>.
+     * @return the pair
+     */
     private Pair<String, String> parseEnvironment(String environment) {
         String start = environment.substring(ENV_PREFIX.length());
         return start.contains("|")
@@ -466,8 +526,15 @@ public abstract class ConfigurableVerticle<O extends Options> extends AbstractVe
         }
     }
 
-    private Object[] prepareArgs(String name, Object... args) {
-        return ArrayUtils.addAll(new Object[]{name}, args);
+    /**
+     * Prepare the arguments for logging.
+     *
+     * @param componentName the component name
+     * @param args          the arguments
+     * @return the array with the component name as first item
+     */
+    private Object[] prepareArgs(String componentName, Object... args) {
+        return ArrayUtils.addAll(new Object[]{componentName}, args);
     }
 }
 

@@ -23,30 +23,51 @@ import io.vertx.core.json.JsonObject;
 import java.text.ParseException;
 
 import static fr.myprysm.pipeline.util.ClasspathHelpers.getCronEmitterClassNames;
-import static fr.myprysm.pipeline.validation.JsonValidation.*;
+import static fr.myprysm.pipeline.validation.JsonValidation.holds;
+import static fr.myprysm.pipeline.validation.JsonValidation.isNull;
+import static fr.myprysm.pipeline.validation.JsonValidation.isString;
 import static org.quartz.CronScheduleBuilder.cronScheduleNonvalidatedExpression;
 
+/**
+ * Validates <code>CronPumpOptions</code>.
+ */
 public interface CronPumpOptionsValidation {
 
+    /**
+     * Validate the configuration for <code>CronPumpOptions</code>.
+     *
+     * @param config the configuration
+     * @return the validation result
+     */
     static ValidationResult validate(JsonObject config) {
-        return isString("cron").and(isCronValid())
-                .and(isNull("emitter").or(emitterExists()))
+        return isCronValid()
+                .and(isEmitterValid())
                 .apply(config);
     }
 
-    static JsonValidation emitterExists() {
-        return isString("emitter")
-                .and(holds(json -> getCronEmitterClassNames().contains(json.getString("emitter")), "The class is not a kind of Sink"));
+    /**
+     * Validates that the emitter is a CronEmitter.
+     *
+     * @return the validation chain.
+     */
+    static JsonValidation isEmitterValid() {
+        return isNull("emitter").or(isString("emitter")
+                .and(holds(json -> getCronEmitterClassNames().contains(json.getString("emitter")), "The class is not a kind of CronEmitter")));
     }
 
+    /**
+     * Validates the cron expression.
+     *
+     * @return the validation chain
+     */
     static JsonValidation isCronValid() {
-        return holds(json -> {
+        return isString("cron").and(holds(json -> {
             try {
                 cronScheduleNonvalidatedExpression(json.getString("cron"));
             } catch (ParseException e) {
                 return false;
             }
             return true;
-        }, "Cron expression is not valid");
+        }, "Cron expression is not valid"));
     }
 }

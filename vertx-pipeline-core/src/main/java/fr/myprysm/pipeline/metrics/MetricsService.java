@@ -29,7 +29,7 @@ public interface MetricsService extends Metrics {
 
 
     /**
-     * Provides a metrics object for a processor
+     * Provides a metrics object for a processor.
      *
      * @param processor the processor
      * @return metrics
@@ -37,7 +37,7 @@ public interface MetricsService extends Metrics {
     ProcessorMetrics forProcessor(Processor processor);
 
     /**
-     * Provides a metrics object for a sink
+     * Provides a metrics object for a sink.
      *
      * @param sink the sink
      * @return metrics
@@ -45,7 +45,7 @@ public interface MetricsService extends Metrics {
     SinkMetrics forSink(Sink sink);
 
     /**
-     * Provides a metrics object for a pump
+     * Provides a metrics object for a pump.
      *
      * @param pump the pump
      * @return metrics

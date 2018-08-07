@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 public interface Validable {
 
     /**
-     * Supplies the validation of this <code>Validable</code>
+     * Supplies the validation of this <code>Validable</code>.
      *
      * @param config the configuration
      * @return a supplier to validate this <code>Validable</code> asynchronously

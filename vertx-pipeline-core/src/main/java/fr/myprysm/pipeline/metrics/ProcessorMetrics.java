@@ -25,17 +25,17 @@ import io.vertx.core.spi.metrics.Metrics;
 public interface ProcessorMetrics extends Metrics {
 
     /**
-     * Marks an event reception
+     * Marks an event reception.
      */
     void eventReceived();
 
     /**
-     * Marks an event emission
+     * Marks an event emission.
      */
     void eventSent();
 
     /**
-     * Marks an error
+     * Marks an error.
      */
     void eventError();
 }

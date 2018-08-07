@@ -35,8 +35,21 @@ import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToLongFunction;
 
-import static fr.myprysm.pipeline.processor.MergeBasicProcessorOptions.*;
-import static fr.myprysm.pipeline.util.JsonHelpers.*;
+import static fr.myprysm.pipeline.processor.MergeBasicProcessorOptions.MERGE_ARRAYS;
+import static fr.myprysm.pipeline.processor.MergeBasicProcessorOptions.OBJ_TO_KEY;
+import static fr.myprysm.pipeline.processor.MergeBasicProcessorOptions.SORT_ARRAY;
+import static fr.myprysm.pipeline.processor.MergeBasicProcessorOptions.SORT_FIELD;
+import static fr.myprysm.pipeline.processor.MergeBasicProcessorOptions.SORT_ORDER;
+import static fr.myprysm.pipeline.processor.MergeBasicProcessorOptions.SORT_PATH;
+import static fr.myprysm.pipeline.processor.MergeBasicProcessorOptions.SORT_TYPE;
+import static fr.myprysm.pipeline.util.JsonHelpers.EMPTY_STRING;
+import static fr.myprysm.pipeline.util.JsonHelpers.arr;
+import static fr.myprysm.pipeline.util.JsonHelpers.extractDouble;
+import static fr.myprysm.pipeline.util.JsonHelpers.extractJsonArray;
+import static fr.myprysm.pipeline.util.JsonHelpers.extractLong;
+import static fr.myprysm.pipeline.util.JsonHelpers.extractString;
+import static fr.myprysm.pipeline.util.JsonHelpers.obj;
+import static fr.myprysm.pipeline.util.JsonHelpers.writeObject;
 import static fr.myprysm.pipeline.validation.ValidationResult.invalid;
 import static fr.myprysm.pipeline.validation.ValidationResult.valid;
 import static io.reactivex.Completable.complete;
@@ -96,16 +109,16 @@ public class MergeBasicProcessor extends FlushableJsonProcessor<MergeBasicProces
         JsonObject json = keyToObj.getRight();
         JsonObject original = json;
 
-        if (!map.containsKey(keyToObj.getKey())) {
-            debug("No item on key {}", keyToObj.getKey());
-            map.put(keyToObj.getKey(), json);
-        } else {
+        if (map.containsKey(keyToObj.getKey())) {
             debug("Already an item on key {}", keyToObj.getKey());
             original = map.get(keyToObj.getKey());
+        } else {
+            debug("No item on key {}", keyToObj.getKey());
+            map.put(keyToObj.getKey(), json);
         }
 
         // No need to compute if this is the first time we see the item.
-        if (original != json) {
+        if (!original.equals(json)) {
             mergeArrays(original, json);
         }
 

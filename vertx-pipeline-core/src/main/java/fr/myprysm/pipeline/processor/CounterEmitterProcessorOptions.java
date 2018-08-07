@@ -35,7 +35,7 @@ public class CounterEmitterProcessorOptions extends ProcessorOptions {
     private Long delayTerminate = DEFAULT_DELAY_TERMINATE;
 
     public CounterEmitterProcessorOptions() {
-
+        //
     }
 
     public CounterEmitterProcessorOptions(CounterEmitterProcessorOptions other) {

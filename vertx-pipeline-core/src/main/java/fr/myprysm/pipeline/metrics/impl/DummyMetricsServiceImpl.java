@@ -27,7 +27,10 @@ import io.vertx.core.json.JsonObject;
 
 import static fr.myprysm.pipeline.util.JsonHelpers.obj;
 
-public class DummyMetricsServiceImpl implements MetricsService {
+/**
+ * Dummy metrics service that does nothing.
+ */
+public final class DummyMetricsServiceImpl implements MetricsService {
     @Override
     public ProcessorMetrics forProcessor(Processor processor) {
         return DummyProcessorMetricsImpl.INSTANCE;
@@ -63,26 +66,36 @@ public class DummyMetricsServiceImpl implements MetricsService {
 // does nothing
     }
 
-    private static class DummyProcessorMetricsImpl implements ProcessorMetrics {
+    /**
+     * Dummy processor metrics that does nothing.
+     */
+    private static final class DummyProcessorMetricsImpl implements ProcessorMetrics {
 
+        /**
+         * Instance.
+         */
         static final DummyProcessorMetricsImpl INSTANCE = new DummyProcessorMetricsImpl();
 
+        /**
+         * Hidden.
+         */
         private DummyProcessorMetricsImpl() {
+            //
         }
 
         @Override
         public void eventReceived() {
-
+            //
         }
 
         @Override
         public void eventSent() {
-
+            //
         }
 
         @Override
         public void eventError() {
-
+            //
         }
 
         @Override
@@ -92,25 +105,36 @@ public class DummyMetricsServiceImpl implements MetricsService {
 
         @Override
         public void close() {
+            //
         }
     }
 
-    private static class DummyPumpMetricsImpl implements PumpMetrics {
+    /**
+     * Dummy pump metrics that does nothing.
+     */
+    private static final class DummyPumpMetricsImpl implements PumpMetrics {
 
+        /**
+         * Instance.
+         */
         static final DummyPumpMetricsImpl INSTANCE = new DummyPumpMetricsImpl();
 
+        /**
+         * Hidden.
+         */
         private DummyPumpMetricsImpl() {
+            //
         }
 
 
         @Override
         public void eventSent() {
-
+            //
         }
 
         @Override
         public void eventError() {
-
+            //
         }
 
         @Override
@@ -120,23 +144,36 @@ public class DummyMetricsServiceImpl implements MetricsService {
 
         @Override
         public void close() {
+            //
         }
     }
 
-    private static class DummySinkMetricsImpl implements SinkMetrics {
+    /**
+     * Dummy sink metrics that does nothing.
+     */
+    private static final class DummySinkMetricsImpl implements SinkMetrics {
 
+
+        /**
+         * Instance.
+         */
         static final DummySinkMetricsImpl INSTANCE = new DummySinkMetricsImpl();
 
+        /**
+         * Hidden.
+         */
         private DummySinkMetricsImpl() {
+            //
         }
 
         @Override
         public void eventReceived() {
+            //
         }
 
         @Override
         public void eventError() {
-
+            //
         }
 
         @Override
@@ -146,6 +183,7 @@ public class DummyMetricsServiceImpl implements MetricsService {
 
         @Override
         public void close() {
+            //
         }
     }
 }

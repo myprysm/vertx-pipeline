@@ -43,7 +43,9 @@ import static fr.myprysm.pipeline.util.JsonHelpers.arr;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static strman.Strman.*;
+import static strman.Strman.join;
+import static strman.Strman.lastIndexOf;
+import static strman.Strman.toKebabCase;
 
 class PipelineConfigurer extends PipelineOptions implements Options {
     private static final Logger LOG = LoggerFactory.getLogger(PipelineConfigurer.class);
@@ -199,7 +201,7 @@ class PipelineConfigurer extends PipelineOptions implements Options {
      */
     private String resolveSink(String type) {
         String clazz = ClasspathHelpers.getSinkForAlias(type);
-        return clazz != null ? clazz : type;
+        return clazz == null ? type : clazz;
     }
 
     /**
@@ -252,7 +254,7 @@ class PipelineConfigurer extends PipelineOptions implements Options {
      */
     private String resolveProcessor(String type) {
         String clazz = ClasspathHelpers.getProcessorForAlias(type);
-        return clazz != null ? clazz : type;
+        return clazz == null ? type : clazz;
     }
 
     /**
@@ -304,7 +306,7 @@ class PipelineConfigurer extends PipelineOptions implements Options {
      */
     private String resolvePump(String type) {
         String clazz = ClasspathHelpers.getPumpForAlias(type);
-        return clazz != null ? clazz : type;
+        return clazz == null ? type : clazz;
     }
 
     /**
@@ -338,10 +340,10 @@ class PipelineConfigurer extends PipelineOptions implements Options {
         }
 
 
-        if (!name.equals(defaultName)) {
-            finalName += concatNames(name, component);
-        } else {
+        if (name.equals(defaultName)) {
             finalName += concatNames(type.substring(lastIndexOf(type, ".") + 1));
+        } else {
+            finalName += concatNames(name, component);
         }
 
         return finalName;

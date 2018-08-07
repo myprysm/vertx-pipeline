@@ -40,32 +40,62 @@ import java.util.List;
  *
  * @param <I> The type of input items
  * @param <O> The type of output items
+ * @param <T> The type of options
  */
 abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends ConfigurableVerticle<T> implements Processor<I, O> {
+
+    /**
+     * Logger.
+     */
     private static final Logger LOG = LoggerFactory.getLogger(AbstractProcessor.class);
 
+    /**
+     * Exchange options to communicate with siblings.
+     */
     private ExchangeOptions exchange;
+
+    /**
+     * Recipients configured as output.
+     */
     private List<String> recipients;
+    /**
+     * Iterator over the recipients.
+     */
     private Iterator<String> to;
+
+    /**
+     * Consumer that listens to inbound messages.
+     */
     private MessageConsumer<I> consumer;
+    /**
+     * Vertx event bus.
+     */
     private EventBus eventBus;
+
+    /**
+     * Input address.
+     */
     private String from;
+
+    /**
+     * Metrics implementation.
+     */
     private ProcessorMetrics metrics;
 
     @Override
-    protected ValidationResult preValidate(JsonObject config) {
-        return ProcessorOptionsValidation.validate(config);
+    protected ValidationResult preValidate(JsonObject json) {
+        return ProcessorOptionsValidation.validate(json);
     }
 
     @Override
-    protected JsonObject preConfiguration(JsonObject config) {
-        exchange = new ExchangeOptions(config);
+    protected JsonObject preConfiguration(JsonObject json) {
+        exchange = new ExchangeOptions(json);
         from = exchange.getFrom();
         recipients = exchange.getTo();
         to = RoundRobin.of(recipients).iterator();
         eventBus = vertx.eventBus();
         metrics = MetricsProvider.forProcessor(this);
-        return config;
+        return json;
     }
 
     @Override
@@ -81,7 +111,7 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
 
 
     /**
-     * Provides the address to publish an item
+     * Provides the address to publish an item.
      *
      * @return the address to publish.
      */
@@ -117,6 +147,12 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
         return exchange;
     }
 
+    /**
+     * Consumes an input message by applying the processor transformation
+     * and publish it to the next recipient.
+     *
+     * @param item the input message
+     */
     private void consume(Message<I> item) {
         metrics.eventReceived();
         I input = item.body();
@@ -130,6 +166,12 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
         }
     }
 
+    /**
+     * Handle the metric event and delegates the error handling.
+     *
+     * @param item      the item that triggered the error
+     * @param throwable the error
+     */
     private void handleInternalError(Message<I> item, Throwable throwable) {
         metrics.eventError();
         this.handleError(item, throwable);
@@ -157,6 +199,13 @@ abstract class AbstractProcessor<I, O, T extends ProcessorOptions> extends Confi
         }
     }
 
+    /**
+     * Publishes the output item to the next recipient.
+     * <p>
+     * Handles metrics.
+     *
+     * @param item the item to send.
+     */
     private void publish(O item) {
         LOG.debug("[{}] Emitting message: {}", name(), item);
         eventBus().send(to(), item);

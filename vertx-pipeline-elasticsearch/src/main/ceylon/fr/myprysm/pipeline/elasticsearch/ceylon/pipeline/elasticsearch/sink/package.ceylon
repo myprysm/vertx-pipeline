@@ -1,0 +1,1 @@
+shared package fr.myprysm.pipeline.elasticsearch.ceylon.pipeline.elasticsearch.sink;

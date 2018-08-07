@@ -19,10 +19,20 @@ package fr.myprysm.pipeline.processor;
 import fr.myprysm.pipeline.validation.ValidationResult;
 import io.vertx.core.json.JsonObject;
 
-import static fr.myprysm.pipeline.validation.JsonValidation.*;
+import static fr.myprysm.pipeline.validation.JsonValidation.isObject;
+import static fr.myprysm.pipeline.validation.JsonValidation.mapOf;
 
+/**
+ * Validate <code>DataExtractorProcessorOptions</code>.
+ */
 public interface DataExtractorProcessorOptionsValidation {
 
+    /**
+     * Validate configuration for <code>DataExtractorProcessorOptions</code>.
+     *
+     * @param config the configuration
+     * @return the validation result.
+     */
     static ValidationResult validate(JsonObject config) {
         return isObject("extract")
                 .and(mapOf("extract", String.class))

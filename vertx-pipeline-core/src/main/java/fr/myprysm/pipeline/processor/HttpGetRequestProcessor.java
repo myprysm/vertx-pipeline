@@ -40,7 +40,9 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import static fr.myprysm.pipeline.processor.HttpGetRequestProcessorOptions.ResponseType.LIST_EXTRACT_FIRST;
-import static fr.myprysm.pipeline.util.JsonHelpers.*;
+import static fr.myprysm.pipeline.util.JsonHelpers.extractObject;
+import static fr.myprysm.pipeline.util.JsonHelpers.obj;
+import static fr.myprysm.pipeline.util.JsonHelpers.writeObject;
 
 @Alias(prefix = "pipeline-core", name = "http-get-request-processor")
 public class HttpGetRequestProcessor extends BaseJsonProcessor<HttpGetRequestProcessorConfigurer> {
@@ -222,23 +224,20 @@ public class HttpGetRequestProcessor extends BaseJsonProcessor<HttpGetRequestPro
     private JsonObject inject(String body, JsonObject input) {
         JsonObject output = input.copy();
         Object value;
-        switch (responseType) {
-            case LIST:
-            case LIST_EXTRACT_FIRST:
-                value = asList(body, responseType);
-                break;
-            case OBJECT:
-                value = asObject(body);
-                break;
-            case LONG:
-                value = asLong(body);
-                break;
-            case DOUBLE:
-                value = asDouble(body);
-                break;
-            case STRING:
-            default:
-                value = body;
+        if (responseType == ResponseType.LIST || responseType == ResponseType.LIST_EXTRACT_FIRST) {
+            value = asList(body, responseType);
+
+        } else if (responseType == ResponseType.OBJECT) {
+            value = asObject(body);
+
+        } else if (responseType == ResponseType.LONG) {
+            value = asLong(body);
+
+        } else if (responseType == ResponseType.DOUBLE) {
+            value = asDouble(body);
+
+        } else {
+            value = body;
         }
 
         writeObject(output, injection, value);

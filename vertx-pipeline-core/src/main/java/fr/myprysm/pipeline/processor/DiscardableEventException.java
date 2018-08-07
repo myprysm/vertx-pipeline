@@ -24,21 +24,45 @@ import io.vertx.core.json.JsonObject;
  */
 public class DiscardableEventException extends RuntimeException {
 
+    /**
+     * The event associated with the exception.
+     */
     private JsonObject event;
 
+    /**
+     * Build a new exception with a throwable and no event.
+     *
+     * @param throwable the error.
+     */
     public DiscardableEventException(Throwable throwable) {
         super(throwable);
     }
 
+    /**
+     * Build a new exception with a throwable and an event.
+     *
+     * @param throwable the error.
+     * @param event     the event.
+     */
     public DiscardableEventException(Throwable throwable, JsonObject event) {
         this(throwable);
         this.event = event;
     }
 
+    /**
+     * Build a new exception with the event as data.
+     *
+     * @param object the event.
+     */
     public DiscardableEventException(JsonObject object) {
         event = object;
     }
 
+    /**
+     * The event that generated the exception.
+     *
+     * @return the event
+     */
     public JsonObject getEvent() {
         return event;
     }

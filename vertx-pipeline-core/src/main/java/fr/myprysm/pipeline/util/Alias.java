@@ -22,13 +22,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defines an alias for a component
+ * Defines an alias for a component.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Alias {
     /**
      * The prefix for the alias.
+     *
      * This allows to use the same name without collision across the registered components.
      *
      * @return the prefix

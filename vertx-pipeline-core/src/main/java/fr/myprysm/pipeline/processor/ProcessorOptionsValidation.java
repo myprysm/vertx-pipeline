@@ -16,34 +16,28 @@
 
 package fr.myprysm.pipeline.processor;
 
-import io.vertx.core.json.JsonObject;
 import fr.myprysm.pipeline.validation.JsonValidation;
 import fr.myprysm.pipeline.validation.ValidationResult;
+import io.vertx.core.json.JsonObject;
 
-import static java.util.Objects.requireNonNull;
 import static fr.myprysm.pipeline.validation.JsonValidation.isString;
+import static java.util.Objects.requireNonNull;
 
+/**
+ * Base Validation for <code>ProcessorOptions</code>.
+ */
 public interface ProcessorOptionsValidation extends JsonValidation {
 
     /**
-     * Base validator of a {@link Processor}
+     * Base validator of a {@link Processor}.
      *
      * @param options the options to validate
      * @return the validation result
      */
     static ValidationResult validate(JsonObject options) {
         requireNonNull(options);
-        return hasName()
-            .and(hasType())
-            .apply(options);
+        return isString("name")
+                .and(isString("type"))
+                .apply(options);
     }
-
-    static JsonValidation hasName() {
-        return isString("name");
-    }
-
-    static JsonValidation hasType() {
-        return isString("type");
-    }
-
 }

@@ -32,39 +32,71 @@ import org.slf4j.LoggerFactory;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * Abstract pump that emits events in a pipeline over Vertx event bus.
+ * <p>
+ * This class provides the necessary pieces over the {@link ConfigurableVerticle}
+ * to focus {@link Pump} development on the logic.
+ *
+ * @param <O> The events output type
+ * @param <T> The options type
+ */
 abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVerticle<T> implements Pump<O> {
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractPump.class);
-    private String name;
 
+    /**
+     * Logger.
+     */
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractPump.class);
+
+    /**
+     * Exchange options.
+     */
     private ExchangeOptions exchange;
+    /**
+     * Recipients.
+     */
     private List<String> recipients;
+
+    /**
+     * Iterator over the recipients.
+     */
     private Iterator<String> to;
+
+    /**
+     * Vertx event bus.
+     */
     private EventBus eventBus;
+
+    /**
+     * The disposable for the stream of the pump.
+     */
     private Disposable source;
+
+    /**
+     * Metrics for the component.
+     */
     private PumpMetrics metrics;
 
     @Override
-    protected ValidationResult preValidate(JsonObject config) {
-        return PumpOptionsValidation.validate(config);
+    protected ValidationResult preValidate(JsonObject json) {
+        return PumpOptionsValidation.validate(json);
     }
 
     /**
      * Configures the prerequisites for this {@link Pump} to work.
      * It binds the {@link #pump()} to the {@link EventBus}
      *
-     * @param config the configuration
+     * @param json the configuration
      * @return the configuration
      */
     @Override
-    protected JsonObject preConfiguration(JsonObject config) {
-        PumpOptions pump = new PumpOptions(config);
-        exchange = new ExchangeOptions(config);
-        name = pump.getName();
+    protected JsonObject preConfiguration(JsonObject json) {
+        exchange = new ExchangeOptions(json);
         recipients = exchange.getTo();
         to = RoundRobin.of(recipients).iterator();
         eventBus = vertx.eventBus();
         metrics = MetricsProvider.forPump(this);
-        return config;
+        return json;
     }
 
     @Override
@@ -79,6 +111,11 @@ abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVertic
         return Completable.complete();
     }
 
+    /**
+     * Handles error metric and delegate error processing.
+     *
+     * @param throwable the error
+     */
     private void handleInternalError(Throwable throwable) {
         metrics.eventError();
         handleError(throwable);
@@ -96,15 +133,6 @@ abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVertic
     protected void handleError(Throwable throwable) {
         LOG.error("[" + name() + "] encountered an error: ", throwable);
 
-    }
-
-    /**
-     * The name of this pump.
-     *
-     * @return the name of this pump.
-     */
-    public String name() {
-        return name;
     }
 
     /**
@@ -135,6 +163,11 @@ abstract class AbstractPump<O, T extends PumpOptions> extends ConfigurableVertic
         return recipients;
     }
 
+    /**
+     * Publish the event to the next recipient.
+     *
+     * @param item the item
+     */
     private void publish(O item) {
         debug("Sending item: {}", item.toString());
         eventBus().send(to(), item);

@@ -19,7 +19,16 @@ package fr.myprysm.pipeline.spi;
 import fr.myprysm.pipeline.DeploymentVerticleOptions;
 import fr.myprysm.pipeline.metrics.MetricsService;
 
+/**
+ * Metrics service factory for pipelines
+ */
 public interface MetricsServiceFactory {
 
+    /**
+     * Create a new {@link MetricsService} instance from the provided options.
+     *
+     * @param opts the options
+     * @return the {@link MetricsService} instance.
+     */
     MetricsService create(DeploymentVerticleOptions opts);
 }

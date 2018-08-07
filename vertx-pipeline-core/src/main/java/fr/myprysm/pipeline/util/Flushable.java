@@ -20,7 +20,7 @@ import io.reactivex.Completable;
 
 /**
  * Represents a component that can buffer some items before
- * writing those to its output
+ * writing those to its output.
  */
 public interface Flushable extends SignalReceiver {
 

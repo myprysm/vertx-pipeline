@@ -23,8 +23,11 @@ import io.vertx.core.json.JsonObject;
 
 import static fr.myprysm.pipeline.validation.ValidationResult.valid;
 
+/**
+ * Sink that outputs received events directly into the console (<code>System.out</code>).
+ */
 @Alias(prefix = "pipeline-core", name = "console-sink")
-final public class ConsoleSink extends BaseJsonSink<SinkOptions> {
+public final class ConsoleSink extends BaseJsonSink<SinkOptions> {
 
     @Override
     protected Completable startVerticle() {

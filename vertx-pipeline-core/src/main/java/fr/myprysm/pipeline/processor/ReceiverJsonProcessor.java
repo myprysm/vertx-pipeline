@@ -38,11 +38,11 @@ public abstract class ReceiverJsonProcessor<T extends ProcessorOptions> extends 
     private MessageConsumer<String> controlChannelConsumer;
 
     @Override
-    protected JsonObject preConfiguration(JsonObject config) {
-        super.preConfiguration(config);
+    protected JsonObject preConfiguration(JsonObject json) {
+        super.preConfiguration(json);
         controlChannel = exchange().getControlChannel();
         controlChannelConsumer = eventBus().consumer(controlChannel, this::handleSignal);
-        return config;
+        return json;
     }
 
     @Override

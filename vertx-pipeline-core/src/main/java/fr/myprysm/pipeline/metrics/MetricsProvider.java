@@ -25,12 +25,22 @@ import io.vertx.core.json.JsonObject;
 /**
  * Provides Metrics to components and results as JSON.
  */
-public class MetricsProvider {
+public final class MetricsProvider {
 
+    /**
+     * The metrics service.
+     */
     private static MetricsService metrics = new DummyMetricsServiceImpl();
 
     /**
-     * Provdes metrics for a {@link Sink}
+     * Utility class...
+     */
+    private MetricsProvider() {
+        // Utility class
+    }
+
+    /**
+     * Provdes metrics for a {@link Sink}.
      *
      * @param sink the sink
      * @return the metrics
@@ -40,7 +50,7 @@ public class MetricsProvider {
     }
 
     /**
-     * Provides metrics for a {@link Pump}
+     * Provides metrics for a {@link Pump}.
      *
      * @param pump pump
      * @return the metrics
@@ -50,7 +60,7 @@ public class MetricsProvider {
     }
 
     /**
-     * Provides metrics for a {@link Processor}
+     * Provides metrics for a {@link Processor}.
      *
      * @param processor the processor
      * @return the metrics
@@ -60,7 +70,7 @@ public class MetricsProvider {
     }
 
     /**
-     * Get the current metrics service
+     * Get the current metrics service.
      *
      * @return the metrics service
      */
@@ -78,14 +88,14 @@ public class MetricsProvider {
     }
 
     /**
-     * Closes the metrics service
+     * Closes the metrics service.
      */
     public static void close() {
         metrics.close();
     }
 
     /**
-     * Provides the current metrics for a component name
+     * Provides the current metrics for a component name.
      *
      * @param name the component name
      * @return the metrics

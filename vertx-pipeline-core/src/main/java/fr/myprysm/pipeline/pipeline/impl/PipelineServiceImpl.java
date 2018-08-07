@@ -1,7 +1,11 @@
 package fr.myprysm.pipeline.pipeline.impl;
 
 import com.google.common.collect.ImmutableSet;
-import fr.myprysm.pipeline.pipeline.*;
+import fr.myprysm.pipeline.pipeline.DeployChannelActions;
+import fr.myprysm.pipeline.pipeline.PipelineDeployment;
+import fr.myprysm.pipeline.pipeline.PipelineOptions;
+import fr.myprysm.pipeline.pipeline.PipelineOptionsValidation;
+import fr.myprysm.pipeline.pipeline.PipelineService;
 import fr.myprysm.pipeline.util.EnumUtils;
 import fr.myprysm.pipeline.util.Signal;
 import fr.myprysm.pipeline.validation.ValidationResult;
@@ -115,13 +119,12 @@ public class PipelineServiceImpl implements PipelineService {
         DeployChannelActions action = EnumUtils.fromString(message.headers().get("action"), DeployChannelActions.class);
         String body = message.body();
         if (action != null && body != null) {
-            switch (action) {
-                case UNDEPLOY:
-                    handleUndeploy(message);
-                    break;
-                case DEPLOY:
-                    handleDeploy(message);
-                    break;
+            if (action == DeployChannelActions.UNDEPLOY) {
+                handleUndeploy(message);
+
+            } else if (action == DeployChannelActions.DEPLOY) {
+                handleDeploy(message);
+
             }
         }
 
@@ -437,7 +440,7 @@ public class PipelineServiceImpl implements PipelineService {
      */
     private Single<PipelineOptions> getOptions(PipelineDeployment deployment) {
         return pipelines.rxGet(deployment)
-                .flatMap(options -> options != null ? Single.just(options) : Single.error(new ServiceException(PIPELINE_NOT_FOUND, "Unable to find pipeline " + deployment)));
+                .flatMap(options -> options == null ? Single.error(new ServiceException(PIPELINE_NOT_FOUND, "Unable to find pipeline " + deployment)) : Single.just(options));
     }
 
     @SuppressWarnings("unchecked")

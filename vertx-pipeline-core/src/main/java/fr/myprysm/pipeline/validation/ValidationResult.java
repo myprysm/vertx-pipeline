@@ -16,26 +16,51 @@
 
 package fr.myprysm.pipeline.validation;
 
-import java.util.Objects;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
 import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * A validation result indicates whether a set of predicates results
- * to a valid or an in valid result.
+ * A validation result indicates whether a set of predicates results to a valid or an in valid result.
+ * <p>
  * An invalid result can optionally hold a reason.
  */
 public interface ValidationResult {
+    /**
+     * Get a valid result.
+     *
+     * @return a valid result
+     */
     static ValidationResult valid() {
         return ValidationSupport.valid();
     }
 
+    /**
+     * Get an invalid result with the provided reason.
+     *
+     * @param reason the reason
+     * @return the invalid result with the reason
+     */
     static ValidationResult invalid(String reason) {
         return new Invalid(reason);
     }
 
+    /**
+     * Indicates whether the validation result is valid.
+     *
+     * @return <code>true</code> when the result is valid, <code>false</code> otherwise.
+     */
     boolean isValid();
 
+    /**
+     * The reason when the result is invalid.
+     * <p>
+     * The reason should be empty when the result is valid.
+     *
+     * @return an optional with the reason when the result is invalid
+     */
     Optional<String> getReason();
 
     /**
@@ -60,51 +85,63 @@ public interface ValidationResult {
         return this.isValid() ? other.get() : this;
     }
 
+    /**
+     * Transforms the {@link ValidationResult} into a {@link ValidationException}.
+     *
+     * @return the exception
+     */
     default ValidationException toException() {
         return new ValidationException(this);
     }
 
+    /**
+     * Class that represents an invalid result with a reason.
+     */
+    @ToString
+    @EqualsAndHashCode
     final class Invalid implements ValidationResult {
 
+        /**
+         * The reason
+         */
         private final String reason;
 
+        /**
+         * Initialize the invalid result with the reason.
+         *
+         * @param reason the reason
+         */
         Invalid(String reason) {
             this.reason = reason;
         }
 
+        /**
+         * Indicates false
+         *
+         * @return false
+         */
         public boolean isValid() {
             return false;
         }
 
+        /**
+         * The reason of the error
+         *
+         * @return the reason
+         */
         public Optional<String> getReason() {
             return Optional.of(reason);
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Invalid invalid = (Invalid) o;
-            return Objects.equals(reason, invalid.reason);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(reason);
-        }
-
-        @Override
-        public String toString() {
-            return "Invalid[" +
-                "reason='" + reason + '\'' +
-                ']';
-        }
     }
 
     /**
      * Helper class to produce a unique valid result
      */
     final class ValidationSupport {
+        /**
+         * THE valid result
+         */
         private static final ValidationResult valid = new ValidationResult() {
             public boolean isValid() {
                 return true;
@@ -115,6 +152,15 @@ public interface ValidationResult {
             }
         };
 
+        private ValidationSupport() {
+            //
+        }
+
+        /**
+         * Get THE valid result
+         *
+         * @return a valid result
+         */
         static ValidationResult valid() {
             return valid;
         }

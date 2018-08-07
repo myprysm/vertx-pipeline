@@ -26,11 +26,6 @@ public abstract class FlushableJsonProcessor<T extends ProcessorOptions> extends
 
     @Override
     public Completable onSignal(Signal signal) {
-        switch (signal) {
-            case FLUSH:
-                return this.flush();
-        }
-
-        return complete();
+        return signal == Signal.FLUSH ? this.flush() : complete();
     }
 }

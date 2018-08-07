@@ -19,7 +19,6 @@ package fr.myprysm.pipeline.processor;
 import fr.myprysm.pipeline.util.Alias;
 import fr.myprysm.pipeline.util.JsonHelpers;
 import fr.myprysm.pipeline.validation.ValidationResult;
-import io.netty.channel.EventLoop;
 import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
@@ -39,17 +38,19 @@ import static io.reactivex.Completable.complete;
  * a <code>null</code> value will be set at the output path to ensure that the
  * chain will not be broken by checking unexisting path where error can be handled
  * in a more elegant manner and produce more relevant output.
- * <p>
- * This processor runs its transformations on a worker thread to avoid blocking the {@link EventLoop}.
  */
 @Alias(prefix = "pipeline-core", name = "data-extractor-processor")
 public class DataExtractorProcessor extends BaseJsonProcessor<DataExtractorProcessorOptions> {
+
+    /**
+     * Term to reference the current event.
+     */
     public static final String THIS = "$event";
 
     /**
      * Stored as a {@link JsonObject}
      * but this is basically a <code>Map&lt;String, String&gt;</code> that holds
-     * as key the path to extract from input objects and as value the
+     * as key the path to extract from input objects and as value the destination path.
      */
     private JsonObject extract;
 
@@ -66,6 +67,7 @@ public class DataExtractorProcessor extends BaseJsonProcessor<DataExtractorProce
      * <p>
      * Asynchronous operation executed on a worker thread.
      *
+     * @param input    the input event
      * @param complete the {@link Future} to complete once data is fully transformed.
      */
     private void extractData(JsonObject input, Future<JsonObject> complete) {

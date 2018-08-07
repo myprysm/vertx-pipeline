@@ -22,10 +22,21 @@ import fr.myprysm.pipeline.validation.ValidationResult;
 import io.vertx.core.json.JsonObject;
 
 import static fr.myprysm.pipeline.pump.TimerPumpOptionsValidation.validInterval;
-import static fr.myprysm.pipeline.validation.JsonValidation.*;
+import static fr.myprysm.pipeline.validation.JsonValidation.gt;
+import static fr.myprysm.pipeline.validation.JsonValidation.isEnum;
+import static fr.myprysm.pipeline.validation.JsonValidation.isNull;
 
+/**
+ * Validation for <code>CounterEmitterProcessorOptions</code>.
+ */
 public interface CounterEmitterProcessorOptionsValidation {
 
+    /**
+     * Validates options for <code>CounterEmitterProcessorOptions</code>.
+     *
+     * @param config the json configuration
+     * @return the validation result.
+     */
     static ValidationResult validate(JsonObject config) {
         return validInterval()
                 .and(validSignal())
@@ -33,6 +44,11 @@ public interface CounterEmitterProcessorOptionsValidation {
                 .apply(config);
     }
 
+    /**
+     * Validates that the signal is one of flush, terminate.
+     *
+     * @return the validation chain.
+     */
     static JsonValidation validSignal() {
         return isNull("signal").or(isEnum("signal", Signal.FLUSH, Signal.TERMINATE));
     }

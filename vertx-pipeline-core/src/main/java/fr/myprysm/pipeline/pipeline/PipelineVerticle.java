@@ -50,7 +50,7 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineConfigurer> i
      * and on the right side the deployment ID
      */
     private Pair<String, String> pumpDeployment;
-    private LinkedList<List<Pair<String, String>>> processorsDeployment = new LinkedList<>();
+    private final LinkedList<List<Pair<String, String>>> processorsDeployment = new LinkedList<>();
 
     /**
      * Pair with on the left side the name of the {@link fr.myprysm.pipeline.sink.Sink}
@@ -86,6 +86,8 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineConfigurer> i
     private void handleSignal(Message<String> signalString) {
         Signal signal = Signal.valueOf(signalString.body());
         switch (signal) {
+            case UNRECOVERABLE:
+                break;
             case TERMINATE:
                 undeploy()
                         .doOnComplete(() -> {
@@ -94,6 +96,15 @@ public class PipelineVerticle extends ConfigurableVerticle<PipelineConfigurer> i
                             }
                         })
                         .andThen(defer(this::notifyUndeploy)).subscribe(() -> debug("Undeployed pipeline."));
+                break;
+            case FLUSH:
+                break;
+            case INTERRUPT:
+                break;
+            case RESUME:
+                break;
+            default:
+                break;
         }
     }
 

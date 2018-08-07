@@ -19,7 +19,6 @@ package fr.myprysm.pipeline;
 
 import fr.myprysm.pipeline.metrics.MetricsProvider;
 import fr.myprysm.pipeline.pipeline.PipelineOptions;
-import fr.myprysm.pipeline.pipeline.PipelineVerticle;
 import fr.myprysm.pipeline.pipeline.impl.PipelineServiceImpl;
 import fr.myprysm.pipeline.reactivex.pipeline.PipelineService;
 import fr.myprysm.pipeline.spi.MetricsServiceFactory;
@@ -43,21 +42,49 @@ import java.util.UUID;
 
 import static io.reactivex.Observable.fromIterable;
 
+/**
+ * Verticle that handles the deployment of the pipelines configured in the YAML file provided at <code>path</code>.
+ * <p>
+ * Starts a {@link PipelineService} that will handle the deployments.
+ */
 @Slf4j
 public class DeploymentVerticle extends AbstractVerticle {
 
+    /**
+     * Component name.
+     */
     static final String NAME = "deployment-verticle";
+
+    /**
+     * Property for configuration file path.
+     */
     private static final String CONFIG_PATH = "path";
 
     /**
-     * The deploy channel
+     * The deploy channel.
      */
-    private String deployChannel = UUID.randomUUID().toString();
-
+    private final String deployChannel = UUID.randomUUID().toString();
+    /**
+     * Component instance name.
+     */
+    private final String name = NAME + ":" + deployChannel;
+    /**
+     * Configuration file path.
+     */
     private String path;
-    private String name = NAME + ":" + deployChannel;
+    /**
+     * Pipeline Service instance.
+     */
     private PipelineServiceImpl pipelineService;
+
+    /**
+     * Service RX version.
+     */
     private PipelineService rxService;
+
+    /**
+     * Message consumer for the {@link fr.myprysm.pipeline.pipeline.PipelineService} proxy.
+     */
     private MessageConsumer<JsonObject> serviceConsumer;
 
     @Override
@@ -72,6 +99,13 @@ public class DeploymentVerticle extends AbstractVerticle {
                 .subscribe(CompletableHelper.toObserver(started));
     }
 
+    /**
+     * Starts the pipeline service.
+     * <p>
+     * Registers a proxy handler on the service.
+     *
+     * @return a completable that finishes when pipeline service is started.
+     */
     private Completable startPipelineService() {
         pipelineService = new PipelineServiceImpl(vertx, deployChannel);
         rxService = new PipelineService(pipelineService);
@@ -81,14 +115,20 @@ public class DeploymentVerticle extends AbstractVerticle {
         return pipelineService.configure();
     }
 
+    /**
+     * Initialize the metrics when an implementation is provided.
+     *
+     * @param config the configuration
+     * @return the configuration
+     */
     private JsonObject initializeMetrics(JsonObject config) {
         DeploymentVerticleOptions opts = new DeploymentVerticleOptions(config());
         if (opts.getMetrics()) {
             MetricsServiceFactory factory = ServiceHelper.loadFactoryOrNull(MetricsServiceFactory.class);
-            if (factory != null) {
-                MetricsProvider.initialize(factory.create(opts));
-            } else {
+            if (factory == null) {
                 log.info("Requested metrics but no factory found on the classpath?!");
+            } else {
+                MetricsProvider.initialize(factory.create(opts));
             }
         }
 
@@ -105,20 +145,26 @@ public class DeploymentVerticle extends AbstractVerticle {
     }
 
     /**
-     * Prepares the pipeline name by extracting it from configuration
+     * Prepares the pipeline name by extracting it from configuration.
      *
      * @param json the global pipelines configuration
      * @return the configuration with each pipeline named. according to its entry name from configuration
      */
     private JsonObject prepareConfiguration(JsonObject json) {
-        json.fieldNames().forEach(name ->
-                json.getJsonObject(name)
-                        .put("name", name)
+        json.fieldNames().forEach(pipeline ->
+                json.getJsonObject(pipeline)
+                        .put("name", pipeline)
                         .put("deployChannel", deployChannel)
         );
         return json;
     }
 
+    /**
+     * Start the configured pipelines.
+     *
+     * @param config the configuration
+     * @return completable that finishes successfully when all the pipelines are started.
+     */
     private Completable startPipelines(JsonObject config) {
         return fromIterable(config.fieldNames())
                 .map(config::getJsonObject)
@@ -129,10 +175,11 @@ public class DeploymentVerticle extends AbstractVerticle {
     /**
      * Starts a pipeline with provided config.
      * <p>
-     * If {@link PipelineVerticle} deployment fails, then the error is kept internally but
+     * <s>
+     * If {@link fr.myprysm.pipeline.pipeline.PipelineVerticle} deployment fails, then the error is kept internally but
      * <b>DOES NOT STOP</b> the global deployment of the other pipelines.
      *
-     * @param config the config to inject into the {@link PipelineVerticle}
+     * @param config the config to inject into the {@link fr.myprysm.pipeline.pipeline.PipelineVerticle}
      * @return a single containing a pair with the name of the pipeline and its deployment ID if any.
      */
     private Completable startPipeline(JsonObject config) {

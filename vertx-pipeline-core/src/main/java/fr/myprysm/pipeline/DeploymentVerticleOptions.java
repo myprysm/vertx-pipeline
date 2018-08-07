@@ -33,7 +33,7 @@ public class DeploymentVerticleOptions {
 //    private Boolean global;
 
     public DeploymentVerticleOptions() {
-
+//
     }
 
     public DeploymentVerticleOptions(DeploymentVerticleOptions other) {

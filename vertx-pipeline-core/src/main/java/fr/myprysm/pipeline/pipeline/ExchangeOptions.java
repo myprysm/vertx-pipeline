@@ -36,7 +36,7 @@ public class ExchangeOptions {
     private String controlChannel;
 
     public ExchangeOptions() {
-
+        //
     }
 
     public ExchangeOptions(ExchangeOptions other) {

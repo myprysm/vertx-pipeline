@@ -19,6 +19,11 @@ package fr.myprysm.pipeline.sink;
 import io.reactivex.Completable;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * Base Sink implementation that receives {@link JsonObject} events.
+ *
+ * @param <T> the options type
+ */
 public abstract class BaseJsonSink<T extends SinkOptions> extends AbstractSink<JsonObject, T> {
     @Override
     public Completable shutdown() {

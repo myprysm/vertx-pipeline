@@ -18,19 +18,18 @@ package fr.myprysm.pipeline.processor;
 
 import io.reactivex.Completable;
 import io.vertx.core.json.JsonObject;
-import fr.myprysm.pipeline.pump.Pump;
-import fr.myprysm.pipeline.sink.Sink;
-import fr.myprysm.pipeline.validation.ValidationResult;
 
 /**
  * Base of a pipeline processor.
  * <p>
- * A {@link Processor} is a verticle able to read data from another {@link Processor} or from a {@link Pump}
- * and to send data to another cluster of {@link Processor} or a {@link Sink}.
+ * A {@link Processor} is a verticle able to read data from another {@link Processor} or from a {@link fr.myprysm.pipeline.pump.Pump}
+ * and to send data to another cluster of {@link Processor} or a {@link fr.myprysm.pipeline.sink.Sink}.
  * <p>
  * It handles {@link JsonObject} <b>only</b> to facilitate the data processing as JSON manipulation is quite trivial.
  * <p>
  * Data is emitted to recipient(s) in a round robin fashion.
+ *
+ * @param <O> The processor options type.
  */
 public abstract class BaseJsonProcessor<O extends ProcessorOptions> extends AbstractProcessor<JsonObject, JsonObject, O> {
     @Override

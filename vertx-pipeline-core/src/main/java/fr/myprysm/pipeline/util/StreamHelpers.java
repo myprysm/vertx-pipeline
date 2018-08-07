@@ -16,7 +16,11 @@
 
 package fr.myprysm.pipeline.util;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -33,7 +37,7 @@ public interface StreamHelpers {
      * @param <T>   the type of object in the array
      * @return the stream
      */
-    static <T> Stream<T> streamInReverse(T[] input) {
+    static <T> Stream<T> streamInReverse(T... input) {
         return IntStream.range(1, input.length + 1).mapToObj(
                 i -> input[input.length - i]);
     }

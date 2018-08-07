@@ -28,7 +28,7 @@ import static fr.myprysm.pipeline.validation.ValidationResult.valid;
  * instead of draining it to somewhere else...
  */
 @Alias(prefix = "pipeline-playground", name = "blackhole-sink")
-final public class BlackholeSink extends BaseJsonSink<SinkOptions> {
+public final class BlackholeSink extends BaseJsonSink<SinkOptions> {
 
     @Override
     protected Completable startVerticle() {

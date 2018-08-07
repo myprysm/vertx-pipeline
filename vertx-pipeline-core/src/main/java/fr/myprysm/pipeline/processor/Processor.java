@@ -16,17 +16,15 @@
 
 package fr.myprysm.pipeline.processor;
 
-import fr.myprysm.pipeline.pump.Pump;
-import fr.myprysm.pipeline.sink.Sink;
 import fr.myprysm.pipeline.util.Stream;
 import io.reactivex.Single;
 
 /**
- * A Processor is part of a pipeline configured from a {@link Pump} to a {@link Sink}.
+ * A Processor is part of a pipeline configured from a {@link fr.myprysm.pipeline.pump.Pump} to a {@link fr.myprysm.pipeline.sink.Sink}.
  * <p>
- * It receives items directly from a {@link Pump} or from another {@link Processor}.
+ * It receives items directly from a {@link fr.myprysm.pipeline.pump.Pump} or from another {@link Processor}.
  * Each incoming item receives a transformation before being returned to the pipeline.
- * The output can be sent directly to a {@link Sink} to another {@link Processor}.
+ * The output can be sent directly to a {@link fr.myprysm.pipeline.sink.Sink} to another {@link Processor}.
  *
  * @param <I> The type of input items
  * @param <O> The type of output items

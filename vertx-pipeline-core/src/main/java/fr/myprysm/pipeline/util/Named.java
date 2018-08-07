@@ -22,7 +22,7 @@ package fr.myprysm.pipeline.util;
 public interface Named {
 
     /**
-     * The name of the component
+     * The name of the component.
      *
      * @return the name of the component.
      */

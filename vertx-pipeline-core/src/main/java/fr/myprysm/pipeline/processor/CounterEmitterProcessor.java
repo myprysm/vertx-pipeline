@@ -37,12 +37,26 @@ import static io.reactivex.Completable.complete;
  */
 @Alias(prefix = "pipeline-core", name = "counter-emitter-processor")
 public class CounterEmitterProcessor extends EmitterJsonProcessor<CounterEmitterProcessorOptions> {
+    /**
+     * Logger.
+     */
     private static final Logger LOG = LoggerFactory.getLogger(CounterEmitterProcessor.class);
+    /**
+     * The counter.
+     */
+    private final AtomicLong counter = new AtomicLong(0L);
+    /**
+     * The interval between each tick.
+     */
     private Long interval;
+    /**
+     * The signal to emit on tick.
+     */
     private Signal signal;
+    /**
+     * The delay when sending <code>TERMINATE</code>.
+     */
     private Long delayTerminate;
-
-    private AtomicLong counter = new AtomicLong(0L);
 
     @Override
     public Single<JsonObject> transform(JsonObject input) {
@@ -50,6 +64,11 @@ public class CounterEmitterProcessor extends EmitterJsonProcessor<CounterEmitter
         return Single.just(input);
     }
 
+    /**
+     * Increments the counter and emits the configured {@link Signal}.
+     * <p>
+     * Flush is always emitted, Terminate can be delayed.
+     */
     private void handleSignal() {
         Long modulo = counter.incrementAndGet() % interval;
         if (modulo == 0) {

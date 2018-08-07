@@ -19,6 +19,11 @@ package fr.myprysm.pipeline.pump;
 import io.reactivex.Completable;
 import io.vertx.core.json.JsonObject;
 
+/**
+ * Base Pump implementation that generates {@link JsonObject} events in the pipeline.
+ *
+ * @param <T> the options type
+ */
 public abstract class BaseJsonPump<T extends PumpOptions> extends AbstractPump<JsonObject, T> {
     @Override
     public Completable shutdown() {

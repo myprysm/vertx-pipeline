@@ -30,17 +30,58 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ClasspathHelpers {
+/**
+ * Classpath Helpers for pipelines.
+ * <p>
+ * Keeps a single reference to the scan to avoid multiple scans.
+ */
+public final class ClasspathHelpers {
+
+    /**
+     * Logger.
+     */
     private static final Logger LOG = LoggerFactory.getLogger(ClasspathHelpers.class);
+
+    /**
+     * Globlal class scan result.
+     */
     private static ScanResult scan;
+
+    /**
+     * List of processor classes.
+     */
     private static List<String> processorClassNames;
+
+    /**
+     * List of sink classes.
+     */
     private static List<String> sinkClassNames;
+
+    /**
+     * List of pump classes.
+     */
     private static List<String> pumpClassNames;
+
+    /**
+     * List of accumulator classes.
+     */
     private static List<String> accumulatorClassName;
+
+    /**
+     * List of cron emitter classes.
+     */
     private static List<String> cronEmitterClassName;
+
+    /**
+     * Map alias to component class.
+     */
     private static Map<String, String> aliasToComponents;
 
+    /**
+     * utility class...
+     */
     private ClasspathHelpers() {
+        //
     }
 
     /**
@@ -48,7 +89,7 @@ public class ClasspathHelpers {
      *
      * @return the scan result
      */
-    public synchronized static ScanResult getScan() {
+    public static synchronized ScanResult getScan() {
         if (scan == null) {
             LOG.info("Scanning classpath...");
             scan = new FastClasspathScanner().scan();
@@ -58,7 +99,13 @@ public class ClasspathHelpers {
         return scan;
     }
 
-    public synchronized static String getSinkForAlias(String alias) {
+    /**
+     * Get the {@link Sink} matching the provided alias or <code>null</code>.
+     *
+     * @param alias the alias
+     * @return the class name
+     */
+    public static synchronized String getSinkForAlias(String alias) {
         String clazz = getComponentFromAlias(alias);
         if (clazz != null && !Sink.class.isAssignableFrom(getScan().classNameToClassRef(clazz))) {
             clazz = null;
@@ -67,7 +114,13 @@ public class ClasspathHelpers {
         return clazz;
     }
 
-    public synchronized static String getProcessorForAlias(String alias) {
+    /**
+     * Get the {@link Processor} matching the provided alias or <code>null</code>.
+     *
+     * @param alias the alias
+     * @return the class name
+     */
+    public static synchronized String getProcessorForAlias(String alias) {
         String clazz = getComponentFromAlias(alias);
         if (clazz != null && !Processor.class.isAssignableFrom(getScan().classNameToClassRef(clazz))) {
             clazz = null;
@@ -76,7 +129,13 @@ public class ClasspathHelpers {
         return clazz;
     }
 
-    public synchronized static String getPumpForAlias(String alias) {
+    /**
+     * Get the {@link Pump} matching the provided alias or <code>null</code>.
+     *
+     * @param alias the alias
+     * @return the class name
+     */
+    public static synchronized String getPumpForAlias(String alias) {
         String clazz = getComponentFromAlias(alias);
         if (clazz != null && !Pump.class.isAssignableFrom(getScan().classNameToClassRef(clazz))) {
             clazz = null;
@@ -85,15 +144,29 @@ public class ClasspathHelpers {
         return clazz;
     }
 
-    public synchronized static String getComponentFromAlias(String alias) {
+    /**
+     * Get the {@link Pump} matching the provided alias or <code>null</code>.
+     *
+     * @param alias the alias
+     * @return the class name
+     */
+    public static synchronized String getComponentFromAlias(String alias) {
         return getAliasToComponents().get(alias);
     }
 
-    public synchronized static Map<String, String> getAliasToComponents() {
+    /**
+     * Get the aliased components.
+     * <p>
+     * The components are annotated with {@link Alias}
+     * and must implement one of {@link Pump}, {@link Processor}, {@link Sink}.
+     *
+     * @return a map with the alias as key and the class name as value
+     */
+    public static synchronized Map<String, String> getAliasToComponents() {
         if (aliasToComponents == null) {
             aliasToComponents = new ConcurrentHashMap<>();
-            ScanResult scan = getScan();
-            scan.classNamesToClassRefs(scan.getNamesOfClassesWithAnnotation(Alias.class)).forEach(clazz -> {
+            ScanResult scanResult = getScan();
+            scanResult.classNamesToClassRefs(scanResult.getNamesOfClassesWithAnnotation(Alias.class)).forEach(clazz -> {
                 if (Processor.class.isAssignableFrom(clazz) || Pump.class.isAssignableFrom(clazz) || Sink.class.isAssignableFrom(clazz)) {
                     Alias annot = clazz.getAnnotation(Alias.class);
                     String alias = (annot.prefix() + '.' + annot.name()).toLowerCase();
@@ -115,7 +188,7 @@ public class ClasspathHelpers {
      *
      * @return the list of classes annotated {@link Accumulator}
      */
-    public synchronized static List<String> getAccumulatorClassNames() {
+    public static synchronized List<String> getAccumulatorClassNames() {
         if (accumulatorClassName == null) {
             accumulatorClassName = getScan().getNamesOfClassesWithAnnotation(Accumulator.class);
         }
@@ -128,7 +201,7 @@ public class ClasspathHelpers {
      *
      * @return the list of classes implementing {@link Processor}
      */
-    public synchronized static List<String> getProcessorClassNames() {
+    public static synchronized List<String> getProcessorClassNames() {
         if (processorClassNames == null) {
             processorClassNames = getScan().getNamesOfClassesImplementing(Processor.class);
             LOG.info("Processors scanned.");
@@ -137,7 +210,13 @@ public class ClasspathHelpers {
         return processorClassNames;
     }
 
-    public synchronized static List<String> getSinkClassNames() {
+    /**
+     * Get the list of classes implementing {@link Sink}
+     * to validate during startup each element in a pipeline chain are valids.
+     *
+     * @return the list of classes implementing {@link Sink}
+     */
+    public static synchronized List<String> getSinkClassNames() {
         if (sinkClassNames == null) {
             sinkClassNames = getScan().getNamesOfClassesImplementing(Sink.class);
             LOG.info("Sinks scanned.");
@@ -146,7 +225,13 @@ public class ClasspathHelpers {
         return sinkClassNames;
     }
 
-    public synchronized static List<String> getPumpClassNames() {
+    /**
+     * Get the list of classes implementing {@link Pump}
+     * to validate during startup each element in a pipeline chain are valids.
+     *
+     * @return the list of classes implementing {@link Pump}
+     */
+    public static synchronized List<String> getPumpClassNames() {
         if (pumpClassNames == null) {
             pumpClassNames = getScan().getNamesOfClassesImplementing(Pump.class);
             LOG.info("Pumps scanned.");
@@ -155,7 +240,13 @@ public class ClasspathHelpers {
         return pumpClassNames;
     }
 
-    public synchronized static List<String> getCronEmitterClassNames() {
+    /**
+     * Get the list of classes implementing {@link CronEmitter}
+     * to validate during startup each element in a pipeline chain are valids.
+     *
+     * @return the list of classes implementing {@link CronEmitter}
+     */
+    public static synchronized List<String> getCronEmitterClassNames() {
         if (cronEmitterClassName == null) {
             cronEmitterClassName = getScan().getNamesOfSubclassesOf(CronEmitter.class);
         }

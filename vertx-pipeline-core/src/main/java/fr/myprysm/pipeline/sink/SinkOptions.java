@@ -32,7 +32,7 @@ public class SinkOptions implements Options {
     private String type = DEFAULT_TYPE;
 
     public SinkOptions() {
-
+        //
     }
 
     public SinkOptions(SinkOptions other) {
@@ -106,9 +106,9 @@ public class SinkOptions implements Options {
     @Override
     public String toString() {
         return "SinkOptions{" +
-            "name='" + name + '\'' +
-            ", type='" + type + '\'' +
-            '}';
+                "name='" + name + '\'' +
+                ", type='" + type + '\'' +
+                '}';
     }
 
     @Override
@@ -117,7 +117,7 @@ public class SinkOptions implements Options {
         if (!(o instanceof SinkOptions)) return false;
         SinkOptions that = (SinkOptions) o;
         return Objects.equals(name, that.name) &&
-            Objects.equals(type, that.type);
+                Objects.equals(type, that.type);
     }
 
     @Override

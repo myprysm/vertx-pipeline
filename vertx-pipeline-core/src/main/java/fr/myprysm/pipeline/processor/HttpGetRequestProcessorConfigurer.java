@@ -33,17 +33,17 @@ public class HttpGetRequestProcessorConfigurer extends HttpGetRequestProcessorOp
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpGetRequestProcessorConfigurer.class);
 
-    private WebClientOptions options = new WebClientOptions();
+    private final WebClientOptions options = new WebClientOptions();
 
 
-    private CaseInsensitiveHeaders defaultHeaders = new CaseInsensitiveHeaders();
-    private CaseInsensitiveHeaders extractHeaders = new CaseInsensitiveHeaders();
+    private final CaseInsensitiveHeaders defaultHeaders = new CaseInsensitiveHeaders();
+    private final CaseInsensitiveHeaders extractHeaders = new CaseInsensitiveHeaders();
 
-    private CaseInsensitiveHeaders defaultQueryParams = new CaseInsensitiveHeaders();
-    private CaseInsensitiveHeaders extractQueryParams = new CaseInsensitiveHeaders();
+    private final CaseInsensitiveHeaders defaultQueryParams = new CaseInsensitiveHeaders();
+    private final CaseInsensitiveHeaders extractQueryParams = new CaseInsensitiveHeaders();
 
-    private LinkedList<String> urlFragments = new LinkedList<>();
-    private CaseInsensitiveHeaders extractPathParams = new CaseInsensitiveHeaders();
+    private final LinkedList<String> urlFragments = new LinkedList<>();
+    private final CaseInsensitiveHeaders extractPathParams = new CaseInsensitiveHeaders();
 
 
     public HttpGetRequestProcessorConfigurer(HttpGetRequestProcessorOptions config) {

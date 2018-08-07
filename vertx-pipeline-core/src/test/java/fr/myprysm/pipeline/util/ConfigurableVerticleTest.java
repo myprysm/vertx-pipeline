@@ -113,16 +113,16 @@ class ConfigurableVerticleTest extends ConsoleTest implements VertxTest {
 
     class LoadEnvTestVerticle extends EmptyConfigurableVerticle {
         @Override
-        protected JsonObject preConfiguration(JsonObject config) {
-            JsonObject configCopy = super.preConfiguration(config);
-            assertThat(getEnvAsString(config.getString("default"))).isEqualTo("foo bar");
-            assertThat(getEnvAsString(config.getString("int"))).isEqualTo("123");
-            assertThat(getEnvAsInt(config.getString("int"))).isEqualTo(123);
-            assertThat(getEnvAsLong(config.getString("long"))).isEqualTo(123456789123L);
-            assertThat(getEnvAsFloat(config.getString("float"))).isEqualTo(123.123F);
-            assertThat(getEnvAsDouble(config.getString("double"))).isEqualTo(123456789123.123456D);
-            assertThat(getEnvAsBoolean(config.getString("bool.n"))).isEqualTo(false);
-            assertThat(getEnvAsBoolean(config.getString("bool.y"))).isEqualTo(true);
+        protected JsonObject preConfiguration(JsonObject json) {
+            JsonObject configCopy = super.preConfiguration(json);
+            assertThat(getEnvAsString(json.getString("default"))).isEqualTo("foo bar");
+            assertThat(getEnvAsString(json.getString("int"))).isEqualTo("123");
+            assertThat(getEnvAsInt(json.getString("int"))).isEqualTo(123);
+            assertThat(getEnvAsLong(json.getString("long"))).isEqualTo(123456789123L);
+            assertThat(getEnvAsFloat(json.getString("float"))).isEqualTo(123.123F);
+            assertThat(getEnvAsDouble(json.getString("double"))).isEqualTo(123456789123.123456D);
+            assertThat(getEnvAsBoolean(json.getString("bool.n"))).isEqualTo(false);
+            assertThat(getEnvAsBoolean(json.getString("bool.y"))).isEqualTo(true);
             return configCopy;
         }
     }

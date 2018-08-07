@@ -30,29 +30,59 @@ import io.vertx.reactivex.core.eventbus.MessageConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Abstract sink that receives events in a pipeline over Vertx event bus.
+ * <p>
+ * This class provides the necessary pieces over the {@link ConfigurableVerticle}
+ * to focus {@link Sink} development on the logic.
+ *
+ * @param <I> The events input type
+ * @param <T> The options type
+ */
 abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVerticle<T> implements Sink<I>, Named {
+
+    /**
+     * Logger.
+     */
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSink.class);
-    private String name;
+
+    /**
+     * Vertx event bus.
+     */
     private EventBus eventBus;
+
+    /**
+     * Exchange options.
+     */
     private ExchangeOptions exchange;
+
+    /**
+     * Event source address.
+     */
     private String from;
+
+    /**
+     * Message consumer for incoming events.
+     */
     private MessageConsumer<I> consumer;
+
+    /**
+     * Metrics handler.
+     */
     private SinkMetrics metrics;
 
     @Override
-    protected ValidationResult preValidate(JsonObject config) {
-        return SinkOptionsValidation.validate(config);
+    protected ValidationResult preValidate(JsonObject json) {
+        return SinkOptionsValidation.validate(json);
     }
 
     @Override
-    protected JsonObject preConfiguration(JsonObject config) {
-        SinkOptions options = new SinkOptions(config);
-        exchange = new ExchangeOptions(config);
-        name = options.getName();
+    protected JsonObject preConfiguration(JsonObject json) {
+        exchange = new ExchangeOptions(json);
         eventBus = vertx.eventBus();
         from = exchange.getFrom();
         metrics = MetricsProvider.forSink(this);
-        return config;
+        return json;
     }
 
     @Override
@@ -65,11 +95,6 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
     @Override
     protected Completable preShutdown() {
         return consumer.rxUnregister();
-    }
-
-    @Override
-    public String name() {
-        return name;
     }
 
     /**
@@ -91,6 +116,11 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
         return exchange;
     }
 
+    /**
+     * Consumes the incoming event and send it for {@link #drain(I)} to the component.
+     *
+     * @param item the message event
+     */
     private void consume(Message<I> item) {
         metrics.eventReceived();
         I input = item.body();
@@ -102,6 +132,12 @@ abstract class AbstractSink<I, T extends SinkOptions> extends ConfigurableVertic
         }
     }
 
+    /**
+     * Handles error metric and delegate error processing.
+     *
+     * @param item the message that triggered the error
+     * @param exc  the error
+     */
     private void handleInternalError(Message<I> item, Exception exc) {
         metrics.eventError();
         handleError(item, exc);

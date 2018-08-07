@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/**
+ * Vertx Pipeline Core.
+ * <p>
+ * Base components for building and starting complex event stream processing.
+ */
 @ModuleGen(name = "vertx-pipeline-core", groupPackage = "fr.myprysm.pipeline")
 package fr.myprysm.pipeline;
 

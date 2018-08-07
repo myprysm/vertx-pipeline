@@ -33,7 +33,7 @@
 
         <core-contract.version>1.0.0-SNAPSHOT</core-contract.version>
 
-        <jolt.version>0.1.0</jolt.version>
+        <jolt.version>0.1.1</jolt.version>
         <quartz.version>2.3.0</quartz.version>
     </properties>
 
